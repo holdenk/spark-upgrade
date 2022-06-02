@@ -4,6 +4,7 @@ import scalafix.v1._
 import scala.meta._
 import scala.util.matching.Regex
 import scala.collection.mutable.HashSet
+import scala.reflect.ClassTag
 
 case class Utils()(implicit val doc: SemanticDocument) {
   /**
@@ -45,7 +46,7 @@ case class Utils()(implicit val doc: SemanticDocument) {
   /**
    * Strings, ints, doubles, etc. can all be literals or regular symbols
    */
-  class MagicMatcherLit[T <: meta.Lit](matchers: List[SymbolMatcher])
+  class MagicMatcherLit[T <: meta.Lit: ClassTag](matchers: List[SymbolMatcher])
       extends MagicMatcher(matchers) {
     override def unapply(param: Term) = {
       param match {
@@ -55,27 +56,6 @@ case class Utils()(implicit val doc: SemanticDocument) {
     }
   }
 
-  /**
-   * We want to find the name of the spark context. This is imperfect but hopefully
-   * good enough.
-   */
-  def findSparkContextName(): Option[String] = {
-    val scMatch = SymbolMatcher.normalized("org.apache.spark.SparkContext")
-    def findSparkContextInTree(e: Tree): Option[String] = {
-      e match {
-        case scMatch(t) =>
-          Some(t.symbol.displayName)
-        case elem @ _ =>
-          elem.children match {
-            case Nil => None
-            case _ => elem.children.flatMap(findSparkContextInTree).headOption
-          }
-      }
-    }
-    findSparkContextInTree(doc.tree)
-  }
-
-  lazy val sparkContextName = findSparkContextName()
 
   object intMatcher extends MagicMatcherLit[Lit.Int](
     List(SymbolMatcher.normalized("scala.Int")))

@@ -12,25 +12,27 @@ class AccumulatorUpgrade extends SemanticRule("AccumulatorUpgrade") {
     def matchOnTree(e: Tree): Patch = {
       e match {
         // non-named accumulator
-        case ns @ Term.Apply(accumulatorFunMatch(f), params) =>
+        case ns @ Term.Apply(j @ accumulatorFunMatch(f), params) =>
+          // Find the spark context for rewriting
+          val sc = ns.children(0).children(0)
           params match {
             case List(param) =>
               param match {
+                // TODO: Handle non zero values
                 case utils.intMatcher(initialValue) =>
-                  println("Matched initial value " + initialValue)
                   Patch.empty
+                case q"0L" =>
+                  Patch.replaceTree(ns, s"${sc}.longAccumulator")
                 case utils.longMatcher(initialValue) =>
-                  println("Matched initial value " + initialValue)
                   Patch.empty
+                case q"0.0" =>
+                  Patch.replaceTree(ns, s"${sc}.doubleAccumulator")
                 case utils.doubleMatcher(initialValue) =>
-                  println("Matched initial value " + initialValue)
                   Patch.empty
                 case _ =>
-                  println("Failed to match acc param " + param)
                   Patch.empty
               }
             case List(param, name) =>
-              println("Failed to match acc param w/name " + param)
               Patch.empty
           }
         case elem @ _ =>
