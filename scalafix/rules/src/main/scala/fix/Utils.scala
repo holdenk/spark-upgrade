@@ -59,14 +59,14 @@ case class Utils()(implicit val doc: SemanticDocument) {
    * We want to find the name of the spark context. This is imperfect but hopefully
    * good enough.
    */
-  def findSparkContextName() {
+  def findSparkContextName(): Option[String] = {
     val scMatch = SymbolMatcher.normalized("org.apache.spark.SparkContext")
-    def findSparkContextInTree(e: Tree) = {
+    def findSparkContextInTree(e: Tree): Option[String] = {
       e match {
         case scMatch(t) =>
-          Some(t.symbol.displayName())
+          Some(t.symbol.displayName)
         case elem @ _ =>
-          elem.children Match {
+          elem.children match {
             case Nil => None
             case _ => elem.children.flatMap(findSparkContextInTree).headOption
           }

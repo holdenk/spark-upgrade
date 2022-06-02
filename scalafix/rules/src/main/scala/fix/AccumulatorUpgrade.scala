@@ -20,6 +20,8 @@ class AccumulatorUpgrade extends SemanticRule("AccumulatorUpgrade") {
                   println("Matched initial value " + initialValue)
                   Patch.empty
                 case utils.longMatcher(initialValue) =>
+                  println("Matched initial value " + initialValue)
+                  Patch.empty
                 case utils.doubleMatcher(initialValue) =>
                   println("Matched initial value " + initialValue)
                   Patch.empty
