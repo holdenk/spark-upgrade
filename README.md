@@ -1,2 +1,1 @@
-# spark-upgrade
-Magic to help Spark pipelines upgrade
+Aims to help people upgrade to the latest version of Spark.
