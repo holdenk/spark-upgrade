@@ -1,2 +1,6 @@
 *.class
 *.log
+*/build/sbt*.jar
+*/target/
+.metals/
+target/
