@@ -13,11 +13,6 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
-      matrix:
-        spark:
-          - 2.4.7
-          - 3.0.2
-          - 3.1.2
     env:
       SPARK_VERSION: ${{ matrix.spark }}
     steps:
@@ -27,7 +22,7 @@ jobs:
       with:
         fetch-depth: 0
         repository: holdenk/spark-upgrade
-        ref: master
+        ref: main
     - name: Sync the current branch with the latest in spark-testing-base
       if: github.repository != 'holdenk/spark-upgrade'
       id: sync-branch
