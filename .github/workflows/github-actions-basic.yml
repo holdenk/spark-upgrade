@@ -26,7 +26,7 @@ jobs:
       # In order to fetch changed files
       with:
         fetch-depth: 0
-        repository: holdenk/spark-testing-base
+        repository: holdenk/spark-upgrade
         ref: master
     - name: Sync the current branch with the latest in spark-testing-base
       if: github.repository != 'holdenk/spark-upgrade'
