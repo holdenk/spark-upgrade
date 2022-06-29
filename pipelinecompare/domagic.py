@@ -26,8 +26,9 @@ parser.add_argument('--spark-sql-command', type=str, nargs='+', default=["spark-
 #                    help='Just use raw HDFS (compatible) storage. Involves copying data.')
 #parser.add_argument('--tmpdir', type=str,
 #                    help='Temporary directory to use for comparisons.')
-parser.add_argument('--tolerance', type=float, default=0.001,
-                    help='Tolerance for float comparisons.')
+# TODO: Add tolerance :)
+#parser.add_argument('--tolerance', type=float, default=0.001,
+#                    help='Tolerance for float comparisons.')
 parser.add_argument('--control-pipeline', type=str, required=True,
                     help='Control pipeline. Will be passed through the shell.' +
                     'Metavars are {branch_name}, {input_tables}, and {output_tables}')
@@ -113,11 +114,9 @@ if args.lakeFS:
             "--conf", f"spark.hadoop.fs.s3a.secret.key={conf['password']}",
             "--conf", f"spark.hadoop.fs.s3a.endpoint={conf['host']}",
             "--conf", "spark.hadoop.fs.s3a.path.style.access=true",
-            "--class", "com.holdenkarau.tblcmp.Compare",
-            "../tblcmp/target/out.jar",
-            "--control_root", f"s3a://{args.repo}/{branch_names[1]}",
-            "--target_root", f"s3a://{args.repo}/{branch_names[2]}",
-            "--tolerance", f"{args.tolerance}"
+            "table_compare.py",
+            "--control-root", f"s3a://{args.repo}/{branch_names[1]}",
+            "--target-root", f"s3a://{args.repo}/{branch_names[2]}",
             "--tables"])
         cmd.extend(args.output_tables)
         subprocess.run(cmd)
@@ -179,7 +178,7 @@ elif args.iceberg:
         cmd = args.spark_command
         cmd.extend([
             "--class", "com.holdenkarau.tblcmp.Compare",
-            "../tblcmp/target/out.jar",
+            "table_compare.py",
             "--tolerance", f"{args.tolerance}"
             "--control-tables"])
         cmd.extend(ctrl_output_tables)
