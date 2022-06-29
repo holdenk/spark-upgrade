@@ -17,6 +17,10 @@ parser.add_argument('--iceberg', action='store_true',
                     help='Use iceberg to create snapshots for comparisons.')
 parser.add_argument('--lakeFS', action='store_true',
                     help='Use lakeFS to create snapshots for comparisons.')
+parser.add_argument('--spark-command', type=str, nargs='+', default=["spark-submit"],
+                    help="Command to run the comparison pipeline.")
+parser.add_argument('--spark-sql-command', type=str, nargs='+', default=["spark-sql"],
+                    help="Command to run spark sql")
 # Not yet implemented
 #parser.add_argument('--raw', action='store_true',
 #                    help='Just use raw HDFS (compatible) storage. Involves copying data.')
@@ -103,18 +107,18 @@ if args.lakeFS:
                 raise Exception("Error running pipelines.")
         asyncio.run(run_pipelines())
         # Compare the outputs
-        cmd = [
-            "spark-submit",
+        cmd = args.spark_command
+        cmd.extend([
             "--conf", f"spark.hadoop.fs.s3a.access.key={conf['username']}",
             "--conf", f"spark.hadoop.fs.s3a.secret.key={conf['password']}",
             "--conf", f"spark.hadoop.fs.s3a.endpoint={conf['host']}",
             "--conf", "spark.hadoop.fs.s3a.path.style.access=true",
-            "--class", "com.holdenkarau.tblcmp",
+            "--class", "com.holdenkarau.tblcmp.Compare",
             "../tblcmp/target/out.jar",
             "--control_root", f"s3a://{args.repo}/{branch_names[1]}",
             "--target_root", f"s3a://{args.repo}/{branch_names[2]}",
             "--tolerance", f"{args.tolerance}"
-            "--tables"]
+            "--tables"])
         cmd.extend(args.output_tables)
         subprocess.run(cmd)
     finally:
@@ -135,13 +139,17 @@ elif args.iceberg:
     tbl_id = 0
     def snapshot_ish(table_name):
         tbl = tables.load(table_name)
-        return f"{table_name}@{tbl.currentSnapshot}"
+        snapshot_name = f"{table_name}@{tbl.currentSnapshot}"
+        print(snapshot_name)
+        return snapshot_name
 
     def make_tbl_like(table_name):
         global tbl_id
         tbl_id = tbl_id + 1
         new_table_name = f"{tbl_id}{magic}"
-        subprocess.run(["spark-sql", "-c", f"CREATE TABLE {new_table_name}  LIKE {table_name}"])
+        cmd = args.spark_sql_command
+        cmd.extend(["-c", f"CREATE TABLE {new_table_name}  LIKE {table_name}"])
+        subprocess.run(cmd)
         return new_table_name
 
     try:
@@ -166,16 +174,12 @@ elif args.iceberg:
                 raise Exception("Error running pipelines.")
         asyncio.run(run_pipelines())
         # Compare the outputs
-        cmd = [
-            "spark-submit",
-            "--conf", f"spark.hadoop.fs.s3a.access.key={conf['username']}",
-            "--conf", f"spark.hadoop.fs.s3a.secret.key={conf['password']}",
-            "--conf", f"spark.hadoop.fs.s3a.endpoint={conf['host']}",
-            "--conf", "spark.hadoop.fs.s3a.path.style.access=true",
-            "--class", "com.holdenkarau.tblcmp",
+        cmd = args.spark_command
+        cmd.extend([
+            "--class", "com.holdenkarau.tblcmp.Compare",
             "../tblcmp/target/out.jar",
             "--tolerance", f"{args.tolerance}"
-            "--control-tables"]
+            "--control-tables"])
         cmd.extend(ctrl_output_tables)
         cmd.extend(["--new-tables"])
         cmd.extend(new_output_tables)
@@ -184,7 +188,9 @@ elif args.iceberg:
         if not args.no_cleanup:
             for tid in range(0, tbl_id):
                 table_name = f"{tid}{magic}"
-                subprocess.run(["spark-sql", "-c", f"DROP TABLE {table_name}"])
+                cmd = args.spark_sql_command
+                cmd.extend(["-c", f"DROP TABLE {table_name}"])
+                subprocess.run(cmd)
 
 else:
     eprint("You must chose one of iceberg or lakefs for input tables.")
