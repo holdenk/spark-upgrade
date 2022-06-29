@@ -154,7 +154,7 @@ elif args.iceberg:
         tbl_id = tbl_id + 1
         new_table_name = f"{tbl_id}{magic}"
         cmd = args.spark_sql_command
-        cmd.extend(["-c", f"CREATE TABLE {new_table_name}  LIKE {table_name}"])
+        cmd.extend(["-e", f"CREATE TABLE {new_table_name}  LIKE {table_name}"])
         subprocess.run(cmd)
         return new_table_name
 
@@ -195,7 +195,7 @@ elif args.iceberg:
             for tid in range(0, tbl_id):
                 table_name = f"{tid}{magic}"
                 cmd = args.spark_sql_command
-                cmd.extend(["-c", f"DROP TABLE {table_name}"])
+                cmd.extend(["-e", f"DROP TABLE {table_name}"])
                 subprocess.run(cmd)
 
 else:
