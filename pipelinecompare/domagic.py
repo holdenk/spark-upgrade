@@ -21,6 +21,7 @@ parser.add_argument('--spark-command', type=str, nargs='+', default=["spark-subm
                     help="Command to run the comparison pipeline.")
 parser.add_argument('--spark-sql-command', type=str, nargs='+', default=["spark-sql"],
                     help="Command to run spark sql")
+parser.add_argument('--format', type=str, help='Format of the output tables')
 # Not yet implemented
 #parser.add_argument('--raw', action='store_true',
 #                    help='Just use raw HDFS (compatible) storage. Involves copying data.')
@@ -110,11 +111,15 @@ if args.lakeFS:
         # Compare the outputs
         cmd = args.spark_command
         cmd.extend([
+            "--driver-memory", "10G",
             "--conf", f"spark.hadoop.fs.s3a.access.key={conf['username']}",
             "--conf", f"spark.hadoop.fs.s3a.secret.key={conf['password']}",
             "--conf", f"spark.hadoop.fs.s3a.endpoint={conf['host']}",
             "--conf", "spark.hadoop.fs.s3a.path.style.access=true",
+            "--conf", "spark.hadoop.fs.s3a.aws.credentials.provider=org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider",
+            "--conf", "spark.jars.packages=org.apache.hadoop:hadoop-aws:3.2.2,com.amazonaws:aws-java-sdk-bundle:1.11.563",
             "table_compare.py",
+            "--format", args.format,
             "--control-root", f"s3a://{args.repo}/{branch_names[1]}",
             "--target-root", f"s3a://{args.repo}/{branch_names[2]}",
             "--tables"])

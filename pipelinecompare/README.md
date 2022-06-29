@@ -13,6 +13,10 @@ Install requirements from `requirements.txt`, create two different pipelines, bu
 
 `python domagic.py  --control-pipeline "ls /" --input-tables farts mcgee --lakeFS --repo my-repo --new-pipeline "ls /" --output-tables sample_data`
 
+OR if your running in local mode:
+
+`python domagic.py  --control-pipeline "ls /" --input-tables farts mcgee --lakeFS --repo my-repo --new-pipeline "ls /" --output-tables "sample_data/release=v1.9/type=relation/20220106_182445_00068_pa8u7_04924a3b-01b0-4174-9772-7285db53a68c" --format parquet`
+
 ### LakeFS FAQ
 
 Why don't you just use commit hashes?
