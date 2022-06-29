@@ -129,6 +129,63 @@ if args.lakeFS:
 elif args.iceberg:
     import iceberg
     print("Using iceberg.")
+    # See discussion in https://github.com/apache/iceberg/issues/2481
+    # currently no git like branching buuuut we can hack something "close enough"
+    magic = f"magic-cmp-{uuid.uuid1()}"
+    tbl_id = 0
+    def snapshot_ish(table_name):
+        tbl = tables.load(table_name)
+        return f"{table_name}@{tbl.currentSnapshot}"
+
+    def make_tbl_like(table_name):
+        global tbl_id
+        tbl_id = tbl_id + 1
+        new_table_name = f"{tbl_id}{magic}"
+        subprocess.run(["spark-sql", "-c", f"CREATE TABLE {new_table_name}  LIKE {table_name}"])
+        return new_table_name
+
+    try:
+        ctrl_output_tables = list(map(make_tbl_like, args.output_tables))
+        new_output_tables = list(map(make_tbl_like, args.output_tables))
+        snapshotted_tables = list(map(snapshot_ish, args.input_tables))
+        # Run the pipelines concurrently
+        async def run_pipelines():
+            ctrl_pipeline_proc = await run_pipeline(args.control_pipeline, ctrl_output_tables, input_tables=snapshotted_tables)
+            new_pipeline_proc = await run_pipeline(args.new_pipeline, new_output_tables, input_tables=snapshotted_tables)
+            cstdout, cstderr = await ctrl_pipeline_proc.communicate()
+            nstdout, nstderr = await new_pipeline_proc.communicate()
+            if ctrl_pipeline_proc.returncode != 0:
+                print("Error running contorl pipeline")
+                print(cstdout.decode())
+                print(cstderr.decode())
+            if new_pipeline_proc.returncode != 0:
+                print("Error running new pipeline")
+                print(nstdout.decode())
+                print(nstderr.decode())
+            if ctrl_pipeline_proc.returncode != 0 or new_pipeline_proc.returncode != 0:
+                raise Exception("Error running pipelines.")
+        asyncio.run(run_pipelines())
+        # Compare the outputs
+        cmd = [
+            "spark-submit",
+            "--conf", f"spark.hadoop.fs.s3a.access.key={conf['username']}",
+            "--conf", f"spark.hadoop.fs.s3a.secret.key={conf['password']}",
+            "--conf", f"spark.hadoop.fs.s3a.endpoint={conf['host']}",
+            "--conf", "spark.hadoop.fs.s3a.path.style.access=true",
+            "--class", "com.holdenkarau.tblcmp",
+            "../tblcmp/target/out.jar",
+            "--tolerance", f"{args.tolerance}"
+            "--control-tables"]
+        cmd.extend(ctrl_output_tables)
+        cmd.extend(["--new-tables"])
+        cmd.extend(new_output_tables)
+        subprocess.run(cmd)
+    finally:
+        if not args.no_cleanup:
+            for tid in range(0, tbl_id):
+                table_name = f"{tid}{magic}"
+                subprocess.run(["spark-sql", "-c", f"DROP TABLE {table_name}"])
+
 else:
     eprint("You must chose one of iceberg or lakefs for input tables.")
     sys.exit(1)
