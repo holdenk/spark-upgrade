@@ -131,13 +131,15 @@ if args.lakeFS:
                 except:
                     print(f"Skipping deleting branch {branch_name}")
 elif args.iceberg:
-    import iceberg
     print("Using iceberg.")
     # See discussion in https://github.com/apache/iceberg/issues/2481
     # currently no git like branching buuuut we can hack something "close enough"
     magic = f"magic-cmp-{uuid.uuid1()}"
     tbl_id = 0
     def snapshot_ish(table_name):
+        # TODO: Finish this
+        # and try to rewrite it to use Spark SQL DDL to extract so we don't need to import iceberg.
+        import iceberg
         tbl = tables.load(table_name)
         snapshot_name = f"{table_name}@{tbl.currentSnapshot}"
         print(snapshot_name)
@@ -152,10 +154,10 @@ elif args.iceberg:
         subprocess.run(cmd)
         return new_table_name
 
+    snapshotted_tables = list(map(snapshot_ish, args.input_tables))
     try:
         ctrl_output_tables = list(map(make_tbl_like, args.output_tables))
         new_output_tables = list(map(make_tbl_like, args.output_tables))
-        snapshotted_tables = list(map(snapshot_ish, args.input_tables))
         # Run the pipelines concurrently
         async def run_pipelines():
             ctrl_pipeline_proc = await run_pipeline(args.control_pipeline, ctrl_output_tables, input_tables=snapshotted_tables)
