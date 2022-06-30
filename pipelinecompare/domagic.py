@@ -163,7 +163,7 @@ elif args.iceberg:
         cmd.extend(["-e", f"SELECT snapshot_id FROM  {table_name}.history WHERE is_current_ancestor == true AND parent_id IS NULL"])
         proc = subprocess.run(cmd, capture_output=True)
         currentSnapshot = proc.stdout
-        snapshot_name = f"{table_name}@{tbl.currentSnapshot}"
+        snapshot_name = f"{table_name}@{currentSnapshot}"
         print(f"Using snapshoted table {snapshot_name}")
         return snapshot_name
 
