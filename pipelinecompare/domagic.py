@@ -108,7 +108,19 @@ if args.lakeFS:
             if ctrl_pipeline_proc.returncode != 0 or new_pipeline_proc.returncode != 0:
                 raise Exception("Error running pipelines.")
         asyncio.run(run_pipelines())
+        # Commit the outputs
+        client.commits.commit(
+            repository=args.repo,
+            branch=branch_names[1],
+            commit_creation=models.CommitCreation(message='Test data (control)', metadata={'using': 'python_api'}))
+        client.commits.commit(
+            repository=args.repo,
+            branch=branch_names[2],
+            commit_creation=models.CommitCreation(message='Test data (new pipeline)', metadata={'using': 'python_api'}))
         # Compare the outputs
+        # Note: we don't use lakeFS diff because the binary files can be different for a good number of reasons, but underlying data
+        # is effectively the same (compression changes, partioning, etc.)
+        # Possible future optimization: do lakeFS diff and short circuit if it is equal.
         cmd = args.spark_command
         cmd.extend([
             "--driver-memory", "10G",
