@@ -48,7 +48,7 @@ async def run_pipeline(command, output_tables, input_tables=None, branch_name=No
     """
     import os
     if input_tables is not None:
-        command.replace("{input_tables}", " , ".join(input_tables.join))
+        command.replace("{input_tables}", " , ".join(input_tables))
     if output_tables is not None:
         command.replace("{output_tables}", " , ".join(output_tables))
     if branch_name is not None:
