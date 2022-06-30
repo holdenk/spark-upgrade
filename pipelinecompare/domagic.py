@@ -160,7 +160,7 @@ elif args.iceberg:
     tbl_id = 0
     def snapshot_ish(table_name):
         cmd = args.spark_sql_command
-        cmd.extend(["-e", f"SELECT snapshot_id FROM  {table_name}.history WHERE is_current_ancestor == true AND parent_id == NULL"], capture_output=True)
+        cmd.extend(["-e", f"SELECT snapshot_id FROM  {table_name}.history WHERE is_current_ancestor == true AND parent_id IS NULL"], capture_output=True)
         proc = subprocess.run(cmd)
         currentSnapshot = proc.stdout
         snapshot_name = f"{table_name}@{tbl.currentSnapshot}"
