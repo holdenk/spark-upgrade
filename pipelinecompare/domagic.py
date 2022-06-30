@@ -141,10 +141,10 @@ elif args.iceberg:
     magic = f"magic-cmp-{uuid.uuid1()}"
     tbl_id = 0
     def snapshot_ish(table_name):
-        # TODO: Finish this
-        # and try to rewrite it to use Spark SQL DDL to extract so we don't need to import iceberg.
-        import iceberg
-        tbl = tables.load(table_name)
+        cmd = args.spark_sql_command
+        cmd.extend(["-e", f"SELECT snapshot_id FROM  {table_name}.history WHERE is_current_ancestor == true AND parent_id == NULL"], capture_output=True)
+        proc = subprocess.run(cmd)
+        currentSnapshot = proc.stdout
         snapshot_name = f"{table_name}@{tbl.currentSnapshot}"
         print(snapshot_name)
         return snapshot_name

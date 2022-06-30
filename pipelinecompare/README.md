@@ -2,6 +2,12 @@
 
 Install requirements from `requirements.txt`, create two different pipelines, build the parent table comparision project.
 
+# Open questions
+
+Is shelling through the command line the right approach? Benefit: we don't need to run inside of spark-submit.
+Do we want to support "raw" tables?
+
+
 # Samples
 
 ## Iceberg sample
