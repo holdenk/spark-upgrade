@@ -159,7 +159,7 @@ elif args.iceberg:
     magic = f"magic-cmp-{uuid.uuid1()}"
     tbl_id = 0
     def snapshot_ish(table_name):
-        cmd = args.spark_sql_command.split(" ")
+        cmd = args.spark_sql_command
         cmd.extend(["-e", f"SELECT snapshot_id FROM  {table_name}.history WHERE is_current_ancestor == true AND parent_id IS NULL"])
         proc = subprocess.run(cmd, capture_output=True)
         currentSnapshot = proc.stdout
