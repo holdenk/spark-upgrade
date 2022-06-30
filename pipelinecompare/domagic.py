@@ -142,7 +142,7 @@ if args.lakeFS:
             "--target-root", f"s3a://{args.repo}/{branch_names[2]}",
             "--tables"])
         cmd.extend(args.output_tables)
-        subprocess.run(cmd)
+        subprocess.run(cmd, check=True)
     finally:
         # Cleanup the branches
         if not args.no_cleanup:
@@ -164,7 +164,7 @@ elif args.iceberg:
         proc = subprocess.run(cmd)
         currentSnapshot = proc.stdout
         snapshot_name = f"{table_name}@{tbl.currentSnapshot}"
-        print(snapshot_name)
+        print(f"Using snapshoted table {snapshot_name}")
         return snapshot_name
 
     def make_tbl_like(table_name):
@@ -207,7 +207,7 @@ elif args.iceberg:
         cmd.extend(ctrl_output_tables)
         cmd.extend(["--new-tables"])
         cmd.extend(new_output_tables)
-        subprocess.run(cmd)
+        subprocess.run(cmd, check=True)
     finally:
         if not args.no_cleanup:
             for tid in range(0, tbl_id):
