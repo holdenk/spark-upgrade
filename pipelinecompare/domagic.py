@@ -109,14 +109,20 @@ if args.lakeFS:
                 raise Exception("Error running pipelines.")
         asyncio.run(run_pipelines())
         # Commit the outputs
-        client.commits.commit(
-            repository=args.repo,
-            branch=branch_names[1],
-            commit_creation=models.CommitCreation(message='Test data (control)', metadata={'using': 'python_api'}))
-        client.commits.commit(
-            repository=args.repo,
-            branch=branch_names[2],
-            commit_creation=models.CommitCreation(message='Test data (new pipeline)', metadata={'using': 'python_api'}))
+        try:
+            client.commits.commit(
+                repository=args.repo,
+                branch=branch_names[1],
+                commit_creation=models.CommitCreation(message='Test data (control)', metadata={'using': 'python_api'}))
+        except Exception as e:
+            eprint(f"Exception during commit {e}. This is expected for no-op pipelines.")
+        try:
+            client.commits.commit(
+                repository=args.repo,
+                branch=branch_names[2],
+                commit_creation=models.CommitCreation(message='Test data (new pipeline)', metadata={'using': 'python_api'}))
+        except Exception as e:
+            eprint(f"Exception during commit {e}. This is expected for no-op pipelines.")
         # Compare the outputs
         # Note: we don't use lakeFS diff because the binary files can be different for a good number of reasons, but underlying data
         # is effectively the same (compression changes, partioning, etc.)
