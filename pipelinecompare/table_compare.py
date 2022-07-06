@@ -1,5 +1,4 @@
 import argparse
-import pyspark
 from pyspark.sql import SparkSession
 
 spark = SparkSession.builder.getOrCreate()
@@ -31,11 +30,12 @@ def compare_tables(control, target):
     control_count = control.count()
     target_count = target.count()
     # Do diffs on the data, but subtract doesn't support all data types so fall back to strings.
+    # TODO: only convert the columns that need to be converted.
     try:
         missing_rows = control.subtract(target)
         new_rows = target.subtract(control)
     except Exception as e:
-        print("Warning converting all to strings....")
+        print(f"Warning converting all to strings.... {e}")
         columns = control.columns
         for c in columns:
             control = control.withColumn(c, control[c].cast('string'))
@@ -51,7 +51,7 @@ def compare_tables(control, target):
         print(f"Found {missing_rows_count} missing from new new pipeline")
         missing_rows.show()
     if new_rows_count > 0 or missing_rows_count > 0:
-        raise Exception(f"Data differs in table, failing.")
+        raise Exception("Data differs in table, failing.")
 
     if control_count != target_count:
         print(f"Counts do not match! {control_count} {target_count}")
@@ -72,7 +72,7 @@ def compare_tables(control, target):
                     f"Found {missing_rows_count} missing from new new pipeline")
                 missing_rows.show()
         except Exception as e:
-            raise Exception("Data counts differ but {e} prevents grouping cmp")
+            raise Exception(f"Data counts differ but {e} prevents grouping cmp")
 
 
 if args.control_root is not None:

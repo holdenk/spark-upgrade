@@ -1,6 +1,6 @@
 import argparse
 import sys
-from utils import *
+from utils import eprint
 import uuid
 import asyncio
 import subprocess
@@ -48,7 +48,6 @@ async def run_pipeline(command, output_tables, input_tables=None, branch_name=No
     Async run the pipeline for given parameters. Returns a proc object for
     the caller to await communicate on.
     """
-    import os
     if input_tables is not None:
         command.replace("{input_tables}", " , ".join(input_tables))
     if output_tables is not None:
@@ -96,8 +95,10 @@ if args.lakeFS:
         # Run the pipelines concurrently.
 
         async def run_pipelines():
-            ctrl_pipeline_proc = await run_pipeline(args.control_pipeline, args.output_tables, branch_name=branch_names[1])
-            new_pipeline_proc = await run_pipeline(args.new_pipeline, args.output_tables, branch_name=branch_names[2])
+            ctrl_pipeline_proc = await run_pipeline(
+                args.control_pipeline, args.output_tables, branch_name=branch_names[1])
+            new_pipeline_proc = await run_pipeline(
+                args.new_pipeline, args.output_tables, branch_name=branch_names[2])
             cstdout, cstderr = await ctrl_pipeline_proc.communicate()
             nstdout, nstderr = await new_pipeline_proc.communicate()
             if ctrl_pipeline_proc.returncode != 0:
@@ -116,7 +117,9 @@ if args.lakeFS:
             client.commits.commit(
                 repository=args.repo,
                 branch=branch_names[1],
-                commit_creation=models.CommitCreation(message='Test data (control)', metadata={'using': 'python_api'}))
+                commit_creation=models.CommitCreation(
+                    message='Test data (control)',
+                    metadata={'using': 'python_api'}))
         except Exception as e:
             eprint(
                 f"Exception during commit {e}. This is expected for no-op pipelines.")
@@ -124,13 +127,15 @@ if args.lakeFS:
             client.commits.commit(
                 repository=args.repo,
                 branch=branch_names[2],
-                commit_creation=models.CommitCreation(message='Test data (new pipeline)', metadata={'using': 'python_api'}))
+                commit_creation=models.CommitCreation(
+                    message='Test data (new pipeline)',
+                    metadata={'using': 'python_api'}))
         except Exception as e:
             eprint(
                 f"Exception during commit {e}. This is expected for no-op pipelines.")
         # Compare the outputs
-        # Note: we don't use lakeFS diff because the binary files can be different for a good number of reasons, but underlying data
-        # is effectively the same (compression changes, partioning, etc.)
+        # Note: we don't use lakeFS diff because the binary files can be different for a good number
+        # of reasons, but underlying data is effectively the same (compression changes, etc.)
         # Possible future optimization: do lakeFS diff and short circuit if it is equal.
         cmd = args.spark_command
         cmd.extend([
@@ -139,8 +144,8 @@ if args.lakeFS:
             "--conf", f"spark.hadoop.fs.s3a.secret.key={conf['password']}",
             "--conf", f"spark.hadoop.fs.s3a.endpoint={conf['host']}",
             "--conf", "spark.hadoop.fs.s3a.path.style.access=true",
-            "--conf", "spark.hadoop.fs.s3a.aws.credentials.provider=org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider",
-            "--conf", "spark.jars.packages=org.apache.hadoop:hadoop-aws:3.2.2,com.amazonaws:aws-java-sdk-bundle:1.11.563",
+            "--conf", "spark.hadoop.fs.s3a.aws.credentials.provider=org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider",  # noqa
+            "--conf", "spark.jars.packages=org.apache.hadoop:hadoop-aws:3.2.2,com.amazonaws:aws-java-sdk-bundle:1.11.563",   # noqa
             "table_compare.py",
             "--format", args.format,
             "--control-root", f"s3a://{args.repo}/{branch_names[1]}",
@@ -155,8 +160,9 @@ if args.lakeFS:
                 try:
                     client.branches.delete_branch(
                         repository=args.repo, branch=branch_name)
-                except:
-                    print(f"Skipping deleting branch {branch_name}")
+                except Exception as e:
+                    print(f"Skipping deleting branch {branch_name} due to {e}")
+                    raise e
 elif args.iceberg:
     print("Using iceberg.")
     # See discussion in https://github.com/apache/iceberg/issues/2481
@@ -167,7 +173,9 @@ elif args.iceberg:
     def snapshot_ish(table_name):
         cmd = args.spark_sql_command
         cmd.extend(
-            ["-e", f"SELECT snapshot_id FROM  {table_name}.history WHERE is_current_ancestor == true AND parent_id IS NULL"])
+            ["-e",
+             f"SELECT snapshot_id FROM  {table_name}.history WHERE is_current_ancestor == true AND parent_id IS NULL"]  # noqa
+        )
         proc = subprocess.run(cmd, capture_output=True)
         currentSnapshot = proc.stdout
         snapshot_name = f"{table_name}@{currentSnapshot}"
@@ -190,8 +198,10 @@ elif args.iceberg:
         # Run the pipelines concurrently
 
         async def run_pipelines():
-            ctrl_pipeline_proc = await run_pipeline(args.control_pipeline, ctrl_output_tables, input_tables=snapshotted_tables)
-            new_pipeline_proc = await run_pipeline(args.new_pipeline, new_output_tables, input_tables=snapshotted_tables)
+            ctrl_pipeline_proc = await run_pipeline(
+                args.control_pipeline, ctrl_output_tables, input_tables=snapshotted_tables)
+            new_pipeline_proc = await run_pipeline(
+                args.new_pipeline, new_output_tables, input_tables=snapshotted_tables)
             cstdout, cstderr = await ctrl_pipeline_proc.communicate()
             nstdout, nstderr = await new_pipeline_proc.communicate()
             if ctrl_pipeline_proc.returncode != 0:

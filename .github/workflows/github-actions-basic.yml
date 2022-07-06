@@ -32,6 +32,12 @@ jobs:
         git -c user.name='Spark Test Account' -c user.email='sparktestacc@gmail.com' merge --no-commit --progress --squash FETCH_HEAD
         git -c user.name='Spark Test Account' -c user.email='sparktestacc@gmail.com' commit -m "Merged commit"
         echo "::set-output name=SPARK_REF::$apache_spark_ref"
-    # Run the tests.
+    # Install python deps
+    - name: Install python deps
+      run: pip install -r python/requirements.txt
+    # Run the scala tests.
     - name: Run sbt tests
       run: cd scalafix; ./build/sbt ";clean;compile;test"
+    # Run Python style checks
+    - name: Run Python style
+      run: flake8 --max-line-length 100 --exclude  sample_inputs .
