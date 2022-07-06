@@ -220,7 +220,6 @@ elif args.iceberg:
         cmd.extend([
             "--class", "com.holdenkarau.tblcmp.Compare",
             "table_compare.py",
-            "--tolerance", f"{args.tolerance}"
             "--control-tables"])
         cmd.extend(ctrl_output_tables)
         cmd.extend(["--new-tables"])
