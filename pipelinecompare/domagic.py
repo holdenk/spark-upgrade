@@ -5,7 +5,8 @@ import uuid
 import asyncio
 import subprocess
 
-parser = argparse.ArgumentParser(description='Compare two different versions of a pipeline')
+parser = argparse.ArgumentParser(
+    description='Compare two different versions of a pipeline')
 parser.add_argument('--input-tables', type=str, nargs='*',
                     help='Name of the input tables (required for iceberg, optional for lakefs)')
 parser.add_argument('--output-tables', type=str, nargs='+', required=True,
@@ -23,12 +24,12 @@ parser.add_argument('--spark-sql-command', type=str, nargs='+', default=["spark-
                     help="Command to run spark sql")
 parser.add_argument('--format', type=str, help='Format of the output tables')
 # Not yet implemented
-#parser.add_argument('--raw', action='store_true',
+# parser.add_argument('--raw', action='store_true',
 #                    help='Just use raw HDFS (compatible) storage. Involves copying data.')
-#parser.add_argument('--tmpdir', type=str,
+# parser.add_argument('--tmpdir', type=str,
 #                    help='Temporary directory to use for comparisons.')
 # TODO: Add tolerance :)
-#parser.add_argument('--tolerance', type=float, default=0.001,
+# parser.add_argument('--tolerance', type=float, default=0.001,
 #                    help='Tolerance for float comparisons.')
 parser.add_argument('--control-pipeline', type=str, required=True,
                     help='Control pipeline. Will be passed through the shell.' +
@@ -40,6 +41,7 @@ parser.add_argument('--no-cleanup', action='store_true')
 args = parser.parse_args()
 
 print(args)
+
 
 async def run_pipeline(command, output_tables, input_tables=None, branch_name=None):
     """
@@ -54,7 +56,7 @@ async def run_pipeline(command, output_tables, input_tables=None, branch_name=No
     if branch_name is not None:
         command.replace("{branch_name}", branch_name)
     return await asyncio.create_subprocess_exec(
-        'bash','-c', command,
+        'bash', '-c', command,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE)
 
@@ -92,6 +94,7 @@ if args.lakeFS:
             repository=args.repo,
             branch_creation=models.BranchCreation(name=branch_names[2], source=branch_prefix))
         # Run the pipelines concurrently.
+
         async def run_pipelines():
             ctrl_pipeline_proc = await run_pipeline(args.control_pipeline, args.output_tables, branch_name=branch_names[1])
             new_pipeline_proc = await run_pipeline(args.new_pipeline, args.output_tables, branch_name=branch_names[2])
@@ -115,14 +118,16 @@ if args.lakeFS:
                 branch=branch_names[1],
                 commit_creation=models.CommitCreation(message='Test data (control)', metadata={'using': 'python_api'}))
         except Exception as e:
-            eprint(f"Exception during commit {e}. This is expected for no-op pipelines.")
+            eprint(
+                f"Exception during commit {e}. This is expected for no-op pipelines.")
         try:
             client.commits.commit(
                 repository=args.repo,
                 branch=branch_names[2],
                 commit_creation=models.CommitCreation(message='Test data (new pipeline)', metadata={'using': 'python_api'}))
         except Exception as e:
-            eprint(f"Exception during commit {e}. This is expected for no-op pipelines.")
+            eprint(
+                f"Exception during commit {e}. This is expected for no-op pipelines.")
         # Compare the outputs
         # Note: we don't use lakeFS diff because the binary files can be different for a good number of reasons, but underlying data
         # is effectively the same (compression changes, partioning, etc.)
@@ -158,9 +163,11 @@ elif args.iceberg:
     # currently no git like branching buuuut we can hack something "close enough"
     magic = f"magic-cmp-{uuid.uuid1()}"
     tbl_id = 0
+
     def snapshot_ish(table_name):
         cmd = args.spark_sql_command
-        cmd.extend(["-e", f"SELECT snapshot_id FROM  {table_name}.history WHERE is_current_ancestor == true AND parent_id IS NULL"])
+        cmd.extend(
+            ["-e", f"SELECT snapshot_id FROM  {table_name}.history WHERE is_current_ancestor == true AND parent_id IS NULL"])
         proc = subprocess.run(cmd, capture_output=True)
         currentSnapshot = proc.stdout
         snapshot_name = f"{table_name}@{currentSnapshot}"
@@ -181,6 +188,7 @@ elif args.iceberg:
         ctrl_output_tables = list(map(make_tbl_like, args.output_tables))
         new_output_tables = list(map(make_tbl_like, args.output_tables))
         # Run the pipelines concurrently
+
         async def run_pipelines():
             ctrl_pipeline_proc = await run_pipeline(args.control_pipeline, ctrl_output_tables, input_tables=snapshotted_tables)
             new_pipeline_proc = await run_pipeline(args.new_pipeline, new_output_tables, input_tables=snapshotted_tables)

@@ -4,21 +4,28 @@ from pyspark.sql import SparkSession
 
 spark = SparkSession.builder.getOrCreate()
 
-parser = argparse.ArgumentParser(description='Compare two different versions of a pipeline')
+parser = argparse.ArgumentParser(
+    description='Compare two different versions of a pipeline')
 parser.add_argument('--tables', type=str, nargs='+', required=True,
                     help='Name of the tables.')
 parser.add_argument('--format', type=str, help='Format of the table')
-parser.add_argument('--control-root', type=str, help='root directory for the control files')
-parser.add_argument('--target-root', type=str, help='root directory for the target files')
-parser.add_argument('--control-tables', type=str, nargs='+', help='control tables')
-parser.add_argument('--target-tables', type=str, nargs='+', help='target tables')
+parser.add_argument('--control-root', type=str,
+                    help='root directory for the control files')
+parser.add_argument('--target-root', type=str,
+                    help='root directory for the target files')
+parser.add_argument('--control-tables', type=str,
+                    nargs='+', help='control tables')
+parser.add_argument('--target-tables', type=str,
+                    nargs='+', help='target tables')
 args = parser.parse_args()
+
 
 def compare_tables(control, target):
     if control.schema != target.schema:
         control.printSchema()
         target.printSchema()
-        raise Exception(f"Control schema {control.schema} and target schema {target.schema} do not match")
+        raise Exception(
+            f"Control schema {control.schema} and target schema {target.schema} do not match")
     control.persist()
     target.persist()
     control_count = control.count()
@@ -45,12 +52,13 @@ def compare_tables(control, target):
         missing_rows.show()
     if new_rows_count > 0 or missing_rows_count > 0:
         raise Exception(f"Data differs in table, failing.")
-    
+
     if control_count != target_count:
         print(f"Counts do not match! {control_count} {target_count}")
         try:
             # Handle duplicates, will fail on maps.
-            counted_control = control.groupBy(*control.columns).count().persist()
+            counted_control = control.groupBy(
+                *control.columns).count().persist()
             counted_target = target.groupBy(*target.columns).count().persist()
             new_rows = counted_target.subtract(counted_control)
             missing_rows = counted_control.subtract(counted_target)
@@ -60,7 +68,8 @@ def compare_tables(control, target):
                 new_rows.show()
             missing_rows_count = missing_rows.count()
             if missing_rows_count > 0:
-                print(f"Found {missing_rows_count} missing from new new pipeline")
+                print(
+                    f"Found {missing_rows_count} missing from new new pipeline")
                 missing_rows.show()
         except Exception as e:
             raise Exception("Data counts differ but {e} prevents grouping cmp")
@@ -68,10 +77,13 @@ def compare_tables(control, target):
 
 if args.control_root is not None:
     for table in args.tables:
-        control = spark.read.format(args.format).load(f"{args.control_root}/{table}")
-        target = spark.read.format(args.format).load(f"{args.target_root}/{table}")
+        control = spark.read.format(args.format).load(
+            f"{args.control_root}/{table}")
+        target = spark.read.format(args.format).load(
+            f"{args.target_root}/{table}")
         compare_tables(control, target)
 else:
     tables = zip(args.control_tables, args.target_tables)
     for (ctrl_name, target_name) in tables:
-        compare_tables(spark.read.table(ctrl_name), spark.read.table(target_name))
+        compare_tables(spark.read.table(ctrl_name),
+                       spark.read.table(target_name))
