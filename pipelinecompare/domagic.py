@@ -63,7 +63,7 @@ async def run_pipeline(command, output_tables, input_tables=None, branch_name=No
         stderr=asyncio.subprocess.PIPE)
 
 
-mytestid = uuid.uuid1().replace("-", "_")
+mytestid = str(uuid.uuid1()).replace("-", "_")
 if args.lakeFS:
     print("Using lakefs")
     import lakefs_client
