@@ -23,8 +23,7 @@ def compare_tables(control, target):
     if control.schema != target.schema:
         control.printSchema()
         target.printSchema()
-        raise Exception(
-            f"Control schema {control.schema} and target schema {target.schema} do not match")
+        raise Exception("Control schema and target schema do not match")
     control.persist()
     target.persist()
     control_count = control.count()
