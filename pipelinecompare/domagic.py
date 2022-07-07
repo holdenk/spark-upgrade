@@ -229,7 +229,7 @@ elif args.iceberg:
             "table_compare.py",
             "--control-tables"])
         cmd.extend(ctrl_output_tables)
-        cmd.extend(["--new-tables"])
+        cmd.extend(["--target-tables"])
         cmd.extend(new_output_tables)
         subprocess.run(cmd, check=True)
     finally:
