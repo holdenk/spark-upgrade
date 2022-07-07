@@ -174,9 +174,10 @@ elif args.iceberg:
         cmd = args.spark_sql_command
         cmd.extend(["-e"])
         cmd.extend([query])
-        print(f"Running {cmd}")
+        cmd_str = " ".join(cmd)
+        print(f"Running {cmd_str}")
         proc = subprocess.run(cmd, capture_output=True)
-        if proc.return_code != 0:
+        if proc.returncode != 0:
             raise Exception(
                 f"Exception running {cmd} got stdout {proc.stdout} and stderr {proc.stderr}")
         return proc
