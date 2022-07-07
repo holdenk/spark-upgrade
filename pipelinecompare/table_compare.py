@@ -4,8 +4,10 @@ from pyspark.sql import SparkSession
 spark = SparkSession.builder.getOrCreate()
 
 parser = argparse.ArgumentParser(
-    description='Compare two different versions of a pipeline')
-parser.add_argument('--tables', type=str, nargs='+', required=True,
+    description='Compare two different versions of a pipeline.' +
+    'Either --tables and --control-root and --target-root or ' +
+    '--control-tables and --target-tables must be specified.')
+parser.add_argument('--tables', type=str, nargs='+', required=False,
                     help='Name of the tables.')
 parser.add_argument('--format', type=str, help='Format of the table')
 parser.add_argument('--control-root', type=str,
