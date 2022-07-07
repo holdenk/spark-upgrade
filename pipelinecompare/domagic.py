@@ -175,6 +175,7 @@ elif args.iceberg:
     # currently no git like branching buuuut we can hack something "close enough"
     magic = f"magic_cmp_{mytestid}"
     tbl_id = 0
+    tbl_prefix = args.table_prefix
 
     def run_spark_sql_query(query):
         cmd = spark_sql_command.copy()
@@ -198,7 +199,6 @@ elif args.iceberg:
     def make_tbl_like(table_name):
         global tbl_id
         tbl_id = tbl_id + 1
-        tbl_prefix = args.table_prefix
         new_table_name = f"{tbl_prefix}{tbl_id}{magic}"
         run_spark_sql_query(f"CREATE TABLE {new_table_name}  LIKE {table_name}")
         return new_table_name
@@ -239,7 +239,7 @@ elif args.iceberg:
     finally:
         if not args.no_cleanup:
             for tid in range(0, tbl_id):
-                table_name = f"{tid}{magic}"
+                table_name = f"{tbl_prefix}{tbl_id}{magic}"
                 proc = run_spark_sql_query(f"DROP TABLE {table_name}")
 
 
