@@ -63,6 +63,7 @@ async def run_pipeline(command, output_tables, input_tables=None, branch_name=No
         stderr=asyncio.subprocess.PIPE)
 
 
+mytestid = uuid.uuid1().replace("-", "_")
 if args.lakeFS:
     print("Using lakefs")
     import lakefs_client
@@ -79,8 +80,7 @@ if args.lakeFS:
     config.password = conf['password']
     config.host = conf['host']
     client = LakeFSClient(config)
-    mytestid = uuid.uuid1().replace("-", "_")
-    branch_prefix = f"magic-cmp-{mytestid}"
+    branch_prefix = f"magic_cmp_{mytestid}"
     branch_names = [f"{branch_prefix}",
                     f"{branch_prefix}_control",
                     f"{branch_prefix}_test"]
@@ -171,7 +171,7 @@ elif args.iceberg:
     print("Using iceberg.")
     # See discussion in https://github.com/apache/iceberg/issues/2481
     # currently no git like branching buuuut we can hack something "close enough"
-    magic = f"magic-cmp-{uuid.uuid1()}"
+    magic = f"magic_cmp_{mytestid}"
     tbl_id = 0
 
     def run_spark_sql_query(query):
