@@ -79,7 +79,8 @@ if args.lakeFS:
     config.password = conf['password']
     config.host = conf['host']
     client = LakeFSClient(config)
-    branch_prefix = f"magic-cmp-{uuid.uuid1()}"
+    mytestid = uuid.uuid1().replace("-", "_")
+    branch_prefix = f"magic-cmp-{mytestid}"
     branch_names = [f"{branch_prefix}",
                     f"{branch_prefix}_control",
                     f"{branch_prefix}_test"]
