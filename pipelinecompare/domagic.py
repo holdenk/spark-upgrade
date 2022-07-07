@@ -141,7 +141,7 @@ if args.lakeFS:
         # Note: we don't use lakeFS diff because the binary files can be different for a good number
         # of reasons, but underlying data is effectively the same (compression changes, etc.)
         # Possible future optimization: do lakeFS diff and short circuit if it is equal.
-        cmd = spark_command
+        cmd = spark_command.copy()
         cmd.extend([
             "--driver-memory", "10G",
             "--conf", f"spark.hadoop.fs.s3a.access.key={conf['username']}",
@@ -175,7 +175,7 @@ elif args.iceberg:
     tbl_id = 0
 
     def run_spark_sql_query(query):
-        cmd = spark_sql_command
+        cmd = spark_sql_command.copy()
         cmd.extend(["-e"])
         cmd.extend([query])
         cmd_str = " ".join(cmd)
@@ -225,7 +225,7 @@ elif args.iceberg:
                 raise Exception("Error running pipelines.")
         asyncio.run(run_pipelines())
         # Compare the outputs
-        cmd = spark_command
+        cmd = spark_command.copy()
         cmd.extend([
             "table_compare.py",
             "--control-tables"])
