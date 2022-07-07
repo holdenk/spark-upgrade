@@ -23,6 +23,7 @@ parser.add_argument('--spark-command', type=str, nargs='+', default=["spark-subm
 parser.add_argument('--spark-sql-command', type=str, nargs='+', default=["spark-sql"],
                     help="Command to run spark sql")
 parser.add_argument('--format', type=str, help='Format of the output tables')
+parser.add_argument("--table-prefix", type=str, help="Prefix for temp tables.")
 # Not yet implemented
 # parser.add_argument('--raw', action='store_true',
 #                    help='Just use raw HDFS (compatible) storage. Involves copying data.')
@@ -64,6 +65,7 @@ async def run_pipeline(command, output_tables, input_tables=None, branch_name=No
 
 
 mytestid = str(uuid.uuid1()).replace("-", "_")
+mytestid = mytestid.replace(";", "")
 if args.lakeFS:
     print("Using lakefs")
     import lakefs_client
@@ -196,7 +198,8 @@ elif args.iceberg:
     def make_tbl_like(table_name):
         global tbl_id
         tbl_id = tbl_id + 1
-        new_table_name = f"{tbl_id}{magic}"
+        tbl_prefix = args.table_prefix
+        new_table_name = f"{tbl_prefix}{tbl_id}{magic}"
         run_spark_sql_query(f"CREATE TABLE {new_table_name}  LIKE {table_name}")
         return new_table_name
 
