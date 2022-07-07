@@ -225,7 +225,6 @@ elif args.iceberg:
         # Compare the outputs
         cmd = spark_command
         cmd.extend([
-            "--class", "com.holdenkarau.tblcmp.Compare",
             "table_compare.py",
             "--control-tables"])
         cmd.extend(ctrl_output_tables)
