@@ -42,6 +42,8 @@ args = parser.parse_args()
 
 print(args)
 
+spark_sql_command = list(map(lambda x: x.replace("\\-", "-"), args.spark_sql_command))
+spark_command = list(map(lambda x: x.replace("\\-", "-"), args.spark_command))
 
 async def run_pipeline(command, output_tables, input_tables=None, branch_name=None):
     """
@@ -137,7 +139,7 @@ if args.lakeFS:
         # Note: we don't use lakeFS diff because the binary files can be different for a good number
         # of reasons, but underlying data is effectively the same (compression changes, etc.)
         # Possible future optimization: do lakeFS diff and short circuit if it is equal.
-        cmd = args.spark_command
+        cmd = spark_command
         cmd.extend([
             "--driver-memory", "10G",
             "--conf", f"spark.hadoop.fs.s3a.access.key={conf['username']}",
@@ -171,7 +173,7 @@ elif args.iceberg:
     tbl_id = 0
 
     def run_spark_sql_query(query):
-        cmd = args.spark_sql_command
+        cmd = spark_sql_command
         cmd.extend(["-e"])
         cmd.extend([query])
         cmd_str = " ".join(cmd)
@@ -221,7 +223,7 @@ elif args.iceberg:
                 raise Exception("Error running pipelines.")
         asyncio.run(run_pipelines())
         # Compare the outputs
-        cmd = args.spark_command
+        cmd = spark_command
         cmd.extend([
             "--class", "com.holdenkarau.tblcmp.Compare",
             "table_compare.py",
