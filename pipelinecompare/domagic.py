@@ -45,6 +45,7 @@ print(args)
 spark_sql_command = list(map(lambda x: x.replace("\\-", "-"), args.spark_sql_command))
 spark_command = list(map(lambda x: x.replace("\\-", "-"), args.spark_command))
 
+
 async def run_pipeline(command, output_tables, input_tables=None, branch_name=None):
     """
     Async run the pipeline for given parameters. Returns a proc object for
