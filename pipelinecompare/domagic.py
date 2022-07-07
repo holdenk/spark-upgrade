@@ -170,14 +170,20 @@ elif args.iceberg:
     magic = f"magic-cmp-{uuid.uuid1()}"
     tbl_id = 0
 
-    def snapshot_ish(table_name):
+    def run_spark_sql_query(query):
         cmd = args.spark_sql_command
-        cmd.extend(
-            ["-e",
-             f"SELECT snapshot_id FROM  {table_name}.history WHERE is_current_ancestor == true AND parent_id IS NULL"]  # noqa
-        )
+        cmd.extend(["-e"])
+        cmd.extend([query])
+        print(f"Running {cmd}")
         proc = subprocess.run(cmd, capture_output=True)
-        currentSnapshot = proc.stdout
+        if proc.return_code != 0:
+            raise Exception(
+                f"Exception running {cmd} got stdout {proc.stdout} and stderr {proc.stderr}")
+        return proc
+
+    def snapshot_ish(table_name):
+        proc = run_spark_sql_query(f"SELECT snapshot_id FROM  {table_name}.history WHERE is_current_ancestor == true AND parent_id IS NULL")  # noqa
+        currentSnapshot = proc.stdout.decode("utf8")
         snapshot_name = f"{table_name}@{currentSnapshot}"
         print(f"Using snapshoted table {snapshot_name}")
         return snapshot_name
@@ -186,9 +192,7 @@ elif args.iceberg:
         global tbl_id
         tbl_id = tbl_id + 1
         new_table_name = f"{tbl_id}{magic}"
-        cmd = args.spark_sql_command
-        cmd.extend(["-e", f"CREATE TABLE {new_table_name}  LIKE {table_name}"])
-        subprocess.run(cmd)
+        run_spark_sql_query(f"CREATE TABLE {new_table_name}  LIKE {table_name}")
         return new_table_name
 
     snapshotted_tables = list(map(snapshot_ish, args.input_tables))
@@ -229,9 +233,8 @@ elif args.iceberg:
         if not args.no_cleanup:
             for tid in range(0, tbl_id):
                 table_name = f"{tid}{magic}"
-                cmd = args.spark_sql_command
-                cmd.extend(["-e", f"DROP TABLE {table_name}"])
-                subprocess.run(cmd)
+                proc = run_spark_sql_query(f"DROP TABLE {table_name}")
+
 
 else:
     eprint("You must chose one of iceberg or lakefs for input tables.")
