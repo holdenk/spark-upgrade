@@ -196,20 +196,20 @@ elif args.iceberg:
         print(f"Using snapshoted table {snapshot_name}")
         return snapshot_name
 
-    def tbl_name(tid):
+    def gen_table_name(tid):
         return f"{tbl_prefix}{tid}{magic}"
 
-    def make_tbl_like(table_name):
+    def make_table_like(table_name):
         global tbl_id
-        new_table_name = table_name(tbl_id)
+        new_table_name = gen_table_name(tbl_id)
         run_spark_sql_query(f"CREATE TABLE {new_table_name}  LIKE {table_name}")
         tbl_id = tbl_id + 1
         return new_table_name
 
     snapshotted_tables = list(map(snapshot_ish, args.input_tables))
     try:
-        ctrl_output_tables = list(map(make_tbl_like, args.output_tables))
-        new_output_tables = list(map(make_tbl_like, args.output_tables))
+        ctrl_output_tables = list(map(make_table_like, args.output_tables))
+        new_output_tables = list(map(make_table_like, args.output_tables))
         # Run the pipelines concurrently
 
         async def run_pipelines():
@@ -243,7 +243,7 @@ elif args.iceberg:
         print(f"Done comparing, cleaning up {tbl_id} tables.")
         if not args.no_cleanup:
             for tid in range(0, tbl_id):
-                table_name = table_name(tid)
+                table_name = gen_table_name(tid)
                 proc = run_spark_sql_query(f"DROP TABLE {table_name}")
 
 
