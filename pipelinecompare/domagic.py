@@ -196,11 +196,14 @@ elif args.iceberg:
         print(f"Using snapshoted table {snapshot_name}")
         return snapshot_name
 
+    def tbl_name(tid):
+        return f"{tbl_prefix}{tid}{magic}"
+
     def make_tbl_like(table_name):
         global tbl_id
-        tbl_id = tbl_id + 1
-        new_table_name = f"{tbl_prefix}{tbl_id}{magic}"
+        new_table_name = table_name(tbl_id)
         run_spark_sql_query(f"CREATE TABLE {new_table_name}  LIKE {table_name}")
+        tbl_id = tbl_id + 1
         return new_table_name
 
     snapshotted_tables = list(map(snapshot_ish, args.input_tables))
@@ -237,9 +240,10 @@ elif args.iceberg:
         cmd.extend(new_output_tables)
         subprocess.run(cmd, check=True)
     finally:
+        print(f"Done comparing, cleaning up {tbl_id} tables.")
         if not args.no_cleanup:
             for tid in range(0, tbl_id):
-                table_name = f"{tbl_prefix}{tbl_id}{magic}"
+                table_name = table_name(tid)
                 proc = run_spark_sql_query(f"DROP TABLE {table_name}")
 
 
