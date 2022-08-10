@@ -29,9 +29,10 @@ parser.add_argument("--table-prefix", type=str, help="Prefix for temp tables.")
 #                    help='Just use raw HDFS (compatible) storage. Involves copying data.')
 # parser.add_argument('--tmpdir', type=str,
 #                    help='Temporary directory to use for comparisons.')
-# TODO: Add tolerance :)
-# parser.add_argument('--tolerance', type=float, default=0.001,
-#                    help='Tolerance for float comparisons.')
+parser.add_argument('--compare-precision', type=int,
+                   help='Precision for float comparisons.')
+parser.add_argument('--row-diff-tolerance', type=float, default=0.0,
+                   help='Tolerance for % of different rows')
 parser.add_argument('--control-pipeline', type=str, required=True,
                     help='Control pipeline. Will be passed through the shell.' +
                     'Metavars are {branch_name}, {input_tables}, and {output_tables}')
@@ -158,6 +159,12 @@ if args.lakeFS:
             "--target-root", f"s3a://{args.repo}/{branch_names[2]}",
             "--tables"])
         cmd.extend(args.output_tables)
+        if args.row_diff_tolerance is not None:
+            cmd.extend(["--row-diff-tolerance",
+                        f"{args.row_diff_tolerance}"])
+        if args.compare_precision is not None:
+            cmd.extend(["--compare-precision",
+                        f"{args.compare-precision}"])
         subprocess.run(cmd, check=True)
     finally:
         # Cleanup the branches
@@ -238,6 +245,12 @@ elif args.iceberg:
         cmd.extend(ctrl_output_tables)
         cmd.extend(["--target-tables"])
         cmd.extend(new_output_tables)
+        if args.row_diff_tolerance is not None:
+            cmd.extend(["--row-diff-tolerance",
+                        f"{args.row_diff_tolerance}"])
+        if args.compare_precision is not None:
+            cmd.extend(["--compare-precision",
+                        f"{args.compare-precision}"])            
         subprocess.run(cmd, check=True)
     finally:
         print(f"Done comparing, cleaning up {tbl_id} tables.")

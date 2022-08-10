@@ -18,24 +18,33 @@ parser.add_argument('--control-tables', type=str,
                     nargs='+', help='control tables')
 parser.add_argument('--target-tables', type=str,
                     nargs='+', help='target tables')
+parser.add_argument('--compare-precision', type=int,
+                   help='Precision for fractional comparisons.')
+parser.add_argument('--row-diff-tolerance', type=float, default=0.0,
+                   help='Tolerance for % of different rows')
 args = parser.parse_args()
-
 
 def compare_tables(control, target):
     if control.schema != target.schema:
         control.printSchema()
         target.printSchema()
         raise Exception("Control schema and target schema do not match")
+    if parser.compare_precision is not None:
+        columns = control.columns
+        schema = control.schema
+        if isinstance(schema[c].dataType, FractionalType):
+            control = control.withColumn(c, round(control[c], parser.compare_precision))
+            target = control.withColumn(c, round(target[c], parser.compare_precision))
     control.persist()
     target.persist()
     control_count = control.count()
     target_count = target.count()
     # Do diffs on the data, but subtract doesn't support all data types so fall back to strings.
-    # TODO: only convert the columns that need to be converted.
     try:
         missing_rows = control.subtract(target)
         new_rows = target.subtract(control)
     except Exception as e:
+        # TODO: only convert the columns that need to be converted.
         print(f"Warning converting all to strings.... {e}")
         columns = control.columns
         for c in columns:
@@ -51,8 +60,10 @@ def compare_tables(control, target):
     if missing_rows_count > 0:
         print(f"Found {missing_rows_count} missing from new new pipeline")
         missing_rows.show()
-    if new_rows_count > 0 or missing_rows_count > 0:
-        raise Exception("Data differs in table, failing.")
+    changed_rows = new_rows_count + missing_rows_count
+    row_diff_tol = args.row_diff_tolerance
+    if changed_rows >  row_diff_tol * control_count:
+        raise Exception(f"Data differs in table by more than {100 * row_diff_tol}%, failing.")
 
     if control_count != target_count:
         print(f"Counts do not match! {control_count} {target_count}")
