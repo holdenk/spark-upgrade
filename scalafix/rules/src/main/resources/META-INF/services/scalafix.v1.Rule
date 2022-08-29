@@ -3,3 +3,5 @@ fix.MigrateHiveContext
 fix.MigrateToSparkSessionBuilder
 fix.MigrateDeprecatedDataFrameReaderFuns
 fix.AccumulatorUpgrade
+fix.OnFailureFix
+fix.ExecutorPluginWarn
