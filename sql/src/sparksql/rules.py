@@ -5,6 +5,7 @@ from sqlfluff.core.rules import (
     BaseRule,
     LintResult,
     RuleContext,
+    EvalResultType,
 )
 from sqlfluff.core.rules.crawlers import SegmentSeekerCrawler
 from sqlfluff.core.rules.doc_decorators import (
@@ -12,6 +13,7 @@ from sqlfluff.core.rules.doc_decorators import (
     document_fix_compatible,
     document_groups,
 )
+from sqlfluff.utils.functional import Segments, sp, FunctionalContext
 from typing import List
 import os.path
 from sqlfluff.core.config import ConfigLoader
@@ -20,7 +22,7 @@ from sqlfluff.core.config import ConfigLoader
 @hookimpl
 def get_rules() -> List[BaseRule]:
     """Get plugin rules."""
-    return [Rule_Example_L001]
+    return [Rule_Example_L001, Rule_SPARKSQLCAST_L001]
 
 
 @hookimpl
@@ -38,6 +40,56 @@ def get_configs_info() -> dict:
     return {
         "forbidden_columns": {"definition": "A list of column to forbid"},
     }
+
+
+
+@document_groups
+@document_fix_compatible
+@document_configuration
+class Rule_SPARKSQLCAST_L001(BaseRule):
+    """Spark 3.0 cast as int on strings will fail.
+
+    Instead use the int() function.
+
+    **Spark 2.4**
+
+    Cast a string to an int
+
+    .. code-block:: sql
+
+        SELECT cast(foocount as int)
+        FROM foo
+
+    **Best practice**
+
+    Use the int() function.
+
+    .. code-block:: sql
+
+        SELECT int(foocount)
+        FROM foo
+    """
+
+    groups = ("all",)
+    crawl_behaviour = SegmentSeekerCrawler({"function"})
+
+    def _eval(self, context: RuleContext) -> EvalResultType:
+        """Check integer casts."""
+        functional_context = FunctionalContext(context)
+        children = functional_context.segment.children()
+        function_name = children.first(sp.is_type("function_name"))[0].raw.upper().strip()
+        bracketed = children.first(sp.is_type("bracketed"))[0]
+
+        # Is this a cast function call
+        if function_name == "CAST":
+            data_type_info = bracketed.get_child("data_type").raw.upper().strip()
+            if data_type_info == "INT":
+                # Here we know we have a possible one
+                expr = bracketed.get_child("expression")
+                # Replace cast(X as int) with int(X) TODO
+                return LintResult(
+                )
+        return None
 
 
 # These two decorators allow plugins

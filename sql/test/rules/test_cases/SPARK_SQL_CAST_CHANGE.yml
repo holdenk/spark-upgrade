@@ -1,0 +1,8 @@
+rule: SPARKSQLCAST_L001
+
+cast_as_int:
+  fail_str: |
+    select
+      cast(a as int),
+      cast(b as int)
+    from tbl
