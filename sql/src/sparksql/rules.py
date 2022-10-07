@@ -22,7 +22,7 @@ from sqlfluff.core.config import ConfigLoader
 @hookimpl
 def get_rules() -> List[BaseRule]:
     """Get plugin rules."""
-    return [Rule_Example_L001, Rule_SPARKSQLCAST_L001]
+    return [Rule_Example_L001, Rule_SPARKSQLCAST_L001, Rule_RESERVEDROPERTIES_L002]
 
 
 @hookimpl
@@ -111,6 +111,38 @@ class Rule_SPARKSQLCAST_L001(BaseRule):
                 )
 
         return None
+
+
+@document_groups
+@document_fix_compatible
+@document_configuration
+class Rule_RESERVEDROPERTIES_L002(BaseRule):
+    """Spark 3.0 Reserves some table properties
+
+    You can no longer set the provider, location, or owner property.
+    For provider this is replaced with USING and location with LOCATION in the create.
+    Sets after creation are not supported.
+    Owner property is infered from running user.
+    """
+
+    groups = ("all",)
+    # TODO -- Also look at SET calls once we fix SET DBPROPS in SQLFLUFF grammar.
+    crawl_behaviour = SegmentSeekerCrawler({"property_name_identifier"})
+    reserved = {"provider", "location", "owner"}
+
+    def _eval(self, context: RuleContext) -> Optional[LintResult]:
+        """Check for reserved properties being configured."""
+        property_name = context.segment.raw.lower().strip().lstrip('\"').rstrip('\"')
+        print(f"Called with context {context} with \"{property_name}\"")
+        if (property_name not in self.reserved):
+            return None
+        else:
+            print("Yee haw!")
+            return LintResult(
+                anchor=context.segment,
+                description="Reserved table property found.")
+            # TODO - Make a rewrite rule.
+
 
 
 # These two decorators allow plugins

@@ -1,0 +1,41 @@
+rule: RESERVEDROPERTIES_L002
+
+create_db:
+  configs:
+    core:
+      dialect: sparksql
+  fail_str: |
+    CREATE DATABASE boop WITH DBPROPERTIES("location" = "farts")
+#  fix_str: |
+#    select
+#      int(a),
+#      int(b)
+#    from tbl
+
+create_tbl:
+  configs:
+    core:
+      dialect: sparksql
+  fail_str: |
+    CREATE TABLE boop (id INT) TBLPROPERTIES("provider" = "parquet", "ok" = "three")
+#  fix_str: |
+#    select
+#      int(a),
+#      int(b)
+#    from tbl
+
+# TODO - Extend SQLLint SET DBPROPERTIES.
+#alter_tdbl:
+#  configs:
+#    core:
+#      dialect: sparksql
+#  fail_str: |
+#    SET DBPROPERTIES('location'='/tmp')
+
+
+create_tbl_ok:
+  configs:
+    core:
+      dialect: sparksql
+  pass_str: |
+    CREATE TABLE boop (id INT) TBLPROPERTIES("ok" = "three")

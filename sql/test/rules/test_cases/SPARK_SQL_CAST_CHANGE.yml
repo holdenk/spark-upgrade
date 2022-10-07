@@ -1,6 +1,9 @@
 rule: SPARKSQLCAST_L001
 
 cast_as_int:
+  configs:
+    core:
+      dialect: sparksql
   fail_str: |
     select
       cast(a as int),
