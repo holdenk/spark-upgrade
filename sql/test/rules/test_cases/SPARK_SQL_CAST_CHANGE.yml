@@ -6,3 +6,8 @@ cast_as_int:
       cast(a as int),
       cast(b as int)
     from tbl
+  fix_str: |
+    select
+      int(a),
+      int(b)
+    from tbl

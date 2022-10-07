@@ -4,6 +4,7 @@ from sqlfluff.core.plugin import hookimpl
 from sqlfluff.core.rules import (
     BaseRule,
     LintResult,
+    LintFix,
     RuleContext,
     EvalResultType,
 )
@@ -14,7 +15,7 @@ from sqlfluff.core.rules.doc_decorators import (
     document_groups,
 )
 from sqlfluff.utils.functional import Segments, sp, FunctionalContext
-from typing import List
+from typing import List, Optional
 import os.path
 from sqlfluff.core.config import ConfigLoader
 
@@ -40,7 +41,6 @@ def get_configs_info() -> dict:
     return {
         "forbidden_columns": {"definition": "A list of column to forbid"},
     }
-
 
 
 @document_groups
@@ -73,22 +73,44 @@ class Rule_SPARKSQLCAST_L001(BaseRule):
     groups = ("all",)
     crawl_behaviour = SegmentSeekerCrawler({"function"})
 
-    def _eval(self, context: RuleContext) -> EvalResultType:
+    def _eval(self, context: RuleContext) -> Optional[LintResult]:
         """Check integer casts."""
         functional_context = FunctionalContext(context)
         children = functional_context.segment.children()
-        function_name = children.first(sp.is_type("function_name"))[0].raw.upper().strip()
-        bracketed = children.first(sp.is_type("bracketed"))[0]
+        function_name_id_seg = children.first(sp.is_type("function_name")).children(
+        ).first(sp.is_type("function_name_identifier"))[0]
+        raw_function_name = function_name_id_seg.raw.upper().strip()
+        function_name = raw_function_name.upper().strip()
+        bracketed_segments = children.first(sp.is_type("bracketed"))
+        bracketed = bracketed_segments[0]
 
         # Is this a cast function call
         if function_name == "CAST":
-            data_type_info = bracketed.get_child("data_type").raw.upper().strip()
+            print("Found cast function!")
+            data_type_info = bracketed.get_child(
+                "data_type").raw.upper().strip()
             if data_type_info == "INT":
                 # Here we know we have a possible one
                 expr = bracketed.get_child("expression")
+                print(f"Found expr {expr} - {expr.raw}")
                 # Replace cast(X as int) with int(X) TODO
                 return LintResult(
+                    anchor=context.segment,
+                    fixes=[
+                        LintFix.replace(
+                            function_name_id_seg,
+                            [
+                                function_name_id_seg.edit(
+                                    f"int({expr.raw})"
+                                )
+                            ],
+                        ),
+                        LintFix.delete(
+                            bracketed,
+                        ),
+                    ],
                 )
+
         return None
 
 
