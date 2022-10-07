@@ -6,7 +6,6 @@ from sqlfluff.core.rules import (
     LintResult,
     LintFix,
     RuleContext,
-    EvalResultType,
 )
 from sqlfluff.core.rules.crawlers import SegmentSeekerCrawler
 from sqlfluff.core.rules.doc_decorators import (
@@ -14,7 +13,7 @@ from sqlfluff.core.rules.doc_decorators import (
     document_fix_compatible,
     document_groups,
 )
-from sqlfluff.utils.functional import Segments, sp, FunctionalContext
+from sqlfluff.utils.functional import sp, FunctionalContext
 from typing import List, Optional
 import os.path
 from sqlfluff.core.config import ConfigLoader

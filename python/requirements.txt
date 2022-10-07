@@ -1,2 +1,4 @@
 bowler
 flake8
+pytest
+autopep8

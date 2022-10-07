@@ -30,9 +30,9 @@ parser.add_argument("--table-prefix", type=str, help="Prefix for temp tables.")
 # parser.add_argument('--tmpdir', type=str,
 #                    help='Temporary directory to use for comparisons.')
 parser.add_argument('--compare-precision', type=int,
-                   help='Precision for float comparisons.')
+                    help='Precision for float comparisons.')
 parser.add_argument('--row-diff-tolerance', type=float, default=0.0,
-                   help='Tolerance for % of different rows')
+                    help='Tolerance for % of different rows')
 parser.add_argument('--control-pipeline', type=str, required=True,
                     help='Control pipeline. Will be passed through the shell.' +
                     'Metavars are {branch_name}, {input_tables}, and {output_tables}')
@@ -44,7 +44,8 @@ args = parser.parse_args()
 
 print(args)
 
-spark_sql_command = list(map(lambda x: x.replace("\\-", "-"), args.spark_sql_command))
+spark_sql_command = list(
+    map(lambda x: x.replace("\\-", "-"), args.spark_sql_command))
 spark_command = list(map(lambda x: x.replace("\\-", "-"), args.spark_command))
 
 
@@ -164,7 +165,7 @@ if args.lakeFS:
                         f"{args.row_diff_tolerance}"])
         if args.compare_precision is not None:
             cmd.extend(["--compare-precision",
-                        f"{args.compare-precision}"])
+                        f"{args.compare_precision}"])
         subprocess.run(cmd, check=True)
     finally:
         # Cleanup the branches
@@ -209,7 +210,8 @@ elif args.iceberg:
     def make_table_like(table_name):
         global tbl_id
         new_table_name = gen_table_name(tbl_id)
-        run_spark_sql_query(f"CREATE TABLE {new_table_name}  LIKE {table_name}")
+        run_spark_sql_query(
+            f"CREATE TABLE {new_table_name}  LIKE {table_name}")
         tbl_id = tbl_id + 1
         return new_table_name
 
@@ -250,7 +252,7 @@ elif args.iceberg:
                         f"{args.row_diff_tolerance}"])
         if args.compare_precision is not None:
             cmd.extend(["--compare-precision",
-                        f"{args.compare-precision}"])            
+                        f"{args.compare_precision}"])
         subprocess.run(cmd, check=True)
     finally:
         print(f"Done comparing, cleaning up {tbl_id} tables.")

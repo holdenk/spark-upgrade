@@ -41,3 +41,6 @@ jobs:
     # Run Python style checks
     - name: Run Python style
       run: flake8 --max-line-length 100 --exclude  sample_inputs .
+    # Run the sql tests
+    - name: Run Python style
+      run: cd sql; pip install -e .; pytest .

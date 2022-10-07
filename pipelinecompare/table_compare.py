@@ -1,5 +1,6 @@
 import argparse
 from pyspark.sql import SparkSession
+from pyspark.sql.types import FractionalType
 
 spark = SparkSession.builder.getOrCreate()
 
@@ -19,10 +20,11 @@ parser.add_argument('--control-tables', type=str,
 parser.add_argument('--target-tables', type=str,
                     nargs='+', help='target tables')
 parser.add_argument('--compare-precision', type=int,
-                   help='Precision for fractional comparisons.')
+                    help='Precision for fractional comparisons.')
 parser.add_argument('--row-diff-tolerance', type=float, default=0.0,
-                   help='Tolerance for % of different rows')
+                    help='Tolerance for % of different rows')
 args = parser.parse_args()
+
 
 def compare_tables(control, target):
     if control.schema != target.schema:
@@ -32,9 +34,12 @@ def compare_tables(control, target):
     if parser.compare_precision is not None:
         columns = control.columns
         schema = control.schema
-        if isinstance(schema[c].dataType, FractionalType):
-            control = control.withColumn(c, round(control[c], parser.compare_precision))
-            target = control.withColumn(c, round(target[c], parser.compare_precision))
+        for c in control.columns:
+            if isinstance(schema[c].dataType, FractionalType):
+                control = control.withColumn(
+                    c, round(control[c], parser.compare_precision))
+                target = control.withColumn(
+                    c, round(target[c], parser.compare_precision))
     control.persist()
     target.persist()
     control_count = control.count()
@@ -62,8 +67,9 @@ def compare_tables(control, target):
         missing_rows.show()
     changed_rows = new_rows_count + missing_rows_count
     row_diff_tol = args.row_diff_tolerance
-    if changed_rows >  row_diff_tol * control_count:
-        raise Exception(f"Data differs in table by more than {100 * row_diff_tol}%, failing.")
+    if changed_rows > row_diff_tol * control_count:
+        raise Exception(
+            f"Data differs in table by more than {100 * row_diff_tol}%, failing.")
 
     if control_count != target_count:
         print(f"Counts do not match! {control_count} {target_count}")
@@ -84,7 +90,8 @@ def compare_tables(control, target):
                     f"Found {missing_rows_count} missing from new new pipeline")
                 missing_rows.show()
         except Exception as e:
-            raise Exception(f"Data counts differ but {e} prevents grouping cmp")
+            raise Exception(
+                f"Data counts differ but {e} prevents grouping cmp")
 
 
 if args.control_root is not None:
