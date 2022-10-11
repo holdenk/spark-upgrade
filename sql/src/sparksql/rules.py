@@ -13,6 +13,7 @@ from sqlfluff.core.rules.doc_decorators import (
     document_fix_compatible,
     document_groups,
 )
+from sqlfluff.core.parser.segments.raw import CodeSegment
 from sqlfluff.utils.functional import sp, FunctionalContext
 from typing import List, Optional
 import os.path
@@ -132,15 +133,44 @@ class Rule_RESERVEDROPERTIES_L002(BaseRule):
 
     def _eval(self, context: RuleContext) -> Optional[LintResult]:
         """Check for reserved properties being configured."""
-        property_name = context.segment.raw.lower().strip().lstrip('\"').rstrip('\"')
+        functional_context = FunctionalContext(context)
+        property_name_segment = context.segment
+        property_name = property_name_segment.raw.lower().strip().lstrip('\"').rstrip('\"')
         print(f"Called with context {context} with \"{property_name}\"")
         if (property_name not in self.reserved):
             return None
         else:
             print("Yee haw!")
+            # Now we want to get the segments that are "bad" (e.g. we want to delete) and that is
+            # everything from this segment up until either a comma segment or a endbracket segment.
+            parent_segment = context.parent_stack[-1]
+            print(f"{dir(functional_context)}")
+            siblings_post = functional_context.siblings_post
+            segments_to_remove = [property_name_segment]
+            format_name = None
+            for segment in siblings_post:
+                # We want to keep the end bracket so check for it before adding to the list
+                if segment.is_type("end_bracket"):
+                    break
+                segments_to_remove.append(segment)
+                if segment.is_type("quoted_literal"):
+                    format_name = segment.raw.strip().lstrip('\"').rstrip('\"')
+                print(f"{segment} - {segment.get_type()}")
+                # We want to drop the comma so we do the check _after_ the ops
+                if segment.is_type("comma"):
+                    break
+#            return None
+            deletes = map(lambda t: LintFix.delete(t), segments_to_remove)
+            fixes = list(deletes) + [
+                LintFix.create_after(
+                    siblings_post[-1],
+                    [CodeSegment(raw=f" USING({format_name})")],
+                    )
+                ]
             return LintResult(
                 anchor=context.segment,
-                description="Reserved table property found.")
+                description="Reserved table property found.",
+                fixes = fixes)
             # TODO - Make a rewrite rule.
 
 
