@@ -135,15 +135,35 @@ class Rule_RESERVEDROPERTIES_L002(BaseRule):
         """Check for reserved properties being configured."""
         functional_context = FunctionalContext(context)
         property_name_segment = context.segment
-        property_name = property_name_segment.raw.lower().strip().lstrip('\"').rstrip('\"')
+        property_name = property_name_segment.raw.lower().strip().lstrip('\"').rstrip('\"').lstrip('\'').rstrip('\'')
         print(f"Called with context {context} with \"{property_name}\"")
         if (property_name not in self.reserved):
+            print(f"Property: {property_name} is *ok*")
             return None
         else:
-            print("Yee haw!")
+            # Reserved property found, lets check and see if we are in a "CREATE" which we can fix or if we are in an "ALTER"
+            # which we can not automatically fix.
+            create_or_alter_segment = context.parent_stack[-2]
+            print(f"{dir(create_or_alter_segment)}")
+            if create_or_alter_segment.is_type("alter_database_statement") or create_or_alter_segment.is_type("alter_table_statement"):
+                return LintResult(
+                    anchor=context.segment,
+                    description=f"Reserved table/db property {property_name} found in alter statement see " +
+                    "https://spark.apache.org/docs/3.0.0/sql-migration-guide.html for migration advice." +
+                    "In Spark 2.4 these alter statements were (effectively) ignored so you can likely delete it, automatically " +
+                    f"rewritten to \"legacy_{property_name}\".",
+                    fixes=[
+                        LintFix.replace(
+                        property_name_segment,
+                        [
+                            property_name_segment.get_child("quoted_identifier").edit(
+                                f"\"legacy_{property_name}\""
+                            )
+                        ])])
+            # Ok we know it's a create statement since it is not an alter :)
+            parent_segment = context.parent_stack[-1]
             # Now we want to get the segments that are "bad" (e.g. we want to delete) and that is
             # everything from this segment up until either a comma segment or a endbracket segment.
-            parent_segment = context.parent_stack[-1]
             segments_to_remove = []
             edits = []
             property_value = None
@@ -220,7 +240,7 @@ class Rule_RESERVEDROPERTIES_L002(BaseRule):
             fixes = list(edits) + list(deletes) + [new_statement]
             return LintResult(
                 anchor=context.segment,
-                description="Reserved table property found.",
+                description="Reserved table property {property_name} found.",
                 fixes=fixes)
             # TODO - Make a rewrite rule.
 

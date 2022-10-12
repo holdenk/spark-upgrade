@@ -45,15 +45,23 @@ create_empty_loc_spec_tbl:
   fix_str: |
     CREATE TABLE boop LOCATION "butts" TBLPROPERTIES("legacy_location" = "butts")
 
-#
-# TODO - Extend SQLLint SET DBPROPERTIES.
-#alter_tdbl:
-#  configs:
-#    core:
-#      dialect: sparksql
-#  fail_str: |
-#    SET DBPROPERTIES('location'='/tmp')
+alter_db:
+  configs:
+    core:
+      dialect: sparksql
+  fail_str: |
+    ALTER DATABASE meaning_of_life SET DBPROPERTIES('location'='/storage/earth/42')
+  fix_str: |
+    ALTER DATABASE meaning_of_life SET DBPROPERTIES("legacy_location"='/storage/earth/42')
 
+alter_tbl:
+  configs:
+    core:
+      dialect: sparksql
+  fail_str: |
+    ALTER TABLE meaning_of_life SET TBLPROPERTIES('location'='/storage/earth/42')
+  fix_str: |
+    ALTER TABLE meaning_of_life SET TBLPROPERTIES("legacy_location"='/storage/earth/42')
 
 create_tbl_ok:
   configs:
