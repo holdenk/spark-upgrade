@@ -23,7 +23,8 @@ from sqlfluff.core.config import ConfigLoader
 @hookimpl
 def get_rules() -> List[BaseRule]:
     """Get plugin rules."""
-    return [Rule_Example_L001, Rule_SPARKSQLCAST_L001, Rule_RESERVEDROPERTIES_L002]
+    return [Rule_Example_L001, Rule_SPARKSQLCAST_L001, Rule_RESERVEDROPERTIES_L002,
+            Rule_NOCHARS_L003]
 
 
 @hookimpl
@@ -112,6 +113,38 @@ class Rule_SPARKSQLCAST_L001(BaseRule):
                 )
 
         return None
+
+@document_groups
+@document_fix_compatible
+@document_configuration
+class Rule_NOCHARS_L003(BaseRule):
+    """Spark 3.0 No longer supports CHAR type in non-Hive tables.
+
+    In Spark 2.4 the CHAR type was treated as a String type anyways so we'll
+    just rewrite all CHAR types to String types.
+    """
+
+    groups = ("all",)
+    crawl_behaviour = SegmentSeekerCrawler({"primitive_type"})
+
+    def _eval(self, context: RuleContext) -> Optional[LintResult]:
+        """Check for char types."""
+        type_name = context.segment.raw.lower()
+        if type_name.startswith("char"):
+            print(f"Yee haw! {type_name}")
+            return LintResult(
+                anchor=context.segment,
+                description=f"char type found see " +
+                "https://spark.apache.org/docs/3.0.0/sql-migration-guide.html for migration advice." +
+                "In Spark 2.4 on non-Hive tables these were treated as strings so rewritting to string.",
+                fixes=[
+                    LintFix.replace(
+                        context.segment,
+                        [
+                            CodeSegment(raw="string")
+                        ])])
+        else:
+            return None
 
 
 @document_groups
