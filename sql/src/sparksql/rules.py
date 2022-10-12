@@ -147,32 +147,57 @@ class Rule_RESERVEDROPERTIES_L002(BaseRule):
             print(f"{dir(functional_context)}")
             siblings_post = functional_context.siblings_post
             segments_to_remove = [property_name_segment]
-            format_name = None
+            property_value = None
             for segment in siblings_post:
                 # We want to keep the end bracket so check for it before adding to the list
                 if segment.is_type("end_bracket"):
                     break
                 segments_to_remove.append(segment)
                 if segment.is_type("quoted_literal"):
-                    format_name = segment.raw.strip().lstrip('\"').rstrip('\"')
+                    property_value = segment.raw.strip().lstrip('\"').rstrip('\"')
                 print(f"{segment} - {segment.get_type()}")
                 # We want to drop the comma so we do the check _after_ the ops
                 if segment.is_type("comma"):
                     break
-#            return None
             deletes = map(lambda t: LintFix.delete(t), segments_to_remove)
-            fixes = list(deletes) + [
-                LintFix.create_after(
-                    siblings_post[-1],
-                    [CodeSegment(raw=f" USING({format_name})")],
+            new_statement = None
+            if property_name == "provider":
+                new_segment = CodeSegment(raw=f" USING {property_value}")
+                print(functional_context.parent_stack)
+                create_table_segment = functional_context.parent_stack[-2]
+                # We want to insert after the first bracketed segment containing column_definition
+                # but if there are no column definitions we instead insert after the table identifier.
+                first_bracketed_segment = create_table_segment.get_child(
+                    "bracketed")
+                print(dir(first_bracketed_segment))
+                if "column_definition" in first_bracketed_segment.direct_descendant_type_set:
+                    new_statement = LintFix.create_after(
+                        first_bracketed_segment,
+                        [new_segment],
                     )
-                ]
+                else:
+                    new_statement = LintFix.create_after(
+                        create_table_segment.get_child("table_reference"),
+                        [new_segment],
+                    )
+#            elif property_name == "location":
+#                new_statement = LintFix.create_after(
+#                    siblings_post[-1],
+#                    [CodeSegment(raw=f" LOCATION(\"{property_value}\")")],
+#                    )
+            else:
+                # For "owner" property we don't have an easy work around so instead just raise a lint error.
+                return LintResult(
+                    anchor=context.segment,
+                    description=f"Reserved table/db property {property_name} found see " +
+                    "https://spark.apache.org/docs/3.0.0/sql-migration-guide.html for migration advice.",
+                    fixes=None)
+            fixes = list(deletes) + [new_statement]
             return LintResult(
                 anchor=context.segment,
                 description="Reserved table property found.",
-                fixes = fixes)
+                fixes=fixes)
             # TODO - Make a rewrite rule.
-
 
 
 # These two decorators allow plugins

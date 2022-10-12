@@ -1,29 +1,32 @@
 rule: RESERVEDROPERTIES_L002
 
-create_db:
+#create_db:
+#  configs:
+#    core:
+#      dialect: sparksql
+#  fail_str: |
+#    CREATE DATABASE boop WITH DBPROPERTIES("location" = "farts")
+#  fix_str: |
+#    CREATE DATABASE boop WITH DBPROPERTIES() LOCATION("farts")
+
+create_partitioned_tbl:
   configs:
     core:
       dialect: sparksql
   fail_str: |
-    CREATE DATABASE boop WITH DBPROPERTIES("location" = "farts")
-#  fix_str: |
-#    select
-#      int(a),
-#      int(b)
-#    from tbl
+    CREATE TABLE boop (id INT) PARTITIONED BY (id) TBLPROPERTIES("provider" = "parquet", "ok" = "three")
+  fix_str: |
+    CREATE TABLE boop (id INT) USING parquet PARTITIONED BY (id) TBLPROPERTIES( "ok" = "three")
 
-create_tbl:
+create_empty_tbl:
   configs:
     core:
       dialect: sparksql
   fail_str: |
-    CREATE TABLE boop (id INT) TBLPROPERTIES("provider" = "parquet", "ok" = "three")
-#  fix_str: |
-#    select
-#      int(a),
-#      int(b)
-#    from tbl
-
+    CREATE TABLE boop TBLPROPERTIES("provider" = "parquet", "ok" = "three")
+  fix_str: |
+    CREATE TABLE boop USING parquet TBLPROPERTIES( "ok" = "three")
+#
 # TODO - Extend SQLLint SET DBPROPERTIES.
 #alter_tdbl:
 #  configs:
@@ -38,4 +41,4 @@ create_tbl_ok:
     core:
       dialect: sparksql
   pass_str: |
-    CREATE TABLE boop (id INT) TBLPROPERTIES("ok" = "three")
+    CREATE TABLE boop (id INT) USING parquet TBLPROPERTIES( "ok" = "three") 
