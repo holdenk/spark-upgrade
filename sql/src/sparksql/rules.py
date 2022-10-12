@@ -24,7 +24,7 @@ from sqlfluff.core.config import ConfigLoader
 def get_rules() -> List[BaseRule]:
     """Get plugin rules."""
     return [Rule_Example_L001, Rule_SPARKSQLCAST_L001, Rule_RESERVEDROPERTIES_L002,
-            Rule_NOCHARS_L003]
+            Rule_NOCHARS_L003, Rule_FORMATSTRONEINDEX_L004]
 
 
 @hookimpl
@@ -117,6 +117,58 @@ class Rule_SPARKSQLCAST_L001(BaseRule):
 @document_groups
 @document_fix_compatible
 @document_configuration
+class Rule_FORMATSTRONEINDEX_L004(BaseRule):
+    """Spark 3.3 Format strings are one indexed.
+
+
+    Previously on JDK8 format strings were still one indexed, but zero was treated as one.
+    One JDK17 an exception was thrown.
+    """
+
+    groups = ("all",)
+    crawl_behaviour = SegmentSeekerCrawler({"function"})
+
+    def _eval(self, context: RuleContext) -> Optional[LintResult]:
+        """Check for invalid format strs"""
+        functional_context = FunctionalContext(context)
+        children = functional_context.segment.children()
+        function_name_id_seg = children.first(sp.is_type("function_name")).children(
+        ).first(sp.is_type("function_name_identifier"))[0]
+        raw_function_name = function_name_id_seg.raw.upper().strip()
+        function_name = raw_function_name.upper().strip()
+        bracketed_segments = children.first(sp.is_type("bracketed"))
+        bracketed = bracketed_segments[0]
+
+        # Is this a cast function call
+        if function_name == "FORMAT_STRING":
+            print("Found format string function!")
+            format_str_seg = bracketed.get_child("expression").get_child("quoted_literal")
+            format_str = format_str_seg.raw
+            # If we don't use the bad sequence just return right away.
+            if "%0$" not in format_str:
+                return None
+            else:
+                # Replace %0$ with %1$
+                return LintResult(
+                    anchor=context.segment,
+                    fixes=[
+                        LintFix.replace(
+                            format_str_seg,
+                            [
+                                format_str_seg.edit(
+                                    format_str.replace("%0$", "%1$")
+                                )
+                            ],
+                        ),
+                    ],
+                )
+
+        return None
+
+
+@document_groups
+@document_fix_compatible
+@document_configuration
 class Rule_NOCHARS_L003(BaseRule):
     """Spark 3.0 No longer supports CHAR type in non-Hive tables.
 
@@ -131,7 +183,6 @@ class Rule_NOCHARS_L003(BaseRule):
         """Check for char types."""
         type_name = context.segment.raw.lower()
         if type_name.startswith("char"):
-            print(f"Yee haw! {type_name}")
             return LintResult(
                 anchor=context.segment,
                 description=f"char type found see " +
