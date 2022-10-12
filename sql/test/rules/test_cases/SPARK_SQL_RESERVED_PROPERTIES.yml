@@ -1,13 +1,22 @@
 rule: RESERVEDROPERTIES_L002
 
-#create_db:
-#  configs:
-#    core:
-#      dialect: sparksql
-#  fail_str: |
-#    CREATE DATABASE boop WITH DBPROPERTIES("location" = "farts")
-#  fix_str: |
-#    CREATE DATABASE boop WITH DBPROPERTIES() LOCATION("farts")
+create_db:
+  configs:
+    core:
+      dialect: sparksql
+  fail_str: |
+    CREATE DATABASE boop WITH DBPROPERTIES("location" = "farts", "junk" = "farts")
+  fix_str: |
+    CREATE DATABASE boop LOCATION "farts" WITH DBPROPERTIES( "junk" = "farts")
+
+create_db_only_loc_prop:
+  configs:
+    core:
+      dialect: sparksql
+  fail_str: |
+    CREATE DATABASE boop WITH DBPROPERTIES("location" = "farts")
+  fix_str: |
+    CREATE DATABASE boop LOCATION "farts" WITH DBPROPERTIES("legacy_location" = "farts")
 
 create_partitioned_tbl:
   configs:

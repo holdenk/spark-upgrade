@@ -144,10 +144,11 @@ class Rule_RESERVEDROPERTIES_L002(BaseRule):
             # Now we want to get the segments that are "bad" (e.g. we want to delete) and that is
             # everything from this segment up until either a comma segment or a endbracket segment.
             parent_segment = context.parent_stack[-1]
-            print(f"{dir(functional_context)}")
+            segments_to_remove = []
+            edits = []
+            property_value = None
             siblings_post = functional_context.siblings_post
             segments_to_remove = [property_name_segment]
-            property_value = None
             for segment in siblings_post:
                 # We want to keep the end bracket so check for it before adding to the list
                 if segment.is_type("end_bracket"):
@@ -159,6 +160,19 @@ class Rule_RESERVEDROPERTIES_L002(BaseRule):
                 # We want to drop the comma so we do the check _after_ the ops
                 if segment.is_type("comma"):
                     break
+            if len(parent_segment.get_children("property_name_identifier")) == 1:
+                # If there are no other properties besides the property we are going to delete then we need to
+                # drop the entire properties part to do this correctly, but "for now" as a hack we will justg edit the
+                # property name to prepend "legacy_"
+                segments_to_remove = []
+                edits = [
+                    LintFix.replace(
+                        property_name_segment,
+                        [
+                            property_name_segment.get_child("quoted_identifier").edit(
+                                f"\"legacy_{property_name}\""
+                            )
+                        ])]
             deletes = map(lambda t: LintFix.delete(t), segments_to_remove)
             new_statement = None
             if property_name == "provider":
@@ -180,11 +194,22 @@ class Rule_RESERVEDROPERTIES_L002(BaseRule):
                         create_table_segment.get_child("table_reference"),
                         [new_segment],
                     )
-#            elif property_name == "location":
-#                new_statement = LintFix.create_after(
-#                    siblings_post[-1],
-#                    [CodeSegment(raw=f" LOCATION(\"{property_value}\")")],
-#                    )
+            elif property_name == "location":
+                create_segment = functional_context.parent_stack[-2]
+                # We want to insert after the database reference (and comment if present) or before "TBLPROPERTIES" depending.
+                if "database_reference" in create_segment.direct_descendant_type_set:
+                    new_statement = LintFix.create_after(
+                        create_segment.get_child("database_reference"),
+                        [CodeSegment(raw=f" LOCATION \"{property_value}\"")],
+                    )
+                else:
+                    keywords = create_segment.get_children("keyword")
+                    tbl_properties_ref = next(
+                        iter(filter(lambda s: s.raw_upper == "TBLPROPERTIES", keywords)))
+                    new_statement = LintFix.create_before(
+                        tbl_properties_ref,
+                        [CodeSegment(raw=f" LOCATION \"{property_value}\"")],
+                    )
             else:
                 # For "owner" property we don't have an easy work around so instead just raise a lint error.
                 return LintResult(
@@ -192,7 +217,7 @@ class Rule_RESERVEDROPERTIES_L002(BaseRule):
                     description=f"Reserved table/db property {property_name} found see " +
                     "https://spark.apache.org/docs/3.0.0/sql-migration-guide.html for migration advice.",
                     fixes=None)
-            fixes = list(deletes) + [new_statement]
+            fixes = list(edits) + list(deletes) + [new_statement]
             return LintResult(
                 anchor=context.segment,
                 description="Reserved table property found.",
