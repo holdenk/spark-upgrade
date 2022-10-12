@@ -135,7 +135,8 @@ class Rule_RESERVEDROPERTIES_L002(BaseRule):
         """Check for reserved properties being configured."""
         functional_context = FunctionalContext(context)
         property_name_segment = context.segment
-        property_name = property_name_segment.raw.lower().strip().lstrip('\"').rstrip('\"').lstrip('\'').rstrip('\'')
+        property_name = property_name_segment.raw.lower().strip().lstrip(
+            '\"').rstrip('\"').lstrip('\'').rstrip('\'')
         print(f"Called with context {context} with \"{property_name}\"")
         if (property_name not in self.reserved):
             print(f"Property: {property_name} is *ok*")
@@ -154,12 +155,12 @@ class Rule_RESERVEDROPERTIES_L002(BaseRule):
                     f"rewritten to \"legacy_{property_name}\".",
                     fixes=[
                         LintFix.replace(
-                        property_name_segment,
-                        [
-                            property_name_segment.get_child("quoted_identifier").edit(
-                                f"\"legacy_{property_name}\""
-                            )
-                        ])])
+                            property_name_segment,
+                            [
+                                property_name_segment.get_child("quoted_identifier").edit(
+                                    f"\"legacy_{property_name}\""
+                                )
+                            ])])
             # Ok we know it's a create statement since it is not an alter :)
             parent_segment = context.parent_stack[-1]
             # Now we want to get the segments that are "bad" (e.g. we want to delete) and that is
