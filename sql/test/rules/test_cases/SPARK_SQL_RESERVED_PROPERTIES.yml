@@ -27,7 +27,7 @@ create_partitioned_tbl:
   fix_str: |
     CREATE TABLE boop (id INT) USING parquet PARTITIONED BY (id) TBLPROPERTIES( "ok" = "three")
 
-create_empty_tbl:
+create_empty_parquet_tbl:
   configs:
     core:
       dialect: sparksql
@@ -35,6 +35,16 @@ create_empty_tbl:
     CREATE TABLE boop TBLPROPERTIES("provider" = "parquet", "ok" = "three")
   fix_str: |
     CREATE TABLE boop USING parquet TBLPROPERTIES( "ok" = "three")
+
+create_empty_loc_spec_tbl:
+  configs:
+    core:
+      dialect: sparksql
+  fail_str: |
+    CREATE TABLE boop TBLPROPERTIES("location" = "butts")
+  fix_str: |
+    CREATE TABLE boop LOCATION "butts" TBLPROPERTIES("legacy_location" = "butts")
+
 #
 # TODO - Extend SQLLint SET DBPROPERTIES.
 #alter_tdbl:

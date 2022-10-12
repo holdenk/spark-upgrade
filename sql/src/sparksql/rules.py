@@ -208,7 +208,7 @@ class Rule_RESERVEDROPERTIES_L002(BaseRule):
                         iter(filter(lambda s: s.raw_upper == "TBLPROPERTIES", keywords)))
                     new_statement = LintFix.create_before(
                         tbl_properties_ref,
-                        [CodeSegment(raw=f" LOCATION \"{property_value}\"")],
+                        [CodeSegment(raw=f"LOCATION \"{property_value}\" ")],
                     )
             else:
                 # For "owner" property we don't have an easy work around so instead just raise a lint error.
