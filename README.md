@@ -23,28 +23,32 @@ Spark SQL has some important changes between Spark 2.4 and 3.0 as well as some s
 
 The SQL migration tool is built using, (SQLFluff)[https://sqlfluff.com/]. SQLFluff has a (Spark SQL dialect)[https://docs.sqlfluff.com/en/stable/dialects.html]
 
-
-#### Limitations
+#### Limitations / Unique Challenges
 
 Out of the box SQLFluff lackes access to type information that is available when migrating Scala code, and the AST parser is not a 1:1 match with the underlying parser used by Spark SQL. A potential mitigation (if we end up needing type information) is integrating with Spark SQL to run an EXPLAIN on the input query and extract type information.
 
 
 Some migration rules are too much work to fully automate so instead output warnings for users to manually verify.
 
+We do not have an equivelent to "Scala Steward" for SQL files and SQL can target multiple backends. In most situations, the scheduler job type can be used to determine the engine.
+
 ### PySpark (Python Spark) Upgrade (WIP)
 
-The Python Upgrade tool is built using (bowler)[https://pybowler.io/]
+The Python Upgrade tool is built using (bowler)[https://pybowler.io/]. 
 
 
-#### Limitations
+#### Limitations / Unique Challenges
 
-(Bowler)[https://pybowler.io/] can not parse Python 3.9+ only features.
+(Bowler)[https://pybowler.io/] can not parse Python 3.9+ only features. We should probably upgrade to (LibCST)[https://libcst.readthedocs.io/en/stable/codemods_tutorial.html].
+
+
+Python migration tools do not have has much type information as Scala and are more likely to have conflicting APIs than in SQL (see pandas API overlap with Spark DataFrames). Logic to attempt to limit changes to only relevant Spark code may be problematic, so interactive fixes are more likely to be required.
 
 ### Scala Upgrade (WIP)
 
 The Scala upgrade tooling is built on top of ScalaFix and has access to (most) of the type information. Spark's Scala APIs are perhaps the fastest changing of three primary languages used with Spark.
 
 
-#### Limitations
+#### Limitations / Unique Challenges
 
-While scalafix can be integrated with tools like Scala Steward (yay!), recompiling 
+While scalafix can be integrated with tools like Scala Steward (yay!), recompiling and publishing new artifacts is required to verify the changes. It is likely that dependencies will need to be manually upgraded.
