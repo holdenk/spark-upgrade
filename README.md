@@ -15,7 +15,7 @@ Right now it requires that you specify the table to be compared, but (not yet st
 
 ## Semi-Automatic Upgrades
 
-Upgrading your code to a new version of Spark is perhaps not how most folks wish to spend there work day (let alone their after work day). Some parts of the migrations can be automated, and when combined with the upgrade validation described bellow can (hopefully) lead to reasonably 
+Upgrading your code to a new version of Spark is perhaps not how most folks wish to spend there work day (let alone their after work day). Some parts of the migrations can be automated, and when combined with the upgrade validation described above can (hopefully) lead to reasonably confident automatic upgrades.
 
 ### SQL (WIP)
 
