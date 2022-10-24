@@ -114,6 +114,7 @@ class Rule_SPARKSQLCAST_L001(BaseRule):
 
         return None
 
+
 @document_groups
 @document_fix_compatible
 @document_configuration
@@ -185,9 +186,10 @@ class Rule_NOCHARS_L003(BaseRule):
         if type_name.startswith("char"):
             return LintResult(
                 anchor=context.segment,
-                description=f"char type found see " +
-                "https://spark.apache.org/docs/3.0.0/sql-migration-guide.html for migration advice." +
-                "In Spark 2.4 on non-Hive tables these were treated as strings so rewritting to string.",
+                description=f"char type found ({type_name}) in {context} see "
+                "https://spark.apache.org/docs/3.0.0/sql-migration-guide.html for migration"
+                "advice. In Spark 2.4 on non-Hive tables these were treated as strings so "
+                "rewritting to string.",
                 fixes=[
                     LintFix.replace(
                         context.segment,
@@ -226,16 +228,20 @@ class Rule_RESERVEDROPERTIES_L002(BaseRule):
             print(f"Property: {property_name} is *ok*")
             return None
         else:
-            # Reserved property found, lets check and see if we are in a "CREATE" which we can fix or if we are in an "ALTER"
-            # which we can not automatically fix.
+            # Reserved property found, lets check and see if we are in a "CREATE" which we can fix
+            # or if we are in an "ALTER" which we can not automatically fix.
             create_or_alter_segment = context.parent_stack[-2]
             print(f"{dir(create_or_alter_segment)}")
-            if create_or_alter_segment.is_type("alter_database_statement") or create_or_alter_segment.is_type("alter_table_statement"):
+            if (create_or_alter_segment.is_type("alter_database_statement") or
+                create_or_alter_segment.is_type("alter_table_statement")):
                 return LintResult(
                     anchor=context.segment,
-                    description=f"Reserved table/db property {property_name} found in alter statement see " +
-                    "https://spark.apache.org/docs/3.0.0/sql-migration-guide.html for migration advice." +
-                    "In Spark 2.4 these alter statements were (effectively) ignored so you can likely delete it, automatically " +
+                    description=f"Reserved table/db property {property_name} found in alter "
+                    " statement see " +
+                    "https://spark.apache.org/docs/3.0.0/sql-migration-guide.html for migration " +
+                    " advice." +
+                    "In Spark 2.4 these alter statements were (effectively) ignored so you can " +
+                    " likely delete it, automatically " +
                     f"rewritten to \"legacy_{property_name}\".",
                     fixes=[
                         LintFix.replace(
@@ -266,9 +272,9 @@ class Rule_RESERVEDROPERTIES_L002(BaseRule):
                 if segment.is_type("comma"):
                     break
             if len(parent_segment.get_children("property_name_identifier")) == 1:
-                # If there are no other properties besides the property we are going to delete then we need to
-                # drop the entire properties part to do this correctly, but "for now" as a hack we will justg edit the
-                # property name to prepend "legacy_"
+                # If there are no other properties besides the property we are going to delete then
+                # we need to drop the entire properties part to do this correctly, but "for now"
+                # as a hack we will just edit the property name to prepend "legacy_"
                 segments_to_remove = []
                 edits = [
                     LintFix.replace(
@@ -285,7 +291,8 @@ class Rule_RESERVEDROPERTIES_L002(BaseRule):
                 print(functional_context.parent_stack)
                 create_table_segment = functional_context.parent_stack[-2]
                 # We want to insert after the first bracketed segment containing column_definition
-                # but if there are no column definitions we instead insert after the table identifier.
+                # but if there are no column definitions we instead insert after the table
+                # identifier.
                 first_bracketed_segment = create_table_segment.get_child(
                     "bracketed")
                 print(dir(first_bracketed_segment))
@@ -301,7 +308,8 @@ class Rule_RESERVEDROPERTIES_L002(BaseRule):
                     )
             elif property_name == "location":
                 create_segment = functional_context.parent_stack[-2]
-                # We want to insert after the database reference (and comment if present) or before "TBLPROPERTIES" depending.
+                # We want to insert after the database reference (and comment if present) or before
+                # "TBLPROPERTIES" depending.
                 if "database_reference" in create_segment.direct_descendant_type_set:
                     new_statement = LintFix.create_after(
                         create_segment.get_child("database_reference"),
@@ -316,11 +324,13 @@ class Rule_RESERVEDROPERTIES_L002(BaseRule):
                         [CodeSegment(raw=f"LOCATION \"{property_value}\" ")],
                     )
             else:
-                # For "owner" property we don't have an easy work around so instead just raise a lint error.
+                # For "owner" property we don't have an easy work around so instead just raise
+                # a lint error.
                 return LintResult(
                     anchor=context.segment,
                     description=f"Reserved table/db property {property_name} found see " +
-                    "https://spark.apache.org/docs/3.0.0/sql-migration-guide.html for migration advice.",
+                    "https://spark.apache.org/docs/3.0.0/sql-migration-guide.html for " +
+                    "migration advice.",
                     fixes=None)
             fixes = list(edits) + list(deletes) + [new_statement]
             return LintResult(
