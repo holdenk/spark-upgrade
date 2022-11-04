@@ -10,7 +10,7 @@ import org.apache.spark.sql.{DataFrame, Dataset}
 
 object SparkAutoUpgrade {
   // Add code that needs fixing here.
-  def depricatedUnionAll(
+  def deprecatedMethod(
     df1: DataFrame,
     df2: DataFrame,
     df3: DataFrame,
