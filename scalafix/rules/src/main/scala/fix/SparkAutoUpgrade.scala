@@ -2,30 +2,29 @@ package fix
 
 import metaconfig.ConfDecoder.canBuildFromAnyMapWithStringKey
 import metaconfig.generic.Surface
-import metaconfig.ConfDecoder
-import metaconfig.Configured
+import metaconfig.{ConfDecoder, Configured}
 import scalafix.v1._
+
 import scala.meta._
 final case class SparkAutoUpgradeConfig(
-    depricatedMethod: Map[String, String]
+  deprecatedMethod: Map[String, String]
 )
 
 object SparkAutoUpgradeConfig {
   val default: SparkAutoUpgradeConfig =
-    SparkAutoUpgradeConfig(depricatedMethod =
-      Map(
+    SparkAutoUpgradeConfig(
+      deprecatedMethod = Map(
         "unionAll" -> "union"
       )
     )
+
   implicit val surface: Surface[SparkAutoUpgradeConfig] =
-    metaconfig.generic.deriveSurface[SparkAutoUpgradeConfig]
+    metaconfig.generic.deriveSurface
   implicit val decoder: ConfDecoder[SparkAutoUpgradeConfig] =
     metaconfig.generic.deriveDecoder(default)
-
 }
 
-class SparkAutoUpgrade(config: SparkAutoUpgradeConfig)
-    extends SemanticRule("SparkAutoUpgrade") {
+class SparkAutoUpgrade(config: SparkAutoUpgradeConfig) extends SemanticRule("SparkAutoUpgrade") {
   def this() = this(SparkAutoUpgradeConfig.default)
 
   override def withConfiguration(config: Configuration): Configured[Rule] =
@@ -40,41 +39,36 @@ class SparkAutoUpgrade(config: SparkAutoUpgradeConfig)
     println("Tree.structure: " + doc.tree.structure)
     println("Tree.structureLabeled: " + doc.tree.structureLabeled)
 
-    // TODO Check with list depricated method
-    config.depricatedMethod.map { m => replaceTerm(m._1, m._2) }.asPatch
-  }
-
-  def replaceTerm(oldValue: String, newValue: String)(implicit
-      doc: SemanticDocument
-  ): Patch = {
-    doc.tree.collect {
-      case Term.Apply(
-            Term.Select(_, t @ Term.Name(_)),
-            _ :: Nil
-          ) if t.toString() == oldValue =>
-        Patch.replaceTree(
-          t,
-          newValue
-        )
-      case Term.Apply(
-            Term.Select(_, f @ Term.Name(_)),
+    def matchOnTree(t: Tree): Patch = {
+      t.collect {
+        case Term.Apply(
+            Term.Select(_, deprecated @ Term.Name(name)),
+            _
+            ) if config.deprecatedMethod.contains(name) =>
+          Patch.replaceTree(
+            deprecated,
+            config.deprecatedMethod(name)
+          )
+        case Term.Apply(
+            Term.Select(_, _ @Term.Name(name)),
             List(
               Term.AnonymousFunction(
                 Term.ApplyInfix(
                   _,
-                  n @ Term.Name(_),
+                  deprecatedAnm @ Term.Name(nameAnm),
                   _,
                   _
                 )
               )
             )
-          ) if f.toString() == "reduce" && n.toString() == oldValue =>
-        Patch.replaceTree(
-          n,
-          newValue
-        )
+            ) if "reduce".contains(name) && config.deprecatedMethod.contains(nameAnm) =>
+          Patch.replaceTree(
+            deprecatedAnm,
+            config.deprecatedMethod(nameAnm)
+          )
+      }.asPatch
+    }
 
-    }.asPatch
+    matchOnTree(doc.tree)
   }
-
 }
