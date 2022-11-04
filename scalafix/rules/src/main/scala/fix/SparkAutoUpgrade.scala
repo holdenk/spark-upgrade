@@ -7,11 +7,11 @@ import metaconfig.Configured
 import scalafix.v1._
 import scala.meta._
 final case class SparkAutoUpgradeConfig(
-    depricatedMethod: Map[String, String] = Map("unionAll" -> "union")
+    depricatedMethod: Map[String, String]
 )
 
 object SparkAutoUpgradeConfig {
-  def default: SparkAutoUpgradeConfig =
+  val default: SparkAutoUpgradeConfig =
     SparkAutoUpgradeConfig(depricatedMethod =
       Map(
         "unionAll" -> "union"
