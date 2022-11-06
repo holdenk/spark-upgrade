@@ -19,7 +19,7 @@ object SparkAutoUpgradeConfig {
     )
 
   implicit val surface: Surface[SparkAutoUpgradeConfig] =
-    metaconfig.generic.deriveSurface
+    metaconfig.generic.deriveSurface[SparkAutoUpgradeConfig]
   implicit val decoder: ConfDecoder[SparkAutoUpgradeConfig] =
     metaconfig.generic.deriveDecoder(default)
 }
