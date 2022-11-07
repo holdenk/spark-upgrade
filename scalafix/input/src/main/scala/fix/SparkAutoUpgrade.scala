@@ -1,6 +1,6 @@
 /*
 rule = SparkAutoUpgrade
-*/
+ */
 package fix
 
 object SparkAutoUpgrade {
