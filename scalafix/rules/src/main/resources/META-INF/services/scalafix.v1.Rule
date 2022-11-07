@@ -5,3 +5,4 @@ fix.MigrateDeprecatedDataFrameReaderFuns
 fix.AccumulatorUpgrade
 fix.OnFailureFix
 fix.ExecutorPluginWarn
+fix.UnionRewrite
