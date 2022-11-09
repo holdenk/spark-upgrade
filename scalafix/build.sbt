@@ -10,7 +10,16 @@ inThisBuild(
     licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
     sparkVersion := System.getProperty("sparkVersion", "2.4.8"),
     sparkUpgradeVersion := "0.1.1",
-    version := sparkVersion.value + "_" + sparkUpgradeVersion.value,
+    versionScheme := Some("early-semver"),
+    publishMavenStyle := true,
+    pomIncludeRepository := { _ => false },
+    publishTo := {
+      val nexus = "https://oss.sonatype.org/"
+      Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+    },
+    useGpg := true,
+    credentials ++= Seq(Credentials(Path.userHome / ".ivy2" / ".sbtcredentials"), Credentials(Path.userHome / ".ivy2" / ".sparkcredentials")),
+    version := sparkUpgradeVersion.value + "-" + sparkVersion.value,
     developers := List(
       Developer(
         "holdenk",
