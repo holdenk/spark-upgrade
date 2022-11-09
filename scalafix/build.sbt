@@ -44,22 +44,12 @@ inThisBuild(
   )
 )
 
-skip in publish := true
+scmInfo := Some(ScmInfo(
+  url("https://github.com/holdenk/spark-testing-base.git"),
+  "scm:git@github.com:holdenk/spark-testing-base.git"
+))
 
 
-unmanagedSourceDirectories in Compile  ++= {
-  if (scalaVersion.value == V.scala211) {
-    Seq(
-      (sourceDirectory in Compile)(_ / "2.12plus/scala"),
-      (sourceDirectory in Compile)(_ / "/scala")
-    ).join.value
-  } else {
-    Seq(
-      (sourceDirectory in Compile)(_ / "2.11/scala"),
-      (sourceDirectory in Compile)(_ / "/scala")
-    ).join.value
-  }
-}
 
 lazy val rules = project.settings(
   moduleName := "spark-scalafix-rules",
