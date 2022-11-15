@@ -12,7 +12,6 @@ inThisBuild(
     sparkUpgradeVersion := "0.1.1",
     versionScheme := Some("early-semver"),
     publishMavenStyle := true,
-    pomIncludeRepository := { _ => false },
     publishTo := {
       val nexus = "https://oss.sonatype.org/"
       Some("releases"  at nexus + "service/local/staging/deploy/maven2")
@@ -40,15 +39,16 @@ inThisBuild(
     scalacOptions ++= List(
       "-Yrangepos",
       "-P:semanticdb:synthetics:on"
-    )
+    ),
+    scmInfo := Some(ScmInfo(
+      url("https://github.com/holdenk/spark-testing-base.git"),
+      "scm:git@github.com:holdenk/spark-testing-base.git"
+    )),
+    skip in publish := false
   )
 )
 
-scmInfo := Some(ScmInfo(
-  url("https://github.com/holdenk/spark-testing-base.git"),
-  "scm:git@github.com:holdenk/spark-testing-base.git"
-))
-
+skip in publish := true
 
 
 lazy val rules = project.settings(
