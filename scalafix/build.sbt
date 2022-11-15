@@ -17,8 +17,6 @@ inThisBuild(
       Some("releases"  at nexus + "service/local/staging/deploy/maven2")
     },
     useGpg := true,
-    credentials ++= Seq(Credentials(Path.userHome / ".ivy2" / ".sbtcredentials"), Credentials(Path.userHome / ".ivy2" / ".sparkcredentials")),
-    version := sparkUpgradeVersion.value + "-" + sparkVersion.value,
     developers := List(
       Developer(
         "holdenk",
@@ -52,7 +50,7 @@ skip in publish := true
 
 
 lazy val rules = project.settings(
-  moduleName := "spark-scalafix-rules",
+  moduleName := s"spark-scalafix-rules-${sparkVersion.value}",
   libraryDependencies += "ch.epfl.scala" %% "scalafix-core" % V.scalafixVersion,
 )
 
