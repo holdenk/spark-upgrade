@@ -2,7 +2,7 @@
 from setuptools import find_packages, setup
 
 # Change these names in your plugin, e.g. company name or plugin purpose.
-PLUGIN_LOGICAL_NAME = "sparksql"
+PLUGIN_LOGICAL_NAME = "sparksql-upgrade"
 PLUGIN_ROOT_MODULE = "sparksql"
 
 setup(
@@ -13,13 +13,13 @@ setup(
     author='Holden Karau',
     author_email='holden@pigscanfly.ca',
     url='https://github.com/holdenk/spark-upgrade',
-    description='SQLFluff rules to help migrate your Spark SQL from 2.X to 3.X'
+    description='SQLFluff rules to help migrate your Spark SQL from 2.X to 3.X',
     test_requires=[
         'nose',
         'coverage',
         'unittest2'
     ],
-    license='../LICENSE'
+    license='../LICENSE',
     include_package_data=True,
     package_dir={"": "src"},
     packages=find_packages(where="src"),
