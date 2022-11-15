@@ -15,7 +15,7 @@ class MigrateHiveContext extends SemanticRule("MigrateHiveContext") {
         // Rewrite the construction of a HiveContext
         case ns @ Term.New(Init(initArgs)) =>
           initArgs match {
-            case (hiveSymbol, _, _) =>
+            case (hiveSymbolMatcher(_), _, _) =>
               List(
                 Patch.replaceTree(
                   ns,

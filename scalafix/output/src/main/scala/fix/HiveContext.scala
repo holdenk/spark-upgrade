@@ -7,4 +7,13 @@ object BadHiveContextMagic {
     import hiveContext1.implicits._
     hiveContext1
   }
+
+  def makeSparkConf() = {
+    val sparkConf = new SparkConf(true)
+    sparkConf
+  }
+
+  def throwSomeCrap() = {
+    throw new RuntimeException("mr farts!")
+  }
 }
