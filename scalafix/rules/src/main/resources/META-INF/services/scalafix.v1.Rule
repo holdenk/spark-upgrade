@@ -12,3 +12,4 @@ fix.MetadataWarnQQ
 fix.ScalaTestImportChange
 fix.ScalaTestExtendsFix
 fix.MigrateTrigger
+fix.GroupByKeyRenameColumnQQ
