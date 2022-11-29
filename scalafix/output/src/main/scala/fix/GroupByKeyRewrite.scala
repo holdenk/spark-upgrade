@@ -12,6 +12,16 @@ object GroupByKeyRewrite {
         .count()
         .withColumnRenamed("key", "newName")
 
+    val ds11 =
+      List("Paerson 1", "Person 2", "User 1", "User 2", "test", "gggg")
+        .toDS()
+        .withColumnRenamed("value", "newName")
+
+    val df11 =
+      List("Paerson 1", "Person 2", "User 1", "User 2", "test", "gggg")
+        .toDF()
+        .withColumnRenamed("value", "newName")
+
     val ds2 =
       List("Paerson 1", "Person 2", "User 1", "User 2", "test", "gggg")
         .toDS()
