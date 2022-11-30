@@ -6,4 +6,6 @@ fix.AccumulatorUpgrade
 fix.OnFailureFix
 fix.ExecutorPluginWarn
 fix.UnionRewrite
+fix.GroupByKeyWarn
+fix.GroupByKeyRewrite
 fix.MetadataWarnQQ
