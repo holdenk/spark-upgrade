@@ -9,3 +9,4 @@ fix.UnionRewrite
 fix.GroupByKeyWarn
 fix.GroupByKeyRewrite
 fix.MetadataWarnQQ
+fix.ScalaTestImportChange

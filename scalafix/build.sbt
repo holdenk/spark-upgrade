@@ -1,4 +1,6 @@
 val sparkVersion = settingKey[String]("Spark version")
+val srcSparkVersion = settingKey[String]("Source Spark version")
+val targetSparkVersion = settingKey[String]("Target Spark version")
 val sparkUpgradeVersion = settingKey[String]("Spark upgrade version")
 
 
@@ -8,8 +10,10 @@ inThisBuild(
     organization := "com.holdenkarau",
     homepage := Some(url("https://github.com/holdenk/spark-auto-upgrade")),
     licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
-    sparkVersion := System.getProperty("sparkVersion", "2.4.8"),
-    sparkUpgradeVersion := "0.1.1",
+    srcSparkVersion := System.getProperty("sparkVersion", "2.4.8"),
+    targetSparkVersion := System.getProperty("targetSparkVersion", "3.3.0"),
+    sparkVersion := srcSparkVersion.value,
+    sparkUpgradeVersion := "0.1.2",
     versionScheme := Some("early-semver"),
     publishMavenStyle := true,
     publishTo := {
@@ -28,7 +32,7 @@ inThisBuild(
     scalaVersion := V.scala212,
     crossScalaVersions := {
       if (sparkVersion.value > "3.1.0") {
-        List(V.scala211, V.scala212, V.scala213)
+        List(V.scala212, V.scala213)
       } else {
         List(V.scala211, V.scala212)
       }
@@ -56,20 +60,24 @@ lazy val rules = project.settings(
 
 lazy val input = project.settings(
   skip in publish := true,
+  sparkVersion := srcSparkVersion.value,
   libraryDependencies ++= Seq(
     "org.scalacheck" %% "scalacheck" % "1.14.0",
     "org.apache.spark" %% "spark-core"        % sparkVersion.value,
     "org.apache.spark" %% "spark-sql"         % sparkVersion.value,
-    "org.apache.spark" %% "spark-hive"        % sparkVersion.value)
+    "org.apache.spark" %% "spark-hive"        % sparkVersion.value,
+    "org.scalatest" %% "scalatest" % "3.0.0")
 )
 
 lazy val output = project.settings(
   skip in publish := true,
+  sparkVersion := targetSparkVersion.value,
   libraryDependencies ++= Seq(
     "org.scalacheck" %% "scalacheck" % "1.14.0",
     "org.apache.spark" %% "spark-core"        % sparkVersion.value,
     "org.apache.spark" %% "spark-sql"         % sparkVersion.value,
-    "org.apache.spark" %% "spark-hive"        % sparkVersion.value)
+    "org.apache.spark" %% "spark-hive"        % sparkVersion.value,
+    "org.scalatest" %% "scalatest" % "3.2.14")
 )
 
 lazy val tests = project
@@ -87,3 +95,7 @@ lazy val tests = project
   )
   .dependsOn(rules)
   .enablePlugins(ScalafixTestkitPlugin)
+
+ThisBuild / libraryDependencySchemes ++= Seq(
+  "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always
+)
