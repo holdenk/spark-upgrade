@@ -31,9 +31,9 @@ class ScalaTestImportChange
         case q"""import org.scalatest.Matchers""" =>
           Patch.replaceTree(t, q"""import org.scalatest.matchers.should.Matchers""".toString())
         case q"""import org.scalatest.MustMatchers""" =>
-          Patch.replaceTree(t, """import org.scalatest.matchers.must.{Matchers => MustMatchers}""")
+          Patch.replaceTree(t, q"""import org.scalatest.matchers.must.{Matchers => MustMatchers}""".toString)
         case q"""import org.scalatest.MustMatchers._""" =>
-          Patch.replaceTree(t, """import org.scalatest.matchers.must.Matchers._""")
+          Patch.replaceTree(t, """import org.scalatest.matchers.must.Matchers._\n""")
         case elem @ _ =>
           elem.children match {
             case Nil => Patch.empty
