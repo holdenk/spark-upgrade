@@ -1,20 +1,21 @@
 val sparkVersion = settingKey[String]("Spark version")
 val sparkUpgradeVersion = settingKey[String]("Spark upgrade version")
 
-
 lazy val V = _root_.scalafix.sbt.BuildInfo
 inThisBuild(
   List(
     organization := "com.holdenkarau",
     homepage := Some(url("https://github.com/holdenk/spark-auto-upgrade")),
-    licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
+    licenses := List(
+      "Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")
+    ),
     sparkVersion := System.getProperty("sparkVersion", "2.4.8"),
     sparkUpgradeVersion := "0.1.1",
     versionScheme := Some("early-semver"),
     publishMavenStyle := true,
     publishTo := {
       val nexus = "https://oss.sonatype.org/"
-      Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+      Some("releases" at nexus + "service/local/staging/deploy/maven2")
     },
     useGpg := true,
     developers := List(
@@ -38,38 +39,43 @@ inThisBuild(
       "-Yrangepos",
       "-P:semanticdb:synthetics:on"
     ),
-    scmInfo := Some(ScmInfo(
-      url("https://github.com/holdenk/spark-testing-base.git"),
-      "scm:git@github.com:holdenk/spark-testing-base.git"
-    )),
+    scmInfo := Some(
+      ScmInfo(
+        url("https://github.com/holdenk/spark-testing-base.git"),
+        "scm:git@github.com:holdenk/spark-testing-base.git"
+      )
+    ),
     skip in publish := false
   )
 )
 
 skip in publish := true
 
-
 lazy val rules = project.settings(
   moduleName := s"spark-scalafix-rules-${sparkVersion.value}",
-  libraryDependencies += "ch.epfl.scala" %% "scalafix-core" % V.scalafixVersion,
+  libraryDependencies += "ch.epfl.scala" %% "scalafix-core" % V.scalafixVersion
 )
 
 lazy val input = project.settings(
   skip in publish := true,
   libraryDependencies ++= Seq(
     "org.scalacheck" %% "scalacheck" % "1.14.0",
-    "org.apache.spark" %% "spark-core"        % sparkVersion.value,
-    "org.apache.spark" %% "spark-sql"         % sparkVersion.value,
-    "org.apache.spark" %% "spark-hive"        % sparkVersion.value)
+    "org.apache.spark" %% "spark-core" % sparkVersion.value,
+    "org.apache.spark" %% "spark-sql" % sparkVersion.value,
+    "org.apache.spark" %% "spark-hive" % sparkVersion.value,
+    "com.typesafe.slick" %% "slick" % "3.4.1"
+  )
 )
 
 lazy val output = project.settings(
   skip in publish := true,
   libraryDependencies ++= Seq(
     "org.scalacheck" %% "scalacheck" % "1.14.0",
-    "org.apache.spark" %% "spark-core"        % sparkVersion.value,
-    "org.apache.spark" %% "spark-sql"         % sparkVersion.value,
-    "org.apache.spark" %% "spark-hive"        % sparkVersion.value)
+    "org.apache.spark" %% "spark-core" % sparkVersion.value,
+    "org.apache.spark" %% "spark-sql" % sparkVersion.value,
+    "org.apache.spark" %% "spark-hive" % sparkVersion.value,
+    "com.typesafe.slick" %% "slick" % "3.4.1"
+  )
 )
 
 lazy val tests = project
@@ -77,13 +83,16 @@ lazy val tests = project
     skip in publish := true,
     libraryDependencies += "ch.epfl.scala" % "scalafix-testkit" % V.scalafixVersion % Test cross CrossVersion.full,
     compile.in(Compile) :=
-      compile.in(Compile).dependsOn(compile.in(input, Compile), compile.in(output, Compile)).value,
+      compile
+        .in(Compile)
+        .dependsOn(compile.in(input, Compile), compile.in(output, Compile))
+        .value,
     scalafixTestkitOutputSourceDirectories :=
       sourceDirectories.in(output, Compile).value,
     scalafixTestkitInputSourceDirectories :=
       sourceDirectories.in(input, Compile).value,
     scalafixTestkitInputClasspath :=
-      fullClasspath.in(input, Compile).value,
+      fullClasspath.in(input, Compile).value
   )
   .dependsOn(rules)
   .enablePlugins(ScalafixTestkitPlugin)
