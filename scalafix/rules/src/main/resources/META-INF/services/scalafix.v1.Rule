@@ -10,3 +10,4 @@ fix.GroupByKeyWarn
 fix.GroupByKeyRewrite
 fix.MetadataWarnQQ
 fix.ScalaTestImportChange
+fix.ScalaTestExtendsFix

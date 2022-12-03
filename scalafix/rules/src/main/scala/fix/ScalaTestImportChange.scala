@@ -21,7 +21,7 @@ class ScalaTestImportChange
         case q"""import org.scalatest.FunSuiteLike""" =>
           Patch.replaceTree(t, q"""import org.scalatest.funsuite.AnyFunSuiteLike""".toString())
         case q"""class $cls extends FunSuiteLike { $expr }""" =>
-          Patch.replaceTree(t, f"class $cls extends AnyFunSuiteLike { $expr }")
+          Patch.replaceTree(t, q"class $cls extends AnyFunSuiteLike { $expr }".toString)
         case q"""import org.scalatest.AsyncFunSuite""" =>
           Patch.replaceTree(t, q"""import org.scalatest.funsuite.AsyncFunSuiteLike""".toString())
         case q"""import org.scalatest.fixture.FunSuite""" =>
