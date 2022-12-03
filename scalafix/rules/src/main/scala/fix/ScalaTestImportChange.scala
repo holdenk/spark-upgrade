@@ -26,10 +26,14 @@ class ScalaTestImportChange
           Patch.replaceTree(t, q"""import org.scalatest.funsuite.AsyncFunSuiteLike""".toString())
         case q"""import org.scalatest.fixture.FunSuite""" =>
           Patch.replaceTree(t, q"""import org.scalatest.funsuite.FixtureAnyFunSuite""".toString())
+        case q"""import org.scalatest.Matchers._""" =>
+          Patch.replaceTree(t, q"""import org.scalatest.matchers.should.Matchers._""".toString())
         case q"""import org.scalatest.Matchers""" =>
           Patch.replaceTree(t, q"""import org.scalatest.matchers.should.Matchers""".toString())
         case q"""import org.scalatest.MustMatchers""" =>
           Patch.replaceTree(t, """import org.scalatest.matchers.must.{Matchers => MustMatchers}""")
+        case q"""import org.scalatest.MustMatchers._""" =>
+          Patch.replaceTree(t, """import org.scalatest.matchers.must.Matchers._""")
         case elem @ _ =>
           elem.children match {
             case Nil => Patch.empty
