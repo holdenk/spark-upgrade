@@ -11,3 +11,4 @@ fix.GroupByKeyRewrite
 fix.MetadataWarnQQ
 fix.ScalaTestImportChange
 fix.ScalaTestExtendsFix
+fix.MigrateTrigger
