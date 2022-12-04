@@ -7,6 +7,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.{col, upper}
 
 object GroupByKeyRenameColumnQQ {
+  case class City(countryName: String, cityName: String)
   def inSource(spark: SparkSession): Unit = {
     import spark.implicits._
 
@@ -58,5 +59,56 @@ object GroupByKeyRenameColumnQQ {
 
     val s = "value"
     val value = 1
+  }
+  def inSource2(spark: SparkSession): Unit = {
+    import spark.implicits._
+
+    val source = Seq(
+      City("USA", "Seatle"),
+      City("Canada", "Toronto"),
+      City("Ukraine", "Kyev"),
+      City("Ukraine", "Ternopil"),
+      City("Canada", "Vancouver"),
+      City("Germany", "Köln")
+    )
+
+    val df = source.toDF().groupBy(col("countryName")).count
+    val ds = source.toDS().groupBy(col("countryName")).count
+    val res = source.toDF().as[City].groupBy(col("countryName")).count
+    val res1 = res
+      .select(col("countryName").alias("value"))
+      .as[String]
+      .groupByKey(l => l.substring(0, 3))
+      .count()
+    val res2 = res
+      .select(col("countryName").alias("newValue"))
+      .as[String]
+      .groupByKey(l => l.substring(0, 3))
+      .count()
+      .select('value)
+  }
+  def inSource3(spark: SparkSession): Unit = {
+    import spark.implicits._
+
+    val source = Seq(
+      City("USA", "Seatle"),
+      City("Canada", "Toronto"),
+      City("Ukraine", "Kyev"),
+      City("Ukraine", "Ternopil"),
+      City("Canada", "Vancouver"),
+      City("Germany", "Köln")
+    )
+    val res = source.toDF().as[City].groupBy(col("countryName")).count
+    val res1 = res
+      .select(col("countryName").alias("value"))
+      .as[String]
+      .groupByKey(l => l.substring(0, 3))
+      .count()
+
+    val ds = List("Person 1", "Person 2", "User 1", "User 2").toDS()
+
+    val res2 = res1.union(ds.groupByKey(l => l.substring(0, 3)).count)
+
+    val r = res2.select('value, col("count(1)"))
   }
 }
