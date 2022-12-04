@@ -36,6 +36,9 @@ class GroupByKeyRenameColumnQQ
 
     def matchOnTree(t: Tree): Patch = {
       // TODO: Add checking only for Dataset
+      // TODO: test inSource3.
+      //  1. Rule not work.
+      //  2. Need add checking all source code
       t match {
         case _ @Term.Apply(tr, params) =>
           if (isGroupByKeyAndCount(tr)) params.map(matchOnTerm).asPatch
