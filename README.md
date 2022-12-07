@@ -15,17 +15,17 @@ Right now it requires that you specify the table to be compared, but (not yet st
 
 ## Semi-Automatic Upgrades
 
-Upgrading your code to a new version of Spark is perhaps not how most folks wish to spend there work day (let alone their after work day). Some parts of the migrations can be automated, and when combined with the upgrade validation described above can (hopefully) lead to reasonably confident automatic upgrades.
+Upgrading your code to a new version of Spark is perhaps not how most folks wish to spend their work day (let alone their after work day). Some parts of the migrations can be automated, and when combined with the upgrade validation described above can (hopefully) lead to reasonably confident automatic upgrades.
 
 ### SQL (WIP)
 
 Spark SQL has some important changes between Spark 2.4 and 3.0 as well as some smaller changes in between later versions. (Spark SQL migration guide)[https://spark.apache.org/docs/3.3.0/sql-migration-guide.html] covers most of the expected required changes.
 
-The SQL migration tool is built using, (SQLFluff)[https://sqlfluff.com/]. SQLFluff has a (Spark SQL dialect)[https://docs.sqlfluff.com/en/stable/dialects.html]
+The SQL migration tool is built using (SQLFluff)[https://sqlfluff.com/], which has a (Spark SQL dialect)[https://docs.sqlfluff.com/en/stable/dialects.html].
 
 #### Limitations / Unique Challenges
 
-Out of the box SQLFluff lackes access to type information that is available when migrating Scala code, and the AST parser is not a 1:1 match with the underlying parser used by Spark SQL. A potential mitigation (if we end up needing type information) is integrating with Spark SQL to run an EXPLAIN on the input query and extract type information.
+Out of the box SQLFluff lacks access to type information that is available when migrating Scala code, and the AST parser is not a 1:1 match with the underlying parser used by Spark SQL. A potential mitigation (if we end up needing type information) is integrating with Spark SQL to run an EXPLAIN on the input query and extract type information.
 
 
 Some migration rules are too much work to fully automate so instead output warnings for users to manually verify.
