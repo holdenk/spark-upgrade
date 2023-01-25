@@ -14,8 +14,10 @@ parser.add_argument('--output-tables', type=str, nargs='+', required=True,
 parser.add_argument('--repo', type=str, help='lakefs repo')
 parser.add_argument('--src-branch', type=str, help='src branch to fork from',
                     default='main')
+parser.add_argument('--iceberglegay', action='store_true',
+                    help='Use iceberg to create snapshots for comparisons in seperate tables')
 parser.add_argument('--iceberg', action='store_true',
-                    help='Use iceberg to create snapshots for comparisons.')
+                    help='Use iceberg to create snapshots using WAP pattern.')
 parser.add_argument('--lakeFS', action='store_true',
                     help='Use lakeFS to create snapshots for comparisons.')
 parser.add_argument('--spark-command', type=str, nargs='+', default=["spark-submit"],
@@ -35,7 +37,7 @@ parser.add_argument('--row-diff-tolerance', type=float, default=0.0,
                     help='Tolerance for % of different rows')
 parser.add_argument('--control-pipeline', type=str, required=True,
                     help='Control pipeline. Will be passed through the shell.' +
-                    'Metavars are {branch_name}, {input_tables}, and {output_tables}')
+                    'Metavars are {branch_name}, {spark_extra_conf}, {input_tables}, and {output_tables}')
 parser.add_argument('--new-pipeline', type=str, required=True,
                     help='New pipeline. Will be passed through the shell.' +
                     'Metavars are {branch_name}, {input_tables}, and {output_tables}')
@@ -177,8 +179,8 @@ if args.lakeFS:
                 except Exception as e:
                     print(f"Skipping deleting branch {branch_name} due to {e}")
                     raise e
-elif args.iceberg:
-    print("Using iceberg.")
+elif args.iceberglegacy:
+    print("Using iceberg in legacy mode")
     # See discussion in https://github.com/apache/iceberg/issues/2481
     # currently no git like branching buuuut we can hack something "close enough"
     magic = f"magic_cmp_{mytestid}"
@@ -226,6 +228,54 @@ elif args.iceberg:
                 args.control_pipeline, ctrl_output_tables, input_tables=snapshotted_tables)
             new_pipeline_proc = await run_pipeline(
                 args.new_pipeline, new_output_tables, input_tables=snapshotted_tables)
+            cstdout, cstderr = await ctrl_pipeline_proc.communicate()
+            nstdout, nstderr = await new_pipeline_proc.communicate()
+            if ctrl_pipeline_proc.returncode != 0:
+                print("Error running contorl pipeline")
+                print(cstdout.decode())
+                print(cstderr.decode())
+            if new_pipeline_proc.returncode != 0:
+                print("Error running new pipeline")
+                print(nstdout.decode())
+                print(nstderr.decode())
+            if ctrl_pipeline_proc.returncode != 0 or new_pipeline_proc.returncode != 0:
+                raise Exception("Error running pipelines.")
+        asyncio.run(run_pipelines())
+        # Compare the outputs
+        cmd = spark_command.copy()
+        cmd.extend([
+            "table_compare.py",
+            "--control-tables"])
+        cmd.extend(ctrl_output_tables)
+        cmd.extend(["--target-tables"])
+        cmd.extend(new_output_tables)
+        if args.row_diff_tolerance is not None:
+            cmd.extend(["--row-diff-tolerance",
+                        f"{args.row_diff_tolerance}"])
+        if args.compare_precision is not None:
+            cmd.extend(["--compare-precision",
+                        f"{args.compare_precision}"])
+        subprocess.run(cmd, check=True)
+    finally:
+        print(f"Done comparing, cleaning up {tbl_id} tables.")
+        if not args.no_cleanup:
+            for tid in range(0, tbl_id):
+                table_name = gen_table_name(tid)
+                proc = run_spark_sql_query(f"DROP TABLE {table_name}")
+elif args.iceberg:
+    print("Using iceberg in WAP mode")
+    # See discussion in https://github.com/apache/iceberg/issues/2481
+    # https://github.com/apache/iceberg/issues/744
+    # https://github.com/apache/iceberg/pull/342
+
+    try:
+        table = []
+
+        async def run_pipelines():
+            ctrl_pipeline_proc = await run_pipeline(
+                args.control_pipeline)
+            new_pipeline_proc = await run_pipeline(
+                args.new_pipeline)
             cstdout, cstderr = await ctrl_pipeline_proc.communicate()
             nstdout, nstderr = await new_pipeline_proc.communicate()
             if ctrl_pipeline_proc.returncode != 0:
