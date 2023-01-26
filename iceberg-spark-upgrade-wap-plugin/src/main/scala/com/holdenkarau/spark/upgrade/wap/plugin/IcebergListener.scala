@@ -1,4 +1,4 @@
-package com.holdenkarau
+package com.holdenkarau.spark.upgrade.wap.plugin
 
 import com.typesafe.scalalogging.Logger
 

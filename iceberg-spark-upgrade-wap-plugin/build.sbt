@@ -8,7 +8,10 @@ ThisBuild / name := "Iceberg WAP plugin"
 
 Test / classLoaderLayeringStrategy := ClassLoaderLayeringStrategy.Flat
 Test / parallelExecution := false
-Test / fork := false
+Test / fork := true
+// TODO: Put in java option to load our agent
+// For now this should fail.
+Test / javaOptions += "-faaaarts"
 
 
 
