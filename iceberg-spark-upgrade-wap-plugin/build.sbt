@@ -5,6 +5,7 @@ ThisBuild / version          := "0.1.0-SNAPSHOT"
 ThisBuild / organization     := "com.holdenkarau"
 ThisBuild / organizationName := "holdenkarau"
 ThisBuild / name := "Iceberg WAP plugin"
+ThisBuild / javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
 
 Test / classLoaderLayeringStrategy := ClassLoaderLayeringStrategy.Flat
 Test / parallelExecution := false

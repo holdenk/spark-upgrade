@@ -4,7 +4,7 @@ import java.lang.instrument.Instrumentation;
 
 import org.apache.iceberg.events.{CreateSnapshotEvent, Listeners}
 
-class Agent {
+object Agent {
   def premain(agentOps: String, inst: Instrumentation): Unit = {
     registerListener()
   }
