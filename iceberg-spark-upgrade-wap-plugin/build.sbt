@@ -9,9 +9,7 @@ ThisBuild / name := "Iceberg WAP plugin"
 Test / classLoaderLayeringStrategy := ClassLoaderLayeringStrategy.Flat
 Test / parallelExecution := false
 Test / fork := true
-// TODO: Put in java option to load our agent
-// For now this should fail.
-Test / javaOptions += "-faaaarts"
+Test / javaOptions += "-javaagent:./target/scala-2.12/iceberg-spark-upgrade-wap-plugin_2.12-0.1.0-SNAPSHOT.jar"
 
 
 
@@ -26,4 +24,9 @@ lazy val root = (project in file("."))
     libraryDependencies += scalaLogging,
   )
 
-// See https://www.scala-sbt.org/1.x/docs/Using-Sonatype.html for instructions on how to publish to Sonatype.
+// Since sbt generates a MANIFEST.MF file rather than storing one in resources and dealing the conflict
+// just add our properties to the one sbt generates for us.
+Compile / packageBin / packageOptions ++= List(
+  Package.ManifestAttributes("Premain-Class" -> "com.holdenkarau.spark.upgrade.wap.plugin.Agent"),
+  Package.ManifestAttributes("Agent-Class" -> "com.holdenkarau.spark.upgrade.wap.plugin.Agent"),
+  Package.ManifestAttributes("Can-Redefine-Classes" -> "com.holdenkarau.spark.upgrade.wap.plugin.Agent"))
