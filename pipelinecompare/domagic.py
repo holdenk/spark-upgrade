@@ -8,16 +8,20 @@ import subprocess
 parser = argparse.ArgumentParser(
     description='Compare two different versions of a pipeline')
 parser.add_argument('--input-tables', type=str, nargs='*',
-                    help='Name of the input tables (required for iceberg, optional for lakefs)')
-parser.add_argument('--output-tables', type=str, nargs='+', required=True,
-                    help='Name of the output tables.')
+                    help='Name of the input tables (required for legacy iceberg, ' +
+                    'optional for lakefs and new iceberg)')
+parser.add_argument('--output-tables', type=str, nargs='+', required=False,
+                    help='Name of the output tables. Required for LakeFS and Legacy Iceberg.' +
+                    'For new Iceberg will be used to filter the "relevant" tables.')
 parser.add_argument('--repo', type=str, help='lakefs repo')
 parser.add_argument('--src-branch', type=str, help='src branch to fork from',
                     default='main')
 parser.add_argument('--iceberglegay', action='store_true',
                     help='Use iceberg to create snapshots for comparisons in seperate tables')
 parser.add_argument('--iceberg', action='store_true',
-                    help='Use iceberg to create snapshots using WAP pattern.')
+                    help='Use iceberg to create snapshots using WAP pattern. ' +
+                    'Must run in client mode. Uses iceberg-spark-upgrade-wap-plugin to' +
+                    'add a listener.')
 parser.add_argument('--lakeFS', action='store_true',
                     help='Use lakeFS to create snapshots for comparisons.')
 parser.add_argument('--spark-command', type=str, nargs='+', default=["spark-submit"],
@@ -37,10 +41,12 @@ parser.add_argument('--row-diff-tolerance', type=float, default=0.0,
                     help='Tolerance for % of different rows')
 parser.add_argument('--control-pipeline', type=str, required=True,
                     help='Control pipeline. Will be passed through the shell.' +
-                    'Metavars are {branch_name}, {spark_extra_conf}, {input_tables}, and {output_tables}')
+                    'Metavars are {branch_name}, {spark_extra_conf}, {input_tables}, ' +
+                    'and {output_tables}')
 parser.add_argument('--new-pipeline', type=str, required=True,
                     help='New pipeline. Will be passed through the shell.' +
-                    'Metavars are {branch_name}, {input_tables}, and {output_tables}')
+                    'Metavars are {branch_name}, {input_tables}, {output_tables}' +
+                    'and {spark_extra_conf}')
 parser.add_argument('--no-cleanup', action='store_true')
 args = parser.parse_args()
 
@@ -51,7 +57,8 @@ spark_sql_command = list(
 spark_command = list(map(lambda x: x.replace("\\-", "-"), args.spark_command))
 
 
-async def run_pipeline(command, output_tables, input_tables=None, branch_name=None):
+async def run_pipeline(command, output_tables=None, input_tables=None, branch_name=None,
+                       spark_extra_conf=None):
     """
     Async run the pipeline for given parameters. Returns a proc object for
     the caller to await communicate on.
@@ -61,7 +68,13 @@ async def run_pipeline(command, output_tables, input_tables=None, branch_name=No
     if output_tables is not None:
         command.replace("{output_tables}", " , ".join(output_tables))
     if branch_name is not None:
+        if "{branch_name}" is not in command:
+            print("Could not find metavar {branch_name} to configure in " + command)
         command.replace("{branch_name}", branch_name)
+    if spark_extra_conf is not None:
+        if "{spark_extra_conf}" is not in command:
+            print("Could not find metavar {spark_extra_conf} to configure in " + command)
+        command.replace("{spark_extra_conf}", spark_extra_conf)
     return await asyncio.create_subprocess_exec(
         'bash', '-c', command,
         stdout=asyncio.subprocess.PIPE,
@@ -271,11 +284,24 @@ elif args.iceberg:
     try:
         table = []
 
+        # TODO: Table extraction using the regex from WAPIcebergSpec
+        # We dynamically create the control and target tables
+        # If output_tables is specified in the params filter on it.
+        ctrl_output_tables = []
+        new_output_tables = []
+
+
         async def run_pipelines():
+            script_path = os.path.realpath(os.path.dirname(__file__))
+            plugin_target_path = (f"{script_path}/../iceberg-spark-upgrade-wap-plugin" +
+                                  "/target/scala-2.12/")
+            java_agent_path = (plugin_target_path +
+                               "iceberg-spark-upgrade-wap-plugin_2.12-0.1.0-SNAPSHOT.jar")
+            spark_extra_conf = f"--driver-java-options \"-javaagent:{java_agent_path}\""
             ctrl_pipeline_proc = await run_pipeline(
-                args.control_pipeline)
+                args.control_pipeline, args.output_tables, spark_extra_conf=)
             new_pipeline_proc = await run_pipeline(
-                args.new_pipeline)
+                args.new_pipeline, args.output_tables, spark_extra_conf=)
             cstdout, cstderr = await ctrl_pipeline_proc.communicate()
             nstdout, nstderr = await new_pipeline_proc.communicate()
             if ctrl_pipeline_proc.returncode != 0:
