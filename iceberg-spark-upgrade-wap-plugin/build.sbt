@@ -1,5 +1,11 @@
 import Dependencies._
 
+resolvers += Resolver.mavenLocal
+resolvers += Resolver.sonatypeRepo("public" )
+resolvers += Resolver.typesafeRepo("releases")
+resolvers += Resolver.sbtPluginRepo("releases")
+
+
 ThisBuild / scalaVersion     := "2.12.8"
 ThisBuild / version          := "0.1.0-SNAPSHOT"
 ThisBuild / organization     := "com.holdenkarau"
@@ -11,7 +17,7 @@ Test / classLoaderLayeringStrategy := ClassLoaderLayeringStrategy.Flat
 Test / parallelExecution := false
 Test / fork := true
 Test / javaOptions += "-javaagent:./target/scala-2.12/iceberg-spark-upgrade-wap-plugin_2.12-0.1.0-SNAPSHOT.jar"
-
+Test / compile := ((Test / compile) dependsOn( Compile / Keys.`package` )).value
 
 
 lazy val root = (project in file("."))
