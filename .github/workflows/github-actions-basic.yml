@@ -36,8 +36,10 @@ jobs:
     - name: Install python deps
       run: pip install -r python/requirements.txt
     # Run the scala tests.
-    - name: Run sbt tests
+    - name: Run sbt tests on scalafix
       run: cd scalafix; ./build/sbt ";clean;compile;test"
+    - name: Run sbt tests on our WAP plugin
+      run: cd iceberg-spark-upgrade-wap-plugin; ./build/sbt ";clean;compile;package;test"
     # Run Python style checks
     - name: Run Python style
       run: flake8 --max-line-length 100 --ignore=E129,W504 --exclude  sample_inputs .
