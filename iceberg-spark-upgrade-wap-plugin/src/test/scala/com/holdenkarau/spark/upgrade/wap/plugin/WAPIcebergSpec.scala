@@ -36,7 +36,7 @@ class WAPIcebergSpec extends AnyFunSuite with ScalaDataFrameSuiteBase with Match
   }
 
   test("WAPIcebergSpec should be called on iceberg commit") {
-    val re = """Created snapshot (\d+) on table (.+?) summary .*? from operation (.+)""".r
+    val re = """IcebergListener: Created snapshot (\d+) on table (.+?) summary .*? from operation (.+)""".r
     spark.sql("CREATE TABLE local.db.table (id bigint, data string) USING iceberg")
     // there _might be_ a timing race condition here since were using a listener
     // that is not blocking the write path.
