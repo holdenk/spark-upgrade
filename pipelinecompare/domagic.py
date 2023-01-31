@@ -68,11 +68,11 @@ async def run_pipeline(command, output_tables=None, input_tables=None, branch_na
     if output_tables is not None:
         command.replace("{output_tables}", " , ".join(output_tables))
     if branch_name is not None:
-        if "{branch_name}" is not in command:
+        if "{branch_name}" not in command:
             print("Could not find metavar {branch_name} to configure in " + command)
         command.replace("{branch_name}", branch_name)
     if spark_extra_conf is not None:
-        if "{spark_extra_conf}" is not in command:
+        if "{spark_extra_conf}" not in command:
             print("Could not find metavar {spark_extra_conf} to configure in " + command)
         command.replace("{spark_extra_conf}", spark_extra_conf)
     return await asyncio.create_subprocess_exec(
