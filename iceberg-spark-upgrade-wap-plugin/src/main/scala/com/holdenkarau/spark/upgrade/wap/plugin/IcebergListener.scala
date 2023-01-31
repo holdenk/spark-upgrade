@@ -11,12 +11,10 @@ object WAPIcebergListener extends Listener[CreateSnapshotEvent] {
   private[holdenkarau] var lastLog = ""
 
   override def notify(event: CreateSnapshotEvent): Unit = {
-    val msg = s"Created snapshot {createSnapshotEvent.snapshotId()} on table " +
-      s"{createSnapshotEvent.tableName()} summary {createSnapshotEvent.summary()} from operation " +
-    s"createSnapshotEvent.operation()"
+    val msg = s"Created snapshot ${event.snapshotId()} on table " +
+      s"${event.tableName()} summary ${event.summary()} from operation " +
+    s"${event.operation()}"
     lastLog = msg
-    logger.info(s"Created snapshot {createSnapshotEvent.snapshotId()} on table " +
-      s"{createSnapshotEvent.tableName()} summary {createSnapshotEvent.summary()} from operation " +
-      s"createSnapshotEvent.operation()")
+    logger.info(msg)
   }
 }
