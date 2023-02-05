@@ -299,9 +299,11 @@ elif args.iceberg:
                                "iceberg-spark-upgrade-wap-plugin_2.12-0.1.0-SNAPSHOT.jar")
             spark_extra_conf = f"--driver-java-options \"-javaagent:{java_agent_path}\""
             ctrl_pipeline_proc = await run_pipeline(
-                args.control_pipeline, args.output_tables, spark_extra_conf=)
+                args.control_pipeline, args.output_tables,
+                spark_extra_conf=spark_extra_conf)
             new_pipeline_proc = await run_pipeline(
-                args.new_pipeline, args.output_tables, spark_extra_conf=)
+                args.new_pipeline, args.output_tables,
+                spark_extra_conf=spark_extra_conf)
             cstdout, cstderr = await ctrl_pipeline_proc.communicate()
             nstdout, nstderr = await new_pipeline_proc.communicate()
             if ctrl_pipeline_proc.returncode != 0:
