@@ -27,11 +27,15 @@ class GroupByKeyRenameColumnQQ
     }
 
     val dsGBKmatcher = SymbolMatcher.normalized("org.apache.spark.sql.Dataset.groupByKey")
+    val dsMatcher = SymbolMatcher.normalized("org.apache.spark.sql.Dataset")
+    val dfMatcher = SymbolMatcher.normalized("org.apache.spark.sql.DataFrame")
 
     def isDSGroupByKey(t: Term): Boolean = {
       val isDataset = t.collect {
         case q"""Dataset""" => true
         case dsGBKmatcher(_) => true
+        case dfMatcher(_) => true
+        case dsMatcher(_) => true
       }
       val isGroupByKey = t.collect { case q"""groupByKey""" => true }
       (isGroupByKey.isEmpty.equals(false) && isGroupByKey.head.equals(

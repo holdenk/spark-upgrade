@@ -6,7 +6,7 @@ I've tried to update your build file for you, but there might be some mistakes. 
 
 ``
 scalafixDependencies in ThisBuild +=
-  "com.holdenkarau" %% "spark-scalafix-rules" % "0.1.1-2.4.8"
+  "com.holdenkarau" %% "spark-scalafix-rules-2.4.8" % "0.1.7"
 semanticdbEnabled in ThisBuild := true
 ``
 
