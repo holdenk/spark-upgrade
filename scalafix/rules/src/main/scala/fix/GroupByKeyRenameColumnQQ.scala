@@ -12,14 +12,6 @@ class GroupByKeyRenameColumnQQ
 
   override def fix(implicit doc: SemanticDocument): Patch = {
 
-    def isGroupByKeyAndCount(t: Term): Boolean = {
-      val isGroupByKey = t.collect { case q"""groupByKey""" => true }
-      val isCount = t.collect { case q"""count""" => true }
-      (isGroupByKey.isEmpty.equals(false) && isGroupByKey.head.equals(
-        true
-      )) && (isCount.isEmpty.equals(false) && isCount.head.equals(true))
-    }
-
     def matchOnTerm(t: Term): Patch = {
       t match {
         case q""""value"""" => Patch.replaceTree(t, q""""key"""".toString())
@@ -34,14 +26,26 @@ class GroupByKeyRenameColumnQQ
       }
     }
 
+    val dsGBKmatcher = SymbolMatcher.normalized("org.apache.spark.sql.Dataset.groupByKey")
+
+    def isDSGroupByKey(t: Term): Boolean = {
+      val isDataset = t.collect {
+        case q"""Dataset""" => true
+        case dsGBKmatcher(_) => true
+      }
+      val isGroupByKey = t.collect { case q"""groupByKey""" => true }
+      (isGroupByKey.isEmpty.equals(false) && isGroupByKey.head.equals(
+        true
+      )) && (isDataset.isEmpty.equals(false) && isDataset.head.equals(
+        true
+      ))
+
+    }
+
     def matchOnTree(t: Tree): Patch = {
-      // TODO: Add checking only for Dataset
-      // TODO: test inSource3.
-      //  1. Rule not work.
-      //  2. Need add checking all source code
       t match {
         case _ @Term.Apply(tr, params) =>
-          if (isGroupByKeyAndCount(tr)) params.map(matchOnTerm).asPatch
+          if (isDSGroupByKey(tr)) params.map(matchOnTerm).asPatch
           else Patch.empty
         case elem @ _ =>
           elem.children match {
@@ -52,6 +56,12 @@ class GroupByKeyRenameColumnQQ
       }
     }
 
-    matchOnTree(doc.tree)
+    // Bit of a hack, but limit our blast radius
+    if (doc.input.text.contains("groupByKey") && doc.input.text.contains("value") &&
+      doc.input.text.contains("org.apache.spark.sql")) {
+      matchOnTree(doc.tree)
+    } else {
+      Patch.empty
+    }
   }
 }

@@ -3,6 +3,7 @@ rule=GroupByKeyRenameColumnQQ
  */
 package fix
 
+import org.apache.spark._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.{col, upper}
 
@@ -12,6 +13,9 @@ object GroupByKeyRenameColumnQQ {
     import spark.implicits._
 
     val ds = List("Person 1", "Person 2", "User 1", "User2", "Test").toDS()
+    // Don't change the RDD one.
+    val sc = SparkContext.getOrCreate()
+    val rdd = sc.parallelize(List((1,2))).groupByKey().map(x => "value")
 
     val ds11 =
       ds.groupByKey(c => c.substring(0, 3)).count().select(col("value"))
