@@ -23,6 +23,6 @@ class WordCountTest extends AnyFunSuite with SharedSparkContext {
     assert(!wordCountsAsMap.contains("?"))
     assert(!wordCountsAsMap.contains("#!?ing"))
     assert(wordCountsAsMap.contains("ing"))
-    assert(wordCountsAsMap.get("panda").get.equals(3))
+    assert(wordCountsAsMap.get("panda").get === 3L)
   }
 }

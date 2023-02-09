@@ -1,6 +1,7 @@
 package com.holdenkarau.sparkDemoProject
 
 import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.sql._
 
 /**
   * Use this to test the app locally, from sbt:
@@ -27,10 +28,11 @@ object CountingApp extends App{
 }
 
 object Runner {
-  def run(conf: SparkConf, inputFile: String, outputFile: String): Unit = {
+  def run(conf: SparkConf, inputPath: String, outputTable: String): Unit = {
     val sc = new SparkContext(conf)
-    val rdd = sc.textFile(inputFile)
-    val counts = WordCount.withStopWordsFiltered(rdd)
-    counts.saveAsTextFile(outputFile)
+    val spark = SparkSession.builder().getOrCreate()
+    val df = spark.read.format("text").load(inputPath)
+    val counts = WordCount.dataFrameWC(df)
+    counts.write.saveAsTable(outputTable)
   }
 }
