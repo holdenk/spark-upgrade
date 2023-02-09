@@ -27,8 +27,6 @@ lazy val root = (project in file("."))
     libraryDependencies += icebergSparkRuntime % Test,
     libraryDependencies += sparkTestingBase % Test,
     libraryDependencies += iceberg % Provided,
-    libraryDependencies += logback % Provided,
-    libraryDependencies += scalaLogging,
   )
 
 // Since sbt generates a MANIFEST.MF file rather than storing one in resources and dealing the conflict

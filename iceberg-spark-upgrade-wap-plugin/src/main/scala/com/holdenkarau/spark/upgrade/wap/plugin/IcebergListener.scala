@@ -1,12 +1,8 @@
 package com.holdenkarau.spark.upgrade.wap.plugin
 
-import com.typesafe.scalalogging.Logger
-
 import org.apache.iceberg.events.{CreateSnapshotEvent, Listener}
 
 object WAPIcebergListener extends Listener[CreateSnapshotEvent] {
-  val logger = Logger(getClass.getName)
-
   // For testing
   private[holdenkarau] var lastLog = ""
 
@@ -15,6 +11,6 @@ object WAPIcebergListener extends Listener[CreateSnapshotEvent] {
       s"${event.tableName()} summary ${event.summary()} from operation " +
     s"${event.operation()}"
     lastLog = msg
-    logger.info(msg)
+    System.err.println(msg)
   }
 }
