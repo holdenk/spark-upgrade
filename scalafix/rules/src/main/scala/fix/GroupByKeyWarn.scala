@@ -3,7 +3,7 @@ package fix
 import scalafix.v1._
 import scala.meta._
 
-case class GroupByKeyWarning(tn: Term.Name) extends Diagnostic {
+case class GroupByKeyWarning(tn: scala.meta.Tree) extends Diagnostic {
   override def position: Position = tn.pos
 
   override def message: String =
@@ -14,17 +14,26 @@ case class GroupByKeyWarning(tn: Term.Name) extends Diagnostic {
       |For example, the schema of ds.groupByKey(...).count() is (value, count).
       |Since Spark 3.0, we name the grouping attribute to “key”.
       |The old behavior is preserved under a newly added configuration
-      |spark.sql.legacy.dataset.nameNonStructGroupingKeyAsValue with a default value of false.""".stripMargin
+      |spark.sql.legacy.dataset.nameNonStructGroupingKeyAsValue with a default value of false.
+      |This linter rule is fuzzy.""".stripMargin
 }
 
 class GroupByKeyWarn extends SemanticRule("GroupByKeyWarn") {
-  val grpByKey = "groupByKey"
-  val funcToDS = "toDS"
-  val agrFunCount = "count"
+  val matcher = SymbolMatcher.normalized("org.apache.spark.sql.Dataset.groupByKey")
+  override val description = "GroupByKey Warning."
 
   override def fix(implicit doc: SemanticDocument): Patch = {
-    doc.tree.collect {
-      case Term.Apply(
+    // Hacky.
+    val grpByKey = "groupByKey"
+    val funcToDS = "toDS"
+    val agrFunCount = "count"
+
+    if (doc.input.text.contains("groupByKey") && doc.input.text.contains("value") &&
+      doc.input.text.contains("org.apache.spark.sql")) {
+      doc.tree.collect {
+        case matcher(gbk) =>
+          Patch.lint(GroupByKeyWarning(gbk))
+        case t @ Term.Apply(
             Term.Select(
               Term.Apply(
                 Term.Select(
@@ -39,8 +48,10 @@ class GroupByKeyWarn extends SemanticRule("GroupByKeyWarn") {
           )
           if grpByKey.equals(name) && funcToDS.equals(fName) && agrFunCount
             .equals(oprName) =>
-        Patch.lint(GroupByKeyWarning(gbk))
+          Patch.lint(GroupByKeyWarning(t))
+      }.asPatch
+    } else {
+      Patch.empty
     }
-
-  }.asPatch
+  }
 }
