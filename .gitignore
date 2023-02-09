@@ -4,3 +4,10 @@
 */target/
 .metals/
 target/
+*.jar
+spark-*-bin-*hadoop*
+sparkdemoproject-3
+*/__pycache__/*
+project/metals.sbt
+*/*.egg-info/*
+.bsp/

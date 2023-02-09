@@ -25,32 +25,79 @@ parser.add_argument('--iceberg', action='store_true',
 parser.add_argument('--lakeFS', action='store_true',
                     help='Use lakeFS to create snapshots for comparisons.')
 parser.add_argument('--spark-command', type=str, nargs='+', default=["spark-submit"],
-                    help="Command to run the comparison pipeline.")
+                    help="Spark command to run the comparison pipeline.")
 parser.add_argument('--spark-sql-command', type=str, nargs='+', default=["spark-sql"],
                     help="Command to run spark sql")
 parser.add_argument('--format', type=str, help='Format of the output tables')
 parser.add_argument("--table-prefix", type=str, help="Prefix for temp tables.")
-# Not yet implemented
-# parser.add_argument('--raw', action='store_true',
-#                    help='Just use raw HDFS (compatible) storage. Involves copying data.')
-# parser.add_argument('--tmpdir', type=str,
-#                    help='Temporary directory to use for comparisons.')
 parser.add_argument('--compare-precision', type=int,
                     help='Precision for float comparisons.')
 parser.add_argument('--row-diff-tolerance', type=float, default=0.0,
                     help='Tolerance for % of different rows')
-parser.add_argument('--control-pipeline', type=str, required=True,
+# You can either fully specify the two different commands (these two args)
+parser.add_argument('--control-pipeline', type=str, required=False,
                     help='Control pipeline. Will be passed through the shell.' +
                     'Metavars are {branch_name}, {spark_extra_conf}, {input_tables}, ' +
                     'and {output_tables}')
-parser.add_argument('--new-pipeline', type=str, required=True,
+parser.add_argument('--new-pipeline', type=str, required=False,
+                    help='New pipeline. Will be passed through the shell.' +
+                    'Metavars are {branch_name}, {input_tables}, {output_tables}' +
+                    'and {spark_extra_conf}')
+
+# Or you can specify one pipeline and some parameters we'll generate new vs control.
+parser.add_argument('--spark-control-command', type=str, nargs='+', default=["spark-submit"],
+                    help="Spark command to run control pipeline")
+parser.add_argument('--spark-new-command', type=str, nargs='+', default=["spark-submit"],
+                    help="Spark command to run control pipeline")
+parser.add_argument('--new-jar-suffix', type=str, nargs='?', default="",
+                    help="Suffix to add to the new jar so we can tell different version apart.")
+parser.add_argument('--combined-pipeline', type=str, required=False,
                     help='New pipeline. Will be passed through the shell.' +
                     'Metavars are {branch_name}, {input_tables}, {output_tables}' +
                     'and {spark_extra_conf}')
 parser.add_argument('--no-cleanup', action='store_true')
 args = parser.parse_args()
 
+# Generate our pipelines
+parsed_control_pipeline = args.control_pipeline
+parsed_new_pipeline = args.new_pipeline
+
+if ((args.control_pipeline is not None or args.new_pipeline is not None)
+    and args.combined_pipeline is not None):
+
+    print("You specified both control new and combined. Please choose one of two ways of" +
+          "sepcifying yourpipeline.")
+elif args.combined_pipeline is not None:
+    combined_pipeline = args.combined_pipeline
+
+    if "{spark_extra_conf}" is not in combined_pipeline:
+        # Find a place to insert our conf
+        def insert_extra_conf(match):
+            return "{spark_extra_conf} " + match.group(0)
+        re.sub("(--jar|--deploy-mode|--conf|--packages|--files|--py-files|[\-_\w]+\.jar|)",
+               insert_extra_conf,
+               1)
+    parsed_control_pipeline = f"{args.spark_control_command} {args.combined_pipeline}"
+    updated_combinad_pipeline = args.combined_pipeline
+    if args.new_jar_suffix is not None:
+        def rewrite_jar(match):
+            # group 0 is everything
+            # group 1 is the seperator
+            sep = m.group(1)
+            # group 2 is the artifact "name"
+            name = m.group(2)
+            # group 3 is the artifact version (including the scala parts)
+            v = m.group(3)
+            return sep + name + args.new_jar_suffix + v + ".jar"
+        updated_combinad_pipeline = re.sub(
+            "([ ,])([\-_\w]+?)([\-_.0-9]+)\.jar",
+            rewrite_jar,
+            combined_pipeline)
+    parsed_new_pipeline = f"{args.spark_control_command} {updated_combined_pipeline}"
+
 print(args)
+
+# Setup our commands for side-by-side comparison.
 
 spark_sql_command = list(
     map(lambda x: x.replace("\\-", "-"), args.spark_sql_command))
@@ -119,9 +166,9 @@ if args.lakeFS:
 
         async def run_pipelines():
             ctrl_pipeline_proc = await run_pipeline(
-                args.control_pipeline, args.output_tables, branch_name=branch_names[1])
+                parsed_control_pipeline, args.output_tables, branch_name=branch_names[1])
             new_pipeline_proc = await run_pipeline(
-                args.new_pipeline, args.output_tables, branch_name=branch_names[2])
+                parsed_new_pipeline, args.output_tables, branch_name=branch_names[2])
             cstdout, cstderr = await ctrl_pipeline_proc.communicate()
             nstdout, nstderr = await new_pipeline_proc.communicate()
             if ctrl_pipeline_proc.returncode != 0:
@@ -238,9 +285,9 @@ elif args.iceberglegacy:
 
         async def run_pipelines():
             ctrl_pipeline_proc = await run_pipeline(
-                args.control_pipeline, ctrl_output_tables, input_tables=snapshotted_tables)
+                parsed_control_pipeline, ctrl_output_tables, input_tables=snapshotted_tables)
             new_pipeline_proc = await run_pipeline(
-                args.new_pipeline, new_output_tables, input_tables=snapshotted_tables)
+                parsed_new_pipeline, new_output_tables, input_tables=snapshotted_tables)
             cstdout, cstderr = await ctrl_pipeline_proc.communicate()
             nstdout, nstderr = await new_pipeline_proc.communicate()
             if ctrl_pipeline_proc.returncode != 0:
@@ -298,10 +345,10 @@ elif args.iceberg:
                                "iceberg-spark-upgrade-wap-plugin_2.12-0.1.0-SNAPSHOT.jar")
             spark_extra_conf = f"--driver-java-options \"-javaagent:{java_agent_path}\""
             ctrl_pipeline_proc = await run_pipeline(
-                args.control_pipeline, args.output_tables,
+                parsed_control_pipeline, args.output_tables,
                 spark_extra_conf=spark_extra_conf)
             new_pipeline_proc = await run_pipeline(
-                args.new_pipeline, args.output_tables,
+                parsed_new_pipeline, args.output_tables,
                 spark_extra_conf=spark_extra_conf)
             cstdout, cstderr = await ctrl_pipeline_proc.communicate()
             nstdout, nstderr = await new_pipeline_proc.communicate()

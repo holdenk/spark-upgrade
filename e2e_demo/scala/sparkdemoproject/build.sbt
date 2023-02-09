@@ -1,5 +1,7 @@
 // give the user a nice default project!
 
+val sparkVersion = settingKey[String]("Spark version")
+
 lazy val root = (project in file(".")).
 
   settings(
@@ -11,7 +13,6 @@ lazy val root = (project in file(".")).
     version := "0.0.1",
 
     sparkVersion := "2.4.8",
-    sparkComponents := Seq(),
 
     javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
     javaOptions ++= Seq("-Xms512M", "-Xmx2048M", "-XX:MaxPermSize=2048M", "-XX:+CMSClassUnloadingEnabled"),
