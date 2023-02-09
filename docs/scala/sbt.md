@@ -7,6 +7,7 @@ I've tried to update your build file for you, but there might be some mistakes. 
 ``
 scalafixDependencies in ThisBuild +=
   "com.holdenkarau" %% "spark-scalafix-rules" % "0.1.1-2.4.8"
+semanticdbEnabled in ThisBuild := true
 ``
 
 Then add:
@@ -24,3 +25,5 @@ And update your build file to add a "-3" to the artifact name so I can tell the 
 Thanks friend!
 
 (Note: we could also try and do this with some REs on your build file too, but... it's a demo)
+
+Add a .scalafix.conf file as patterned after the one in our scalafix directory.
