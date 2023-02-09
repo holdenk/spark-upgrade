@@ -2,6 +2,15 @@
 
 set -ex
 
+INITIAL_VERSION=${INITIAL_VERSION:-2.4.8}
+TARGET_VERSION=${TARGET_VERSION:-3.3.1}
+
+prompt () {
+  if [ -z "$NO_PROMPT" ]; then
+    read -p "Press enter to continue:" hifriends
+  fi
+}
+
 echo "Downloading Spark 2 and 3"
 if [ ! -f spark-2.4.8-bin-hadoop2.7.tgz ]; then
   wget https://archive.apache.org/dist/spark/spark-2.4.8/spark-2.4.8-bin-hadoop2.7.tgz &
@@ -53,13 +62,18 @@ cat >> project/plugins.sbt <<- EOM
 addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.10.4")
 EOM
 cp ../../../scalafix/.scalafix.conf ./
-read -p "Press enter to continue:" hifriends
+prompt
 echo "Great! Now we'll try and run the scala fix rules in your project! Yay!. This might fail if you have interesting build targets."
 sbt scalafix
 echo "Hells yes! Ok now take a close look at the output from above. THere may be linter rules for items we failed to migrate."
-echo "You will also need to update dependency versions now."
+prompt
+sbt clean compile test package
+cp -af build.sbt build.sbt.bak.pre3
+cat build.sbt.bak.pre3 | \
+  python -c 'import re,sys;print(re.sub(r"${INITIAL_VERSION}", "name :=\"${TARGET_VERSION}", sys.stdin.read()))' > build.sbt
+echo "You will also need to update dependency versions now (e.g. Spark to 3.3 and libs)"
 echo "Please address those and then press enter."
-read -p "Press enter to continue:" hifriends
+prompt
 sbt clean compile test package
 echo "Lovely! Now we \"simulate\" publishing these jars to an S3 bucket (using local fs)"
 cd ..
