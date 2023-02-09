@@ -290,7 +290,6 @@ elif args.iceberg:
         ctrl_output_tables = []
         new_output_tables = []
 
-
         async def run_pipelines():
             script_path = os.path.realpath(os.path.dirname(__file__))
             plugin_target_path = (f"{script_path}/../iceberg-spark-upgrade-wap-plugin" +
