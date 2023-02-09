@@ -13,7 +13,7 @@ inThisBuild(
     srcSparkVersion := System.getProperty("sparkVersion", "2.4.8"),
     targetSparkVersion := System.getProperty("targetSparkVersion", "3.3.0"),
     sparkVersion := srcSparkVersion.value,
-    sparkUpgradeVersion := "0.1.2",
+    sparkUpgradeVersion := "0.1.6", // latest version tagged.
     versionScheme := Some("early-semver"),
     publishMavenStyle := true,
     publishTo := {
