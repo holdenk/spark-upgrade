@@ -78,7 +78,7 @@ elif args.combined_pipeline is not None:
             return "{spark_extra_conf} " + match.group(0)
         combined_pipeline = re.sub(
             "(--jar|--deploy-mode|--conf|--packages|--files|--py-files|" +
-            "[\\-_\\w]+\\.jar|)",
+            "[\\-_\\w]+\\.jar|--class)",
             insert_extra_conf,
             combined_pipeline,
             1)
