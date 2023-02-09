@@ -64,8 +64,8 @@ args = parser.parse_args()
 parsed_control_pipeline = args.control_pipeline
 parsed_new_pipeline = args.new_pipeline
 
-if ((args.control_pipeline is not None or args.new_pipeline is not None)
-    and args.combined_pipeline is not None):
+if ((args.control_pipeline is not None or args.new_pipeline is not None) and
+    args.combined_pipeline is not None):
 
     print("You specified both control new and combined. Please choose one of two ways of" +
           "sepcifying yourpipeline.")
@@ -76,24 +76,26 @@ elif args.combined_pipeline is not None:
         # Find a place to insert our conf
         def insert_extra_conf(match):
             return "{spark_extra_conf} " + match.group(0)
-        combined_pipeline = re.sub("(--jar|--deploy-mode|--conf|--packages|--files|--py-files|[\-_\w]+\.jar|)",
-               insert_extra_conf,
-               combined_pipeline,
-               1)
+        combined_pipeline = re.sub(
+            "(--jar|--deploy-mode|--conf|--packages|--files|--py-files|" +
+            "[\\-_\\w]+\\.jar|)",
+            insert_extra_conf,
+            combined_pipeline,
+            1)
     parsed_control_pipeline = f"{args.spark_control_command} {combined_pipeline}"
     updated_combined_pipeline = combined_pipeline
     if args.new_jar_suffix is not None:
         def rewrite_jar(match):
             # group 0 is everything
             # group 1 is the seperator
-            sep = m.group(1)
+            sep = match.group(1)
             # group 2 is the artifact "name"
-            name = m.group(2)
+            name = match.group(2)
             # group 3 is the artifact version (including the scala parts)
-            v = m.group(3)
+            v = match.group(3)
             return sep + name + args.new_jar_suffix + v + ".jar"
         updated_combinad_pipeline = re.sub(
-            "([ ,])([\-_\w]+?)([\-_.0-9]+)\.jar",
+            "([ ,])([\\-_\\w]+?)([\\-_.0-9]+)\\.jar",
             rewrite_jar,
             combined_pipeline)
     parsed_new_pipeline = f"{args.spark_new_command} {updated_combined_pipeline}"
@@ -140,7 +142,6 @@ if args.lakeFS:
     from lakefs_client import models
     from lakefs_client.client import LakeFSClient
     import yaml
-    import os
     # TODO: Match real config instead of whatever I came up with.
     # Or update lakefs client to read lakectlyaml file?
     conf_file = open(os.path.expanduser("~/.lakectl.yaml"), "r")
