@@ -27,7 +27,7 @@ lazy val root = (project in file(".")).
 
       "org.scalatest" %% "scalatest" % "3.2.2" % "test",
       "org.scalacheck" %% "scalacheck" % "1.15.2" % "test",
-      "com.holdenkarau" %% "spark-testing-base" % "2.4.8_1.0.0" % "test" 
+      "com.holdenkarau" %% "spark-testing-base" % "2.4.8_1.3.0" % "test"
     ),
 
     // uses compile classpath for the run task, including "provided" jar (cf http://stackoverflow.com/a/21803413/3827)
