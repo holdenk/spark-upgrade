@@ -4,6 +4,8 @@ from utils import eprint
 import uuid
 import asyncio
 import subprocess
+import re
+import os
 
 parser = argparse.ArgumentParser(
     description='Compare two different versions of a pipeline')
@@ -16,7 +18,7 @@ parser.add_argument('--output-tables', type=str, nargs='+', required=False,
 parser.add_argument('--repo', type=str, help='lakefs repo')
 parser.add_argument('--src-branch', type=str, help='src branch to fork from',
                     default='main')
-parser.add_argument('--iceberglegay', action='store_true',
+parser.add_argument('--iceberg-legacy', action='store_true',
                     help='Use iceberg to create snapshots for comparisons in seperate tables')
 parser.add_argument('--iceberg', action='store_true',
                     help='Use iceberg to create snapshots using WAP pattern. ' +
@@ -45,9 +47,9 @@ parser.add_argument('--new-pipeline', type=str, required=False,
                     'and {spark_extra_conf}')
 
 # Or you can specify one pipeline and some parameters we'll generate new vs control.
-parser.add_argument('--spark-control-command', type=str, nargs='+', default=["spark-submit"],
+parser.add_argument('--spark-control-command', type=str, required=False, default="spark-submit",
                     help="Spark command to run control pipeline")
-parser.add_argument('--spark-new-command', type=str, nargs='+', default=["spark-submit"],
+parser.add_argument('--spark-new-command', type=str, required=False, default="spark-submit",
                     help="Spark command to run control pipeline")
 parser.add_argument('--new-jar-suffix', type=str, nargs='?', default="",
                     help="Suffix to add to the new jar so we can tell different version apart.")
@@ -70,15 +72,16 @@ if ((args.control_pipeline is not None or args.new_pipeline is not None)
 elif args.combined_pipeline is not None:
     combined_pipeline = args.combined_pipeline
 
-    if "{spark_extra_conf}" is not in combined_pipeline:
+    if "{spark_extra_conf}" not in combined_pipeline:
         # Find a place to insert our conf
         def insert_extra_conf(match):
             return "{spark_extra_conf} " + match.group(0)
-        re.sub("(--jar|--deploy-mode|--conf|--packages|--files|--py-files|[\-_\w]+\.jar|)",
+        combined_pipeline = re.sub("(--jar|--deploy-mode|--conf|--packages|--files|--py-files|[\-_\w]+\.jar|)",
                insert_extra_conf,
+               combined_pipeline,
                1)
-    parsed_control_pipeline = f"{args.spark_control_command} {args.combined_pipeline}"
-    updated_combinad_pipeline = args.combined_pipeline
+    parsed_control_pipeline = f"{args.spark_control_command} {combined_pipeline}"
+    updated_combined_pipeline = combined_pipeline
     if args.new_jar_suffix is not None:
         def rewrite_jar(match):
             # group 0 is everything
@@ -93,7 +96,7 @@ elif args.combined_pipeline is not None:
             "([ ,])([\-_\w]+?)([\-_.0-9]+)\.jar",
             rewrite_jar,
             combined_pipeline)
-    parsed_new_pipeline = f"{args.spark_control_command} {updated_combined_pipeline}"
+    parsed_new_pipeline = f"{args.spark_new_command} {updated_combined_pipeline}"
 
 print(args)
 
@@ -111,17 +114,18 @@ async def run_pipeline(command, output_tables=None, input_tables=None, branch_na
     the caller to await communicate on.
     """
     if input_tables is not None:
-        command.replace("{input_tables}", " , ".join(input_tables))
+        command = command.replace("{input_tables}", " , ".join(input_tables))
     if output_tables is not None:
-        command.replace("{output_tables}", " , ".join(output_tables))
+        command = command.replace("{output_tables}", " , ".join(output_tables))
     if branch_name is not None:
         if "{branch_name}" not in command:
             print("Could not find metavar {branch_name} to configure in " + command)
-        command.replace("{branch_name}", branch_name)
+        command = command.replace("{branch_name}", branch_name)
     if spark_extra_conf is not None:
         if "{spark_extra_conf}" not in command:
             print("Could not find metavar {spark_extra_conf} to configure in " + command)
-        command.replace("{spark_extra_conf}", spark_extra_conf)
+        command = command.replace("{spark_extra_conf}", spark_extra_conf)
+    print(f"Running {command}")
     return await asyncio.create_subprocess_exec(
         'bash', '-c', command,
         stdout=asyncio.subprocess.PIPE,
@@ -239,7 +243,7 @@ if args.lakeFS:
                 except Exception as e:
                     print(f"Skipping deleting branch {branch_name} due to {e}")
                     raise e
-elif args.iceberglegacy:
+elif args.iceberg_legacy:
     print("Using iceberg in legacy mode")
     # See discussion in https://github.com/apache/iceberg/issues/2481
     # currently no git like branching buuuut we can hack something "close enough"
@@ -379,12 +383,7 @@ elif args.iceberg:
                         f"{args.compare_precision}"])
         subprocess.run(cmd, check=True)
     finally:
-        print(f"Done comparing, cleaning up {tbl_id} tables.")
-        if not args.no_cleanup:
-            for tid in range(0, tbl_id):
-                table_name = gen_table_name(tid)
-                proc = run_spark_sql_query(f"DROP TABLE {table_name}")
-
+        print("Done!. You may want to cleanup snapshots.")
 
 else:
     eprint("You must chose one of iceberg or lakefs for input tables.")
