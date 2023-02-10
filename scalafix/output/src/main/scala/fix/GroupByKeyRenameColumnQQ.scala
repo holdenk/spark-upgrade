@@ -1,7 +1,7 @@
 package fix
 
 import org.apache.spark._
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql._
 import org.apache.spark.sql.functions.{col, upper}
 
 object GroupByKeyRenameColumnQQ {
@@ -14,8 +14,14 @@ object GroupByKeyRenameColumnQQ {
     val sc = SparkContext.getOrCreate()
     val rdd = sc.parallelize(List((1,2))).groupByKey().map(x => "value")
 
+    // Do change the inidrect ds ones
     val ds11 =
       ds.groupByKey(c => c.substring(0, 3)).count().select(col("key"))
+    var words: Dataset[_] = null
+    def keyMe(a: Any) = {
+      1
+    }
+    words.groupByKey(keyMe).count().select(col("key").as("word"), col("count(1)")).orderBy("count(1)")
 
     val ds10 = List("Person 1", "Person 2", "User 1", "User 3", "test")
       .toDS()
