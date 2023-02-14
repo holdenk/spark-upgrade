@@ -72,6 +72,14 @@ lazy val input = project.settings(
 lazy val output = project.settings(
   skip in publish := true,
   sparkVersion := targetSparkVersion.value,
+  scalaVersion := V.scala212,
+  crossScalaVersions := {
+    if (sparkVersion.value > "3.1.0") {
+      List(V.scala212, V.scala213)
+    } else {
+      List(V.scala211, V.scala212)
+    }
+  },
   libraryDependencies ++= Seq(
     "org.scalacheck" %% "scalacheck" % "1.14.0",
     "org.apache.spark" %% "spark-core"        % sparkVersion.value,
