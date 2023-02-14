@@ -17,9 +17,9 @@ object GroupByKeyRenameColumnQQ {
     // Do change the inidrect ds ones
     val ds11 =
       ds.groupByKey(c => c.substring(0, 3)).count().select(col("key"))
-    var words: Dataset[_] = null
-    def keyMe(a: Any) = {
-      1
+    var words: Dataset[Row] = null
+    def keyMe(a: Row): String = {
+      "1"
     }
     words.groupByKey(keyMe).count().select(col("key").as("word"), col("count(1)")).orderBy("count(1)")
 
