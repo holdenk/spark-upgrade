@@ -8,23 +8,27 @@ import org.apache.spark.sql._
   * sbt "run inputFile.txt outputFile.txt"
   *  (+ select CountingLocalApp when prompted)
   */
-object CountingLocalApp extends App{
-  val (inputFile, outputFile) = (args(0), args(1))
-  val conf = new SparkConf()
-    .setMaster("local")
-    .setAppName("my awesome app")
+object CountingLocalApp {
+  def main(args: Array[String]) = {
+    val (inputFile, outputFile) = (args(0), args(1))
+    val conf = new SparkConf()
+      .setMaster("local")
+      .setAppName("my awesome app")
 
-  Runner.run(conf, inputFile, outputFile)
+    Runner.run(conf, inputFile, outputFile)
+  }
 }
 
 /**
   * Use this when submitting the app to a cluster with spark-submit
   * */
-object CountingApp extends App{
-  val (inputFile, outputFile) = (args(0), args(1))
+object CountingApp {
+  def main(args: Array[String]) = {
+    val (inputFile, outputFile) = (args(0), args(1))
 
-  // spark-submit command should supply all necessary config elements
-  Runner.run(new SparkConf(), inputFile, outputFile)
+    // spark-submit command should supply all necessary config elements
+    Runner.run(new SparkConf(), inputFile, outputFile)
+  }
 }
 
 object Runner {
@@ -33,6 +37,6 @@ object Runner {
     val spark = SparkSession.builder().getOrCreate()
     val df = spark.read.format("text").load(inputPath)
     val counts = WordCount.dataFrameWC(df)
-    counts.write.saveAsTable(outputTable)
+    counts.write.mode('append').saveAsTable(outputTable)
   }
 }

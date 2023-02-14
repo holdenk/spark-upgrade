@@ -14,19 +14,25 @@ prompt () {
   fi
 }
 
+SPARK2_DETAILS="spark-2.4.8-bin-without-hadoop-scala-2.12"
+SPARK3_DETAILS="spark-3.3.1-bin-hadoop2"
+
 echo "Downloading Spark 2 and 3"
-if [ ! -f spark-2.4.8-bin-hadoop2.7.tgz ]; then
-  wget https://archive.apache.org/dist/spark/spark-2.4.8/spark-2.4.8-bin-hadoop2.7.tgz &
+if [ ! -f ${SPARK2_DETAILS}.tgz ]; then
+  wget  https://archive.apache.org/dist/spark/spark-2.4.8/${SPARK2_DETAILS}.tgz &
+  wget https://archive.apache.org/dist/hadoop/common/hadoop-2.8.0/hadoop-2.8.0.tar.gz &
 fi
-if [ ! -f spark-3.3.1-bin-hadoop2.tgz ]; then
-  wget https://archive.apache.org/dist/spark/spark-3.3.1/spark-3.3.1-bin-hadoop2.tgz &
+if [ ! -f ${SPARK3_DETAILS}.tgz ]; then
+  wget https://archive.apache.org/dist/spark/spark-3.3.1/${SPARK3_DETAILS}.tgz &
 fi
 wait
-if [ ! -d spark-3.3.1-bin-hadoop2 ]; then
-  tar -xvf spark-3.3.1-bin-hadoop2.tgz
+if [ ! -d ${SPARK3_DETAILS} ]; then
+  tar -xvf ${SPARK3_DETAILS}.tgz
 fi
-if [ ! -d spark-2.4.8-bin-hadoop2.7 ]; then
-  tar -xvf spark-2.4.8-bin-hadoop2.7.tgz
+if [ ! -d ${SPARK2_DETAILS} ]; then
+  tar -xvf ${SPARK2_DETAILS}.tgz
+  tar -xvf hadoop-2.8.0.tar.gz
+  find ./hadoop-2.8.0 -name "*.jar" -exec cp {} ./${SPARK2_DETAILS}/jars \;
 fi
 if [ ! -f iceberg-spark-runtime-3.3_2.12-1.1.0.jar ]; then
   wget https://search.maven.org/remotecontent?filepath=org/apache/iceberg/iceberg-spark-runtime-3.3_2.12/1.1.0/iceberg-spark-runtime-3.3_2.12-1.1.0.jar -O iceberg-spark-runtime-3.3_2.12-1.1.0.jar &
@@ -35,11 +41,11 @@ if [ ! -f iceberg-spark-runtime-2.4-1.1.0.jar ]; then
   wget https://search.maven.org/remotecontent?filepath=org/apache/iceberg/iceberg-spark-runtime-2.4/1.1.0/iceberg-spark-runtime-2.4-1.1.0.jar -O iceberg-spark-runtime-2.4-1.1.0.jar &
 fi
 wait
-cp iceberg-spark-runtime-3.3_2.12-1.1.0.jar spark-3.3.1-bin-hadoop2/jars/
-cp iceberg-spark-runtime-2.4-1.1.0.jar spark-2.4.8-bin-hadoop2.7/jars/
+cp iceberg-spark-runtime-3.3_2.12-1.1.0.jar ${SPARK3_DETAILS}/jars/
+cp iceberg-spark-runtime-2.4-1.1.0.jar ${SPARK2_DETAILS}/jars/
 
-spark_submit2="$(pwd)/spark-2.4.8-bin-hadoop2.7/bin/spark-submit"
-spark_submit3="$(pwd)/spark-3.3.1-bin-hadoop2/bin/spark-submit"
+spark_submit2="$(pwd)/${SPARK2_DETAILS}/bin/spark-submit"
+spark_submit3="$(pwd)/${SPARK3_DETAILS}/bin/spark-submit"
 
 echo "Making a copy of the demo project so we can have side-by-side migrated / non-migrated."
 rm -rf sparkdemoproject-3
@@ -100,4 +106,4 @@ python domagic.py --iceberg --spark-control-command ${spark_submit2} --spark-new
     --conf spark.sql.catalog.local.type=hadoop \
     --conf spark.sql.catalog.local.warehouse=$PWD/warehouse \
     --class com.holdenkarau.sparkDemoProject.CountingLocalApp \
-    /tmp/spark-migration-jars/sparkdemoproject_2.12-0.0.1.jar"
+    /tmp/spark-migration-jars/sparkdemoproject_2.12-0.0.1.jar /var/log/syslog farttable"

@@ -94,8 +94,8 @@ elif args.combined_pipeline is not None:
             # group 3 is the artifact version (including the scala parts)
             v = match.group(3)
             return sep + name + args.new_jar_suffix + v + ".jar"
-        updated_combinad_pipeline = re.sub(
-            "([ ,])([\\-_\\w]+?)([\\-_.0-9]+)\\.jar",
+        updated_combined_pipeline = re.sub(
+            "([ ,])([\\-_\\w\/]+?)([\\-_.0-9]+)\\.jar",
             rewrite_jar,
             combined_pipeline)
     parsed_new_pipeline = f"{args.spark_new_command} {updated_combined_pipeline}"
