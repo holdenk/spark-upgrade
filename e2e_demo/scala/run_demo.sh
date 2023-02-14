@@ -56,7 +56,7 @@ cat build.sbt.bak | \
   python -c 'import re,sys;print(re.sub(r"name :=\s*\"(.*?)\"", "name :=\"\\1-3\"", sys.stdin.read()))' > build.sbt
 cat >> build.sbt <<- EOM
 scalafixDependencies in ThisBuild +=
-  "com.holdenkarau" %% "spark-scalafix-rules-2.4.8" % "0.1.7"
+  "com.holdenkarau" %% "spark-scalafix-rules-2.4.8" % "0.1.9"
 semanticdbEnabled in ThisBuild := true
 EOM
 mkdir -p project
