@@ -64,18 +64,21 @@ class GroupByKeyRenameColumnQQ
 
     def matchOnTree(t: Tree): Patch = {
       t match {
-        case _ @Term.Apply(tr, params) if (isDSGroupByKey(tr)) =>
+        case _ @Term.Apply(tr, params) if (isDSGroupByKey(tr)) => {
           List(
             params.map(matchOnTerm).asPatch,
             params.map(matchOnTree).asPatch,
-            tr.children.map(matchOnTree).asPatch,
+            tr.children.map(matchOnTree).asPatch
           ).asPatch
-        case elem @ _ =>
+        }
+        case elem @ _ => {
           elem.children match {
             case Nil => Patch.empty
-            case _ =>
+            case _ => {
               elem.children.map(matchOnTree).asPatch
+            }
           }
+        }
       }
     }
 
