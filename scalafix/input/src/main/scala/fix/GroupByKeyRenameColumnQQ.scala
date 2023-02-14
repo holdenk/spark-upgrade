@@ -5,7 +5,7 @@ package fix
 
 import org.apache.spark._
 import org.apache.spark.sql._
-import org.apache.spark.sql.functions.{col, upper}
+import org.apache.spark.sql.functions._
 
 object GroupByKeyRenameColumnQQ {
   case class City(countryName: String, cityName: String)
@@ -20,10 +20,16 @@ object GroupByKeyRenameColumnQQ {
     // Do change the inidrect ds ones
     val ds11 =
       ds.groupByKey(c => c.substring(0, 3)).count().select(col("value"))
-    var words: Dataset[Row] = null
+    val df: DataFrame = null
+    var words1: Dataset[Row] = null
     def keyMe(a: Row): String = {
       "1"
     }
+    val stopArray = array(lit("hi"))
+    val splitPattern = ""
+    words1.groupByKey(keyMe).count().select(col("value").as("word"), col("count(1)")).orderBy("count(1)")
+    val words = df.select(explode(split(lower(col("value")), splitPattern)).as("words")).filter(
+      not(array_contains(stopArray, col("words"))))
     words.groupByKey(keyMe).count().select(col("value").as("word"), col("count(1)")).orderBy("count(1)")
 
     val ds10 = List("Person 1", "Person 2", "User 1", "User 3", "test")

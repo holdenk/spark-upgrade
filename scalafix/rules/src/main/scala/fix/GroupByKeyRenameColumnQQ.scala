@@ -13,7 +13,7 @@ class GroupByKeyRenameColumnQQ
   override def fix(implicit doc: SemanticDocument): Patch = {
 
     def matchOnTerm(t: Term): Patch = {
-      t match {
+      val p = t match {
         case q""""value"""" => Patch.replaceTree(t, q""""key"""".toString())
         case q"""'value"""  => Patch.replaceTree(t, q"""'key""".toString())
         case q"""col("value")""" =>
@@ -33,6 +33,7 @@ class GroupByKeyRenameColumnQQ
           }.asPatch
         case _ => Patch.empty
       }
+      p
     }
 
     val dsGBKmatcher = SymbolMatcher.normalized("org.apache.spark.sql.Dataset.groupByKey")
@@ -65,11 +66,12 @@ class GroupByKeyRenameColumnQQ
     def matchOnTree(t: Tree): Patch = {
       t match {
         case _ @Term.Apply(tr, params) if (isDSGroupByKey(tr)) => {
-          List(
+          val patch = List(
             params.map(matchOnTerm).asPatch,
             params.map(matchOnTree).asPatch,
             tr.children.map(matchOnTree).asPatch
           ).asPatch
+          patch
         }
         case elem @ _ => {
           elem.children match {

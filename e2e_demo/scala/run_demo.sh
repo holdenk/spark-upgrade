@@ -6,6 +6,7 @@ set -ex
 
 INITIAL_VERSION=${INITIAL_VERSION:-2.4.8}
 TARGET_VERSION=${TARGET_VERSION:-3.3.1}
+SCALAFIX_RULES_VERSION=${SCALAFIX_RULES_VERSION:-0.1.9}
 
 prompt () {
   if [ -z "$NO_PROMPT" ]; then
@@ -56,7 +57,7 @@ cat build.sbt.bak | \
   python -c 'import re,sys;print(re.sub(r"name :=\s*\"(.*?)\"", "name :=\"\\1-3\"", sys.stdin.read()))' > build.sbt
 cat >> build.sbt <<- EOM
 scalafixDependencies in ThisBuild +=
-  "com.holdenkarau" %% "spark-scalafix-rules-2.4.8" % "0.1.9"
+  "com.holdenkarau" %% "spark-scalafix-rules-2.4.8" % "${SCALAFIX_RULES_VERSION}"
 semanticdbEnabled in ThisBuild := true
 EOM
 mkdir -p project
@@ -66,10 +67,14 @@ EOM
 cp ../../../scalafix/.scalafix.conf ./
 prompt
 echo "Great! Now we'll try and run the scala fix rules in your project! Yay!. This might fail if you have interesting build targets."
+sbt scalafix
+echo "Huzzah running the warning check..."
+cp ../../../scalafix/.scalafix-warn.conf ./.scalafix.conf
 sbt scalafix ||     read -p "Linter warnings were found please check then press enter" hifriends
 echo "ScalaFix is done, you should probably review the changes (e.g. git diff)"
 prompt
-sbt clean compile test package
+# We don't run compile test because some changes are not back compat (see value/key change).
+# sbt clean compile test package
 cp -af build.sbt build.sbt.bak.pre3
 cat build.sbt.bak.pre3 | \
   python -c "import re,sys;print(sys.stdin.read().replace(\"${INITIAL_VERSION}\", \"${TARGET_VERSION}\"))" > build.sbt

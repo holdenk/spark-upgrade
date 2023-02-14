@@ -47,7 +47,7 @@ jobs:
       run: pip install -r python/requirements.txt
     # Run the scala tests.
     - name: Run sbt tests on scalafix
-      run: cd scalafix; sbt ";clean;compile;test"
+      run: cd scalafix; sbt ";clean;compile;test;+publish"
     - name: Run sbt tests on our WAP plugin
       run: cd iceberg-spark-upgrade-wap-plugin; sbt ";clean;test"
     # Run Python style checks
@@ -56,3 +56,6 @@ jobs:
     # Run the sql tests
     - name: Run Python style
       run: cd sql; pip install -e .; pytest .
+    # Run the e2e demo with the local version
+    - name: e2e demo
+      run: cd e2e_demo/scala; SCALAFIX_RULES_VERSION="0.0.1-SNAPSHOT" NO_PROMPT="yes" ./run_demo.sh
