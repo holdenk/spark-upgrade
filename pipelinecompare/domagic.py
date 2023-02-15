@@ -95,7 +95,7 @@ elif args.combined_pipeline is not None:
             v = match.group(3)
             return sep + name + args.new_jar_suffix + v + ".jar"
         updated_combined_pipeline = re.sub(
-            "([ ,])([\\-_\\w\/]+?)([\\-_.0-9]+)\\.jar",
+            "([ ,])([\\-_\\w/]+?)([\\-_.0-9]+)\\.jar",
             rewrite_jar,
             combined_pipeline)
     parsed_new_pipeline = f"{args.spark_new_command} {updated_combined_pipeline}"
@@ -286,6 +286,7 @@ elif args.iceberg_legacy:
     try:
         ctrl_output_tables = list(map(make_table_like, args.output_tables))
         new_output_tables = list(map(make_table_like, args.output_tables))
+
         # Run the pipelines concurrently
         async def run_pipelines():
             ctrl_pipeline_proc = await run_pipeline(
@@ -332,6 +333,11 @@ elif args.iceberg:
     # See discussion in https://github.com/apache/iceberg/issues/2481
     # https://github.com/apache/iceberg/issues/744
     # https://github.com/apache/iceberg/pull/342
+    import re
+    r = re.compile(
+        r"""^IcebergListener: Created snapshot (\d+) on table (.+?) summary .+""",
+        re.MULTILINE
+    )
 
     try:
         table = []
@@ -343,11 +349,6 @@ elif args.iceberg:
         new_output_tables = []
 
         async def run_pipelines():
-            import re
-            r = re.compile(
-                r"""^IcebergListener: Created snapshot (\d+) on table (.+?) summary .*? from operation (.+)""",
-                re.MULTILINE
-            )
             script_path = os.path.realpath(os.path.dirname(__file__))
             plugin_target_path = (f"{script_path}/../iceberg-spark-upgrade-wap-plugin" +
                                   "/target/scala-2.12/")
@@ -374,12 +375,15 @@ elif args.iceberg:
                 raise Exception("Error running pipelines.")
             new_match_itr = re.finditer(r, nstderr.decode())
             ctrl_match_itr = re.finditer(r, cstderr.decode())
+
             def match_to_table(m):
                 return m.group(2) + "@" + m.group(1)
+
             print(nstderr.decode())
             new_output_tables = list(map(match_to_table, new_match_itr))
             ctrl_output_tables = list(map(match_to_table, ctrl_match_itr))
-        asyncio.run(run_pipelines())
+            return (ctrl_output_tables, new_output_tables)
+        (ctrl_output_tables, new_output_tables) = asyncio.run(run_pipelines())
         print(f"Huzzah! ctrl: {ctrl_output_tables} new: {new_output_tables} :D")
         # Compare the outputs
         cmd = spark_command.copy()
