@@ -104,5 +104,14 @@ if args.control_root is not None:
 else:
     tables = zip(args.control_tables, args.target_tables)
     for (ctrl_name, target_name) in tables:
-        compare_tables(spark.read.table(ctrl_name),
-                       spark.read.table(target_name))
+        # Handle snapshots
+        if "@" in ctrl_name:
+            (ctrl_name, c_snapshot) = ctrl_name.split("@")
+            (target_name, t_snapshot) = target_name.split("@")
+            compare_tables(
+                spark.read.option("snapshot-id", c_snapshot).table(ctrl_name),
+                spark.read.option("snapshot-id", t_snapshot).table(target_name))
+        else:
+            compare_tables(
+                spark.read.table(ctrl_name),
+                spark.read.table(target_name))
