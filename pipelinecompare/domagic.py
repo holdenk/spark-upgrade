@@ -6,6 +6,7 @@ import asyncio
 import subprocess
 import re
 import os
+import time
 
 parser = argparse.ArgumentParser(
     description='Compare two different versions of a pipeline')
@@ -45,7 +46,9 @@ parser.add_argument('--new-pipeline', type=str, required=False,
                     help='New pipeline. Will be passed through the shell.' +
                     'Metavars are {branch_name}, {input_tables}, {output_tables}' +
                     'and {spark_extra_conf}')
-
+# Special warehouse config
+parser.add_argument('--warehouse-config', type=str, required=False,
+                    help='Config passed to spark submit table compare')
 # Or you can specify one pipeline and some parameters we'll generate new vs control.
 parser.add_argument('--spark-control-command', type=str, required=False, default="spark-submit",
                     help="Spark command to run control pipeline")
@@ -289,10 +292,14 @@ elif args.iceberg_legacy:
 
         # Run the pipelines concurrently
         async def run_pipelines():
-            ctrl_pipeline_proc = await run_pipeline(
-                parsed_control_pipeline, ctrl_output_tables, input_tables=snapshotted_tables)
             new_pipeline_proc = await run_pipeline(
                 parsed_new_pipeline, new_output_tables, input_tables=snapshotted_tables)
+            # Bit of a hack, but incase one of them is going to make a new table we space them out.
+            # Generally iceberg handles conflicts but at the create table time it's
+            # less predictable in old versions.
+            time.sleep(15)
+            ctrl_pipeline_proc = await run_pipeline(
+                parsed_control_pipeline, ctrl_output_tables, input_tables=snapshotted_tables)
             cstdout, cstderr = await ctrl_pipeline_proc.communicate()
             nstdout, nstderr = await new_pipeline_proc.communicate()
             if ctrl_pipeline_proc.returncode != 0:
@@ -387,6 +394,9 @@ elif args.iceberg:
         print(f"Huzzah! ctrl: {ctrl_output_tables} new: {new_output_tables} :D")
         # Compare the outputs
         cmd = spark_command.copy()
+        if args.warehouse_config is not None:
+            warehouse_config = re.split("\s+", args.warehouse_config)
+            cmd.extend(warehouse_config)
         cmd.extend([
             "table_compare.py",
             "--control-tables"])

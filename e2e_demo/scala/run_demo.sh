@@ -73,6 +73,7 @@ cp -f ${CORE_SPARK2}/jars/hive-*.jar ${SPARK2_DETAILS}/jars/
 
 spark_submit2="$(pwd)/${SPARK2_DETAILS}/bin/spark-submit"
 spark_submit3="$(pwd)/${SPARK3_DETAILS}/bin/spark-submit"
+spark_sql3="$(pwd)/${SPARK3_DETAILS}/bin/spark-sql"
 
 echo "Making a copy of the demo project so we can have side-by-side migrated / non-migrated."
 rm -rf sparkdemoproject-3
@@ -125,7 +126,15 @@ cd pipelinecompare
 echo "There is some trickery in our spark-submit2 v.s. spark-submit3 including the right iceberg version"
 echo "Provided you have iceberg in your environment pre-insalled this should be equivelent to prod but... yeah."
 python domagic.py --iceberg --spark-control-command ${spark_submit2} --spark-new-command ${spark_submit3} \
+       --spark-command ${spark_submit3} \
        --new-jar-suffix "-3" \
+       --warehouse-config " \
+    --conf spark.sql.catalog.spark_catalog=org.apache.iceberg.spark.SparkSessionCatalog \
+    --conf spark.sql.catalog.spark_catalog.type=hive \
+    --conf spark.sql.catalog.local=org.apache.iceberg.spark.SparkCatalog \
+    --conf spark.sql.catalog.local.type=hadoop \
+    --conf spark.sql.catalog.local.warehouse=$PWD/warehouse \
+    " \
        --combined-pipeline " \
     --conf spark.sql.catalog.spark_catalog=org.apache.iceberg.spark.SparkSessionCatalog \
     --conf spark.sql.catalog.spark_catalog.type=hive \
