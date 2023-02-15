@@ -395,7 +395,7 @@ elif args.iceberg:
         # Compare the outputs
         cmd = spark_command.copy()
         if args.warehouse_config is not None:
-            warehouse_config = re.split("\s+", args.warehouse_config)
+            warehouse_config = re.split("[\s+=]", args.warehouse_config)
             cmd.extend(warehouse_config)
         cmd.extend([
             "table_compare.py",
@@ -409,6 +409,7 @@ elif args.iceberg:
         if args.compare_precision is not None:
             cmd.extend(["--compare-precision",
                         f"{args.compare_precision}"])
+        cmd = list(filter(lambda x: x != "", cmd))
         subprocess.run(cmd, check=True)
     finally:
         print("Done!. You may want to cleanup snapshots.")
