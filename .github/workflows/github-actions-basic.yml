@@ -56,6 +56,12 @@ jobs:
     # Run the sql tests
     - name: Run Python style
       run: cd sql; pip install -e .; pytest .
+    - name: Cache tgzs
+      id: cache-tgz
+      uses: actions/cache@v3
+      with:
+        path: e2e_demo/scala/*.tgz
+        key: ${{ runner.os }}-tgz
     # Run the e2e demo with the local version
     - name: e2e demo
       run: cd e2e_demo/scala; SCALAFIX_RULES_VERSION="0.0.1-SNAPSHOT" NO_PROMPT="yes" ./run_demo.sh || echo "Not ready yet WIP"
