@@ -367,6 +367,7 @@ elif args.iceberg:
             java_agent_path = (plugin_target_path +
                                "iceberg-spark-upgrade-wap-plugin_2.12-0.1.0-SNAPSHOT.jar")
             spark_extra_conf = f"--driver-java-options \"-javaagent:{java_agent_path}\""
+            spark_extra_conf += "--conf write.wap.enabled=true"
             ctrl_pipeline_proc = await run_pipeline(
                 parsed_control_pipeline, args.output_tables,
                 spark_extra_conf=spark_extra_conf)

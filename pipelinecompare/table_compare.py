@@ -104,7 +104,7 @@ def compare_tables(control, target):
                 print(f"Grouped different {changed_rows} within {row_diff_tol}% ({exact_tol})")
         except Exception as e:
             raise Exception(
-                f"Data counts differ but {e} prevents grouping cmp")
+                f"Data counts differ! And we ran into: {e}")
 
 
 if args.control_root is not None:
