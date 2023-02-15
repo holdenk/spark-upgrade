@@ -14,13 +14,20 @@ prompt () {
   fi
 }
 
+# We DL Spark2 but also slipstreamed spark
 SPARK2_DETAILS="spark-2.4.8-bin-without-hadoop-scala-2.12"
+CORE_SPARK2="spark-2.4.8-bin-hadoop2.7"
 SPARK3_DETAILS="spark-3.3.1-bin-hadoop2"
 
 echo "Downloading Spark 2 and 3"
+if [ ! -f ${CORE_SPARK2}.tgz ]; then
+  wget  https://archive.apache.org/dist/spark/spark-2.4.8/${CORE_SPARK2}.tgz &
+fi
+if [ ! -f hadoop-2.7.0.tar.gz ]; then
+  wget https://archive.apache.org/dist/hadoop/common/hadoop-2.7.0/hadoop-2.7.0.tar.gz &
+fi
 if [ ! -f ${SPARK2_DETAILS}.tgz ]; then
   wget  https://archive.apache.org/dist/spark/spark-2.4.8/${SPARK2_DETAILS}.tgz &
-  wget https://archive.apache.org/dist/hadoop/common/hadoop-2.8.0/hadoop-2.8.0.tar.gz &
 fi
 if [ ! -f ${SPARK3_DETAILS}.tgz ]; then
   wget https://archive.apache.org/dist/spark/spark-3.3.1/${SPARK3_DETAILS}.tgz &
@@ -31,8 +38,12 @@ if [ ! -d ${SPARK3_DETAILS} ]; then
 fi
 if [ ! -d ${SPARK2_DETAILS} ]; then
   tar -xvf ${SPARK2_DETAILS}.tgz
-  tar -xvf hadoop-2.8.0.tar.gz
-  find ./hadoop-2.8.0 -name "*.jar" -exec cp {} ./${SPARK2_DETAILS}/jars \;
+fi
+if [ ! -d ${CORE_SPARK2} ]; then
+  tar -xvf ${CORE_SPARK2}.tgz
+fi
+if [ ! -d hadoop-2.7.0 ]; then
+  tar -xvf hadoop-2.7.0.tar.gz
 fi
 if [ ! -f iceberg-spark-runtime-3.3_2.12-1.1.0.jar ]; then
   wget https://search.maven.org/remotecontent?filepath=org/apache/iceberg/iceberg-spark-runtime-3.3_2.12/1.1.0/iceberg-spark-runtime-3.3_2.12-1.1.0.jar -O iceberg-spark-runtime-3.3_2.12-1.1.0.jar &
@@ -43,6 +54,22 @@ fi
 wait
 cp iceberg-spark-runtime-3.3_2.12-1.1.0.jar ${SPARK3_DETAILS}/jars/
 cp iceberg-spark-runtime-2.4-1.1.0.jar ${SPARK2_DETAILS}/jars/
+
+# Bring over the hadoop parts we need, this is a bit of a hack but using hadoop-2.7.0 contents
+# does not work well either.
+cp -f ${CORE_SPARK2}/jars/apache*.jar ${SPARK2_DETAILS}/jars/
+cp -f ${CORE_SPARK2}/jars/guice*.jar ${SPARK2_DETAILS}/jars/
+cp -f ${CORE_SPARK2}/jars/http*.jar ${SPARK2_DETAILS}/jars/
+cp -f ${CORE_SPARK2}/jars/proto*.jar ${SPARK2_DETAILS}/jars/
+cp -f ${CORE_SPARK2}/jars/parquet-hadoop*.jar ${SPARK2_DETAILS}/jars/
+cp -f ${CORE_SPARK2}/jars/snappy*.jar ${SPARK2_DETAILS}/jars/
+cp -f ${CORE_SPARK2}/jars/hadoop*.jar ${SPARK2_DETAILS}/jars/
+cp -f ${CORE_SPARK2}/jars/guava*.jar ${SPARK2_DETAILS}/jars/
+cp -f ${CORE_SPARK2}/jars/commons*.jar ${SPARK2_DETAILS}/jars/
+cp -f ${CORE_SPARK2}/jars/libthrift*.jar ${SPARK2_DETAILS}/jars/
+cp -f ${CORE_SPARK2}/jars/slf4j*.jar ${SPARK2_DETAILS}/jars/
+cp -f ${CORE_SPARK2}/jars/log4j* ${SPARK2_DETAILS}/jars/
+cp -f ${CORE_SPARK2}/jars/hive-*.jar ${SPARK2_DETAILS}/jars/
 
 spark_submit2="$(pwd)/${SPARK2_DETAILS}/bin/spark-submit"
 spark_submit3="$(pwd)/${SPARK3_DETAILS}/bin/spark-submit"
@@ -76,7 +103,7 @@ echo "Great! Now we'll try and run the scala fix rules in your project! Yay!. Th
 sbt scalafix
 echo "Huzzah running the warning check..."
 cp ../../../scalafix/.scalafix-warn.conf ./.scalafix.conf
-sbt scalafix ||     read -p "Linter warnings were found please check then press enter" hifriends
+sbt scalafix ||     (echo "Linter warnings were found"; prompt)
 echo "ScalaFix is done, you should probably review the changes (e.g. git diff)"
 prompt
 # We don't run compile test because some changes are not back compat (see value/key change).
@@ -99,11 +126,11 @@ echo "There is some trickery in our spark-submit2 v.s. spark-submit3 including t
 echo "Provided you have iceberg in your environment pre-insalled this should be equivelent to prod but... yeah."
 python domagic.py --iceberg --spark-control-command ${spark_submit2} --spark-new-command ${spark_submit3} \
        --new-jar-suffix "-3" \
-       --combined-pipeline "--conf spark.sql.extensions=org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions \
+       --combined-pipeline " \
     --conf spark.sql.catalog.spark_catalog=org.apache.iceberg.spark.SparkSessionCatalog \
     --conf spark.sql.catalog.spark_catalog.type=hive \
     --conf spark.sql.catalog.local=org.apache.iceberg.spark.SparkCatalog \
     --conf spark.sql.catalog.local.type=hadoop \
     --conf spark.sql.catalog.local.warehouse=$PWD/warehouse \
     --class com.holdenkarau.sparkDemoProject.CountingLocalApp \
-    /tmp/spark-migration-jars/sparkdemoproject_2.12-0.0.1.jar /var/log/syslog farttable"
+    /tmp/spark-migration-jars/sparkdemoproject_2.12-0.0.1.jar /var/log/syslog local.new_farttable"
