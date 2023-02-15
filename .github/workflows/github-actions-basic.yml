@@ -62,6 +62,12 @@ jobs:
       with:
         path: e2e_demo/scala/*.tgz
         key: ${{ runner.os }}-tgz
+    - name: Cache tar.gz
+      id: cache-targz
+      uses: actions/cache@v3
+      with:
+        path: e2e_demo/scala/*.tar.gz
+        key: ${{ runner.os }}-targz
     # Run the e2e demo with the local version
     - name: e2e demo
       run: cd e2e_demo/scala; SCALAFIX_RULES_VERSION="0.0.1-SNAPSHOT" NO_PROMPT="yes" ./run_demo.sh || echo "Not ready yet WIP"
