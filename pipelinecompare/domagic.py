@@ -1,12 +1,13 @@
 import argparse
 import sys
-from utils import eprint
+from utils import eprint, error
 import uuid
 import asyncio
 import subprocess
 import re
 import os
 import time
+
 
 parser = argparse.ArgumentParser(
     description='Compare two different versions of a pipeline')
@@ -70,7 +71,7 @@ parsed_new_pipeline = args.new_pipeline
 if ((args.control_pipeline is not None or args.new_pipeline is not None) and
     args.combined_pipeline is not None):
 
-    print("You specified both control new and combined. Please choose one of two ways of" +
+    error("You specified both control new and combined. Please choose one of two ways of" +
           "sepcifying yourpipeline.")
 elif args.combined_pipeline is not None:
     combined_pipeline = args.combined_pipeline
@@ -237,6 +238,8 @@ if args.lakeFS:
             cmd.extend(["--compare-precision",
                         f"{args.compare_precision}"])
         subprocess.run(cmd, check=True)
+    except subprocess.CalledProcessError:
+        error("DANGER DANGER: Error during table compare!")
     finally:
         # Cleanup the branches
         if not args.no_cleanup:
@@ -297,7 +300,7 @@ elif args.iceberg_legacy:
             # Bit of a hack, but incase one of them is going to make a new table we space them out.
             # Generally iceberg handles conflicts but at the create table time it's
             # less predictable in old versions.
-            time.sleep(15)
+            time.sleep(30)
             ctrl_pipeline_proc = await run_pipeline(
                 parsed_control_pipeline, ctrl_output_tables, input_tables=snapshotted_tables)
             cstdout, cstderr = await ctrl_pipeline_proc.communicate()
@@ -329,6 +332,8 @@ elif args.iceberg_legacy:
             cmd.extend(["--compare-precision",
                         f"{args.compare_precision}"])
         subprocess.run(cmd, check=True)
+    except subprocess.CalledProcessError:
+        error("DANGER DANGER: Error during table compare!")
     finally:
         print(f"Done comparing, cleaning up {tbl_id} tables.")
         if not args.no_cleanup:
@@ -410,10 +415,12 @@ elif args.iceberg:
             cmd.extend(["--compare-precision",
                         f"{args.compare_precision}"])
         cmd = list(filter(lambda x: x != "", cmd))
-        subprocess.run(cmd, check=True)
+        r = subprocess.run(cmd, check=True)
+        print(f"Running {cmd} was a success! All signs point towards prod.")
+    except subprocess.CalledProcessError:
+        error("DANGER DANGER: Error during table compare!")
     finally:
         print("Done!. You may want to cleanup snapshots.")
 
 else:
-    eprint("You must chose one of iceberg or lakefs for input tables.")
-    sys.exit(1)
+    error("You must chose one of iceberg or lakefs for input tables.")

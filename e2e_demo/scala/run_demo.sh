@@ -125,6 +125,7 @@ cd ../../
 cd pipelinecompare
 echo "There is some trickery in our spark-submit2 v.s. spark-submit3 including the right iceberg version"
 echo "Provided you have iceberg in your environment pre-insalled this should be equivelent to prod but... yeah."
+# Exepected to pass
 python domagic.py --iceberg --spark-control-command ${spark_submit2} --spark-new-command ${spark_submit3} \
        --spark-command ${spark_submit3} \
        --new-jar-suffix "-3" \
@@ -142,4 +143,23 @@ python domagic.py --iceberg --spark-control-command ${spark_submit2} --spark-new
     --conf spark.sql.catalog.local.type=hadoop \
     --conf spark.sql.catalog.local.warehouse=$PWD/warehouse \
     --class com.holdenkarau.sparkDemoProject.CountingLocalApp \
-    /tmp/spark-migration-jars/sparkdemoproject_2.12-0.0.1.jar /var/log/syslog local.new_farttable"
+    /tmp/spark-migration-jars/sparkdemoproject_2.12-0.0.1.jar utils.py local.new_farttable"
+# Expected to fail because syslog changes between runs.
+(python domagic.py --iceberg --spark-control-command ${spark_submit2} --spark-new-command ${spark_submit3} \
+       --spark-command ${spark_submit3} \
+       --new-jar-suffix "-3" \
+       --warehouse-config " \
+    --conf spark.sql.catalog.spark_catalog=org.apache.iceberg.spark.SparkSessionCatalog \
+    --conf spark.sql.catalog.spark_catalog.type=hive \
+    --conf spark.sql.catalog.local=org.apache.iceberg.spark.SparkCatalog \
+    --conf spark.sql.catalog.local.type=hadoop \
+    --conf spark.sql.catalog.local.warehouse=$PWD/warehouse \
+    " \
+       --combined-pipeline " \
+    --conf spark.sql.catalog.spark_catalog=org.apache.iceberg.spark.SparkSessionCatalog \
+    --conf spark.sql.catalog.spark_catalog.type=hive \
+    --conf spark.sql.catalog.local=org.apache.iceberg.spark.SparkCatalog \
+    --conf spark.sql.catalog.local.type=hadoop \
+    --conf spark.sql.catalog.local.warehouse=$PWD/warehouse \
+    --class com.holdenkarau.sparkDemoProject.CountingLocalApp \
+    /tmp/spark-migration-jars/sparkdemoproject_2.12-0.0.1.jar /var/log/syslog local.old_farttable" && exit 1) || echo "Failed as expected."

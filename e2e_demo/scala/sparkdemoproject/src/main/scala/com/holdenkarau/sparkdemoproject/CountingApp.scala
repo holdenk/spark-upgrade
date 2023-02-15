@@ -39,10 +39,10 @@ object Runner {
     val counts = WordCount.dataFrameWC(df)
     // Try and append, or create.
     try {
-      counts.write.format("iceberg").mode("append").save(outputTable)
+      counts.write.format("iceberg").mode("overwrite").save(outputTable)
     } catch {
       case e: org.apache.spark.sql.catalyst.analysis.NoSuchTableException =>
-        counts.write.format("iceberg").saveAsTable(outputTable)
+        counts.write.mode("overwrite").format("iceberg").saveAsTable(outputTable)
     }
   }
 }

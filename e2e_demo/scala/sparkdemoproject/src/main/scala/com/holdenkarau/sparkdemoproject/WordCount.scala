@@ -30,7 +30,7 @@ object WordCount {
     def keyMe(x: Row): String = {
       x.apply(0).asInstanceOf[String]
     }
-    words.groupByKey(keyMe).count().select(col("value").as("word"), col("count(1)").as("count")).orderBy("count(1)")
+    words.groupByKey(keyMe).count().select(col("value").as("word"), col("count(1)").as("count")).orderBy("count")
   }
 
   def withStopWordsFiltered(rdd : RDD[String],
