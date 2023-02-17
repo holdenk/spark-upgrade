@@ -11,6 +11,7 @@ def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
     print(Style.RESET_ALL, file=sys.stderr)
 
+
 def error(*args, **kwargs):
     eprint(*args, **kwargs)
     raise Exception(*args)

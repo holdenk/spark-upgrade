@@ -1,5 +1,4 @@
 import argparse
-import sys
 from utils import eprint, error
 import uuid
 import asyncio
@@ -401,7 +400,7 @@ elif args.iceberg:
         # Compare the outputs
         cmd = spark_command.copy()
         if args.warehouse_config is not None:
-            warehouse_config = re.split("\s+", args.warehouse_config)
+            warehouse_config = re.split("\\s+", args.warehouse_config)
             cmd.extend(warehouse_config)
         cmd.extend([
             "table_compare.py",
