@@ -47,7 +47,7 @@ jobs:
       run: pip install -r python/requirements.txt
     # Run the scala tests.
     - name: Run sbt tests on scalafix
-      run: cd scalafix; sbt ";clean;compile;test;+publishLocal"
+      run: cd scalafix; sbt ";clean;compile;test;publishLocal;+publishLocal"
     - name: Run sbt tests on our WAP plugin
       run: cd iceberg-spark-upgrade-wap-plugin; sbt ";clean;test"
     # Run Python style checks
