@@ -42,7 +42,7 @@ object Runner {
       counts.write.format("iceberg").mode("overwrite").save(outputTable)
     } catch {
       case e: org.apache.spark.sql.catalyst.analysis.NoSuchTableException =>
-        counts.write.mode("overwrite").format("iceberg").saveAsTable(outputTable)
+        counts.write.mode("overwrite").format("iceberg").save(outputTable)
     }
   }
 }

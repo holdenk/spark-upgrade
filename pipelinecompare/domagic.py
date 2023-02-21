@@ -369,16 +369,16 @@ elif args.iceberg:
             spark_extra_conf += " --conf spark.wap.id={WAP_ID}"
             spark_extra_conf_ctrl = spark_extra_conf.replace("{WAP_ID}", "42")
             spark_extra_conf_new = spark_extra_conf.replace("{WAP_ID}", "43")
-            ctrl_pipeline_proc = await run_pipeline(
-                parsed_control_pipeline, args.output_tables,
-                spark_extra_conf=spark_extra_conf_ctrl)
-            # Give us a few seconds in between for table creation.
-            time.sleep(10)
             new_pipeline_proc = await run_pipeline(
                 parsed_new_pipeline, args.output_tables,
                 spark_extra_conf=spark_extra_conf_new)
-            cstdout, cstderr = await ctrl_pipeline_proc.communicate()
+            # Give us a few seconds in between for table creation.
+            time.sleep(10)
+            ctrl_pipeline_proc = await run_pipeline(
+                parsed_control_pipeline, args.output_tables,
+                spark_extra_conf=spark_extra_conf_ctrl)
             nstdout, nstderr = await new_pipeline_proc.communicate()
+            cstdout, cstderr = await ctrl_pipeline_proc.communicate()
             if ctrl_pipeline_proc.returncode != 0:
                 print(f"Error running contorl pipeline {parsed_control_pipeline}")
                 print("stdout:")
