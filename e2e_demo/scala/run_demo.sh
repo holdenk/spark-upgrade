@@ -70,6 +70,9 @@ cp -f ${CORE_SPARK2}/jars/libthrift*.jar ${SPARK2_DETAILS}/jars/
 cp -f ${CORE_SPARK2}/jars/slf4j*.jar ${SPARK2_DETAILS}/jars/
 cp -f ${CORE_SPARK2}/jars/log4j* ${SPARK2_DETAILS}/jars/
 cp -f ${CORE_SPARK2}/jars/hive-*.jar ${SPARK2_DETAILS}/jars/
+# Bring over non-scala 2.11 jackson jars.
+cp -f ${CORE_SPARK2}/jars/*jackson*.jar ${SPARK2_DETAILS}/jars/
+rm ${SPARK2_DETAILS}/jars/*jackson*_2.11*.jar
 
 spark_submit2="$(pwd)/${SPARK2_DETAILS}/bin/spark-submit"
 spark_submit3="$(pwd)/${SPARK3_DETAILS}/bin/spark-submit"
