@@ -366,21 +366,25 @@ elif args.iceberg:
             java_agent_path = (plugin_target_path +
                                "iceberg-spark-upgrade-wap-plugin_2.12-0.1.0-SNAPSHOT.jar")
             spark_extra_conf = f"--driver-java-options \"-javaagent:{java_agent_path}\""
-            spark_extra_conf += " --conf write.wap.enabled=true"
+            spark_extra_conf += " --conf spark.wap.id={WAP_ID}"
+            spark_extra_conf_ctrl = spark_extra_conf.replace("{WAP_ID}", "42")
+            spark_extra_conf_new = spark_extra_conf.replace("{WAP_ID}", "43")
             ctrl_pipeline_proc = await run_pipeline(
                 parsed_control_pipeline, args.output_tables,
-                spark_extra_conf=spark_extra_conf)
+                spark_extra_conf=spark_extra_conf_ctrl)
             new_pipeline_proc = await run_pipeline(
                 parsed_new_pipeline, args.output_tables,
-                spark_extra_conf=spark_extra_conf)
+                spark_extra_conf=spark_extra_conf_new)
             cstdout, cstderr = await ctrl_pipeline_proc.communicate()
             nstdout, nstderr = await new_pipeline_proc.communicate()
             if ctrl_pipeline_proc.returncode != 0:
-                print("Error running contorl pipeline")
+                print(f"Error running contorl pipeline {parsed_control_pipeline}")
+                print("stdout:")
                 print(cstdout.decode())
+                print("stderr:")
                 print(cstderr.decode())
             if new_pipeline_proc.returncode != 0:
-                print("Error running new pipeline")
+                print(f"Error running new pipeline {parsed_new_pipeline}")
                 print(nstdout.decode())
                 print(nstderr.decode())
             if ctrl_pipeline_proc.returncode != 0 or new_pipeline_proc.returncode != 0:
