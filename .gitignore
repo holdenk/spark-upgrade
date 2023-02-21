@@ -11,3 +11,8 @@ sparkdemoproject-3
 project/metals.sbt
 */*.egg-info/*
 .bsp/
+
+# PyCharm/Intellij Ignores
+**/.idea/*
+**/venv/*
+*.iml
