@@ -372,6 +372,8 @@ elif args.iceberg:
             ctrl_pipeline_proc = await run_pipeline(
                 parsed_control_pipeline, args.output_tables,
                 spark_extra_conf=spark_extra_conf_ctrl)
+            # Give us a few seconds in between for table creation.
+            time.sleep(10)
             new_pipeline_proc = await run_pipeline(
                 parsed_new_pipeline, args.output_tables,
                 spark_extra_conf=spark_extra_conf_new)
