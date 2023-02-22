@@ -27,21 +27,9 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y sbt
     - name: Checkout
-      uses: actions/checkout@v2
-      # In order to fetch changed files
+      uses: actions/checkout@v3
       with:
         fetch-depth: 0
-        repository: holdenk/spark-upgrade
-        ref: main
-    - name: Sync the current branch with the latest in spark-testing-base
-      if: github.repository != 'holdenk/spark-upgrade'
-      id: sync-branch
-      run: |
-        apache_spark_ref=`git rev-parse HEAD`
-        git fetch https://github.com/$GITHUB_REPOSITORY.git ${GITHUB_REF##*/}
-        git -c user.name='Spark Test Account' -c user.email='sparktestacc@gmail.com' merge --no-commit --progress --squash FETCH_HEAD
-        git -c user.name='Spark Test Account' -c user.email='sparktestacc@gmail.com' commit -m "Merged commit"
-        echo "::set-output name=SPARK_REF::$apache_spark_ref"
     # Install python deps
     - name: Install python deps
       run: pip install -r python/requirements.txt
@@ -69,6 +57,18 @@ jobs:
       with:
         path: e2e_demo/scala/*.tar.gz
         key: ${{ runner.os }}-targz
+    - name: Cache extractions spark 3
+      id: cache-extract-spark3
+      uses: actions/cache@v3
+      with:
+        path: e2e_demo/scala/spark-3.3.1-bin-hadoop2
+        key: ${{ runner.os }}-extract-spark3
+    - name: Cache extractions hadoop
+      id: cache-extract-hadoop
+      uses: actions/cache@v3
+      with:
+        path: e2e_demo/scala/hadoop-2*
+        key: ${{ runner.os }}-extract-hadoop2
     # Run the e2e demo with the local version
     - name: e2e demo
       run: cd e2e_demo/scala; SCALAFIX_RULES_VERSION=$(cat ~/rules_version) NO_PROMPT="yes" ./run_demo.sh

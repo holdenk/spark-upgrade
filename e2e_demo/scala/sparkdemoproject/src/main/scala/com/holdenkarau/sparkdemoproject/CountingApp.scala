@@ -37,12 +37,16 @@ object Runner {
     val spark = SparkSession.builder().getOrCreate()
     val df = spark.read.format("text").load(inputPath)
     val counts = WordCount.dataFrameWC(df)
+    counts.cache()
+    counts.count()
     // Try and append, or create.
     try {
       counts.write.format("iceberg").mode("overwrite").save(outputTable)
     } catch {
-      case e: org.apache.spark.sql.catalyst.analysis.NoSuchTableException =>
-        counts.write.mode("overwrite").format("iceberg").save(outputTable)
+      case e =>
+        spark.sql(s"CREATE TABLE ${outputTable} (word string, count long) USING iceberg")
+        counts.write.format("iceberg").saveAsTable(outputTable)
+        spark.sql(s"ALTER TABLE ${outputTable} SET write.wap.enabled=true")
     }
   }
 }
