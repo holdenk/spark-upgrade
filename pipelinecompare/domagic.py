@@ -387,8 +387,12 @@ elif args.iceberg:
                 print(cstderr.decode())
             if new_pipeline_proc.returncode != 0:
                 print(f"Error running new pipeline {parsed_new_pipeline}")
+                print("stdout:")
                 print(nstdout.decode())
+                print("stderr:")
                 print(nstderr.decode())
+            else:
+                print("New pipeline succeeded!")
             if ctrl_pipeline_proc.returncode != 0 or new_pipeline_proc.returncode != 0:
                 raise Exception("Error running pipelines.")
             new_match_itr = re.finditer(r, nstderr.decode())
