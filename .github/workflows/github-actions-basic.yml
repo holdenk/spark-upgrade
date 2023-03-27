@@ -48,17 +48,14 @@ jobs:
     - name: PySparkler - Make Install
       run: |
         cd pysparkler
-        poetry shell
         make install
     - name: PySparkler - Make Lint
       run: |
         cd pysparkler
-        poetry shell
         make lint
     - name: PySparkler - Make Test
       run: |
         cd pysparkler
-        poetry shell
         make test
     - name: Cache tgzs
       id: cache-tgz
