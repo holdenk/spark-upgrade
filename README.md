@@ -34,19 +34,8 @@ We do not have an equivelent to "Scala Steward" for SQL files and SQL can target
 
 ### PySpark (Python Spark) Upgrade (WIP)
 
-The Python Upgrade tool is currently built using (bowler)[https://pybowler.io/], which is legacy-ish. This component has the least amount of development. See the next section for more information.
-
-
-#### Limitations / Unique Challenges
-
-(Bowler)[https://pybowler.io/] can not parse Python 3.9+ only features. We should probably upgrade to (LibCST)[https://github.com/Instagram/LibCST] once it stabalizes.
-
-
-LibCST (currently) has build issues that make upgrading to it questionable (e.g. the binder example fails to build libCST as of Oct 24th 2022).
-
-
-Python migration tools do not have has much type information as Scala and are more likely to have conflicting APIs than in SQL (see pandas API overlap with Spark DataFrames). Logic to attempt to limit changes to only relevant Spark code may be problematic, so interactive fixes are more likely to be required.
-
+The PySpark Upgrade tool - PySparkler - is currently built using [LibCST](https://github.com/Instagram/LibCST).
+More on the tool's design and challenges can be found in the subdirectory README of the tool [here](./pysparkler/README.md).
 
 ### Scala Upgrade (WIP)
 
