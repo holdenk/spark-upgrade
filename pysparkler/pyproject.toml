@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "pysparkler"
+version = "0.1.0"
+description = "A tool that upgrades your PySpark scripts to Spark 3.3 as per Spark migration Guideline"
+authors = ["Dhruv Pratap <dhruv.pratap@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+libcst = "^0.4.9"
+
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.2.2"
+
+
+[tool.poetry.group.lint.dependencies]
+pre-commit = "^3.2.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[[tool.mypy.overrides]]
+module = "libcst.*"
+ignore_missing_imports = true

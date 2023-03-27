@@ -1,0 +1,57 @@
+files: ^pysparkler/
+exclude: ^pysparkler/tests/sample_inputs
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-docstring-first
+      - id: debug-statements
+      - id: check-yaml
+      - id: check-ast
+  - repo: https://github.com/ambv/black
+    rev: 23.1.0
+    hooks:
+      - id: black
+  - repo: https://github.com/pre-commit/mirrors-isort
+    rev: v5.10.1
+    hooks:
+      - id: isort
+        args: [ --settings-path=pysparkler/pyproject.toml ]
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v0.991
+    hooks:
+      - id: mypy
+        args: [ --install-types, --non-interactive, --config=pysparkler/pyproject.toml]
+  - repo: https://github.com/hadialqattan/pycln
+    rev: v2.1.3
+    hooks:
+      - id: pycln
+        args: [--config=pysparkler/pyproject.toml]
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.3.1
+    hooks:
+      - id: pyupgrade
+        args: [ --py38-plus, --keep-runtime-typing ]
+  - repo: https://github.com/pycqa/pylint
+    rev: v2.16.0
+    hooks:
+      - id: pylint
+        args: [ --rcfile=pysparkler/pylintrc ]
+  - repo: https://github.com/pycqa/flake8
+    rev: '6.0.0'
+    hooks:
+      - id: flake8
+        args: [ "--ignore=E501,W503,E203,B024" ]
+        additional_dependencies: [ flake8-bugbear==22.12.6, flake8-comprehensions==3.10.1 ]
+  - repo: https://github.com/executablebooks/mdformat
+    rev: 0.7.16
+    hooks:
+      - id: mdformat
+        additional_dependencies:
+          - mdformat-black
+          - mdformat-config
+          - mdformat-beautysh
+          - mdformat-admon

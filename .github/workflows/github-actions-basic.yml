@@ -32,7 +32,7 @@ jobs:
         fetch-depth: 0
     # Install python deps
     - name: Install python deps
-      run: pip install -r python/requirements.txt
+      run: pip install -r sql/requirements.txt
     # Run the scala tests.
     # We are exctracting the dynamic version from something like [info] 0.1.9+18-ddfaf3e6-SNAPSHOT (non-snapshots will not have +...)
     - name: Run sbt tests on scalafix & extract the dynver
@@ -45,6 +45,18 @@ jobs:
     # Run the sql tests
     - name: Run Python style
       run: cd sql; pip install -e .; pytest .
+    - name: PySparkler - Make Install
+      run: |
+        cd pysparkler
+        make install
+    - name: PySparkler - Make Lint
+      run: |
+        cd pysparkler
+        make lint
+    - name: PySparkler - Make Test
+      run: |
+        cd pysparkler
+        make test
     - name: Cache tgzs
       id: cache-tgz
       uses: actions/cache@v3
