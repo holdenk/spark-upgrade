@@ -7,3 +7,6 @@ lint:
 
 test:
 	poetry run pytest tests/ ${PYTEST_ARGS}
+
+build:
+	poetry build

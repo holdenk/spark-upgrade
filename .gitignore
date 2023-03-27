@@ -16,3 +16,4 @@ project/metals.sbt
 **/.idea/*
 **/venv/*
 *.iml
+**/dist/*
