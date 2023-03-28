@@ -33,4 +33,5 @@ jobs:
       - name: Publish PySparkler Package on PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          password: ${{ secrets.PYSPARKLER_PYPI_API_TOKEN }} # Need Holden to add this as a repo secret
+          packages-dir: pysparkler/dist/
+          password: ${{ secrets.PYSPARKLER_PYPI_API_TOKEN }}
