@@ -8,5 +8,7 @@ lint:
 test:
 	poetry run pytest tests/ ${PYTEST_ARGS}
 
-build:
-	poetry build
+publish:
+	pip install poetry
+	./bump_version.sh
+	poetry publish --build
