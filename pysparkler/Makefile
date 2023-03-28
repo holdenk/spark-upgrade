@@ -9,5 +9,6 @@ test:
 	poetry run pytest tests/ ${PYTEST_ARGS}
 
 publish:
+	pip install poetry
 	./bump_version.sh
 	poetry publish --build
