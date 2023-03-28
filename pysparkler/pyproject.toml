@@ -4,6 +4,13 @@ version = "0.1.0"
 description = "A tool that upgrades your PySpark scripts to Spark 3.3 as per Spark migration Guideline"
 authors = ["Dhruv Pratap <dhruv.pratap@gmail.com>"]
 readme = "README.md"
+license = "Apache-2.0"
+homepage = "https://github.com/holdenk/spark-upgrade"
+repository = "https://github.com/holdenk/spark-upgrade"
+maintainers = [
+    "Holden Karau <holden@pigscanfly.ca>",
+]
+
 
 [tool.poetry.dependencies]
 python = "^3.10"
