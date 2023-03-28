@@ -22,16 +22,13 @@ jobs:
   pypi-publish-pysparkler:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout PySparkler
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - run: |
-          cd pysparkler
-          make install
-          make build
       - name: Publish PySparkler Package on PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          packages-dir: pysparkler/dist/
-          password: ${{ secrets.PYSPARKLER_PYPI_API_TOKEN }}
+        run: |
+          cd pysparkler
+          make publish
+        env:
+          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYSPARKLER_PYPI_API_TOKEN }}
