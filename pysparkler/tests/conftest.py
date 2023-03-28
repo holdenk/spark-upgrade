@@ -18,15 +18,8 @@
 import libcst as cst
 
 
-class BaseTransformer(cst.CSTTransformer):
-    """Base class for all transformers.
-
-    Attributes:
-        transformer_id: A unique identifier for the transformer rule. Follows the format PY<From-Major-Version>-<To-Major-Version>-<Rule-Number>
-            Important for idempotency checks and debugging.
-
-    """
-
-    def __init__(self, transformer_id: str):
-        super().__init__()
-        self.transformer_id = transformer_id
+def rewrite(given_code: str, cst_transformer: cst.CSTTransformer):
+    given_tree = cst.parse_module(given_code)
+    modified_tree = given_tree.visit(cst_transformer)
+    modified_code = modified_tree.code
+    return modified_code
