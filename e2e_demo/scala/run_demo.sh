@@ -34,6 +34,7 @@ if [ ! -f ${SPARK3_DETAILS}.tgz ]; then
   wget https://archive.apache.org/dist/spark/spark-3.3.1/${SPARK3_DETAILS}.tgz &
 fi
 wait
+echo "Unzipping downloaded files"
 if [ ! -d ${SPARK3_DETAILS} ]; then
   tar -xf ${SPARK3_DETAILS}.tgz
 fi
@@ -46,6 +47,7 @@ fi
 if [ ! -d hadoop-2.7.0 ]; then
   tar -xf hadoop-2.7.0.tar.gz
 fi
+echo "Fetching iceberg dependencies"
 if [ ! -f iceberg-spark-runtime-3.3_2.12-1.1.0.jar ]; then
   wget https://search.maven.org/remotecontent?filepath=org/apache/iceberg/iceberg-spark-runtime-3.3_2.12/1.1.0/iceberg-spark-runtime-3.3_2.12-1.1.0.jar -O iceberg-spark-runtime-3.3_2.12-1.1.0.jar &
 fi
@@ -90,6 +92,7 @@ cd sparkdemoproject-3
 echo "Now we run the migration setup."
 cat ../../../docs/scala/sbt.md
 # Sketchy auto rewrite build.sbt
+# Adding the scalafix dependency to the Spark 3 copy of the project
 cp -af build.sbt build.sbt.bak
 cat build.sbt.bak | \
   python -c 'import re,sys;print(re.sub(r"name :=\s*\"(.*?)\"", "name :=\"\\1-3\"", sys.stdin.read()))' > build.sbt
