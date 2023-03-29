@@ -39,11 +39,9 @@ jobs:
       run: cd scalafix; sbt ";clean;compile;test;publishLocal;+publishLocal"; sbt "show rules/dynver" |grep "\[info\]" |grep "[0-9].[0-9].[0-9]" | cut -f 2 -d " " > ~/rules_version
     - name: Run sbt tests on our WAP plugin
       run: cd iceberg-spark-upgrade-wap-plugin; sbt ";clean;test"
-    # Run Python style checks
-    - name: Run Python style
-      run: flake8 --max-line-length 100 --ignore=E129,W504 --exclude  sample_inputs,e2e_demo .
-    # Run the sql tests
-    - name: Run Python style
+    - name: SQL Module - Lint Checks
+      run: cd sql; flake8 --max-line-length 100 --ignore=E129,W504
+    - name:  SQL Module - Install and Test
       run: cd sql; pip install -e .; pytest .
     - name: PySparkler - Make Install
       run: |

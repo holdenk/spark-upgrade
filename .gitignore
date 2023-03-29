@@ -18,3 +18,4 @@ project/metals.sbt
 *.iml
 **/dist/*
 **/__pycache__/*
+.DS_Store
