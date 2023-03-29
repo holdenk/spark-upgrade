@@ -17,8 +17,13 @@
 #
 
 import libcst as cst
+import libcst.matchers as m
 
-from pysparkler import BaseTransformer
+from pysparkler import (
+    BaseMatcherDecoratableTransformer,
+    BaseTransformer,
+    add_comment_to_end_of_a_simple_statement_line,
+)
 
 # Migration rules for PySpark 2.4 to 3.0
 # https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_2.4_to_3.0.html
@@ -57,44 +62,13 @@ class RequiredDependencyVersionCommentWriter(BaseTransformer):
                     break
 
         if match_found:
-            return self._add_comment(updated_node)
+            return add_comment_to_end_of_a_simple_statement_line(
+                updated_node,
+                self.transformer_id,
+                f"# {self.transformer_id}: PySpark {self.pyspark_version} requires {self.required_dependency_name} version {self.required_dependency_version} or higher",
+            )
         else:
             return updated_node
-
-    def _add_comment(self, node: cst.SimpleStatementLine) -> cst.SimpleStatementLine:
-        """Add a trailing whitespace and comment to the node"""
-
-        if node.trailing_whitespace.comment:
-            # If there is already a comment
-            if self.transformer_id in node.trailing_whitespace.comment.value:
-                # If the comment is already added by this transformer, do nothing
-                return node
-            else:
-                # Add the comment to the end of the comments
-                return node.with_changes(
-                    trailing_whitespace=cst.TrailingWhitespace(
-                        whitespace=node.trailing_whitespace.whitespace,
-                        comment=node.trailing_whitespace.comment.with_changes(
-                            value=f"{node.trailing_whitespace.comment.value}  # {self.transformer_id}: PySpark {self.pyspark_version} requires {self.required_dependency_name} version {self.required_dependency_version} or higher",
-                        ),
-                        newline=node.trailing_whitespace.newline,
-                    )
-                )
-        else:
-            # If there is no comment, add a comment to the trailing whitespace
-            return node.with_changes(
-                trailing_whitespace=cst.TrailingWhitespace(
-                    whitespace=cst.SimpleWhitespace(
-                        value="  ",
-                    ),
-                    comment=cst.Comment(
-                        value=f"# {self.transformer_id}: PySpark {self.pyspark_version} requires {self.required_dependency_name} version {self.required_dependency_version} or higher",
-                    ),
-                    newline=cst.Newline(
-                        value=None,
-                    ),
-                )
-            )
 
 
 class RequiredPandasVersionCommentWriter(RequiredDependencyVersionCommentWriter):
@@ -113,3 +87,37 @@ class RequiredPandasVersionCommentWriter(RequiredDependencyVersionCommentWriter)
             required_dependency_name=required_dependency_name,
             required_dependency_version=required_dependency_version,
         )
+
+
+class ToPandasUsageTransformer(BaseMatcherDecoratableTransformer):
+    """In Spark 3.0, PySpark requires a pandas version of 0.23.2 or higher to use pandas related functionality,
+    such as toPandas, createDataFrame from pandas DataFrame, and so on."""
+
+    def __init__(
+        self,
+        pyspark_version: str = "3.0",
+        required_dependency_name: str = "pandas",
+        required_dependency_version: str = "0.23.2",
+    ):
+        super().__init__(transformer_id="PY24-30-002")
+        self.pyspark_version = pyspark_version
+        self.required_dependency_version = required_dependency_version
+        self.required_dependency_name = required_dependency_name
+        self.match_found = False
+
+    def visit_Attribute(self, node: cst.Attribute) -> None:
+        """Check if toPandas is being used"""
+        if m.matches(node, m.Attribute(attr=m.Name("toPandas"))):
+            self.match_found = True
+
+    def leave_SimpleStatementLine(self, original_node, updated_node):
+        """Add a comment where to Pandas is being used"""
+        if self.match_found:
+            self.match_found = False
+            return add_comment_to_end_of_a_simple_statement_line(
+                updated_node,
+                self.transformer_id,
+                f"# {self.transformer_id}: PySpark {self.pyspark_version} requires a {self.required_dependency_name} version of {self.required_dependency_version} or higher to use toPandas()",
+            )
+        else:
+            return original_node

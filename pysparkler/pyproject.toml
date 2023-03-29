@@ -31,3 +31,7 @@ build-backend = "poetry.core.masonry.api"
 [[tool.mypy.overrides]]
 module = "libcst.*"
 ignore_missing_imports = true
+
+[tool.isort]
+src_paths = ["pysparkler/", "tests/"]
+profile = 'black'

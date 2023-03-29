@@ -16,9 +16,11 @@
 #  under the License.
 #
 
+from pysparkler.pyspark_24_to_30 import (
+    RequiredPandasVersionCommentWriter,
+    ToPandasUsageTransformer,
+)
 from tests.conftest import rewrite
-
-from pysparkler.pyspark_24_to_30 import RequiredPandasVersionCommentWriter
 
 
 def test_adds_required_pandas_version_comment_to_import_statements_without_alias():
@@ -95,5 +97,44 @@ import pyspark
     expected_code = """
 import pandas as pd # An existing comment  # PY24-30-001: PySpark 3.0 requires pandas version 0.23.2 or higher
 import pyspark
+"""
+    assert modified_code == expected_code
+
+
+def test_writes_comment_when_topandas_func_is_used_without_import():
+    given_code = """\
+import pyspark
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder.appName('example').getOrCreate()
+
+data = [("James","","Smith","36636","M",60000),
+        ("Jen","Mary","Brown","","F",0)]
+
+columns = ["first_name","middle_name","last_name","dob","gender","salary"]
+pysparkDF = spark.createDataFrame(data = data, schema = columns)
+pysparkDF.printSchema()
+pysparkDF.show(truncate=False)
+
+pandasDF = pysparkDF.toPandas()
+print(pandasDF)
+"""
+    modified_code = rewrite(given_code, ToPandasUsageTransformer())
+    expected_code = """\
+import pyspark
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder.appName('example').getOrCreate()
+
+data = [("James","","Smith","36636","M",60000),
+        ("Jen","Mary","Brown","","F",0)]
+
+columns = ["first_name","middle_name","last_name","dob","gender","salary"]
+pysparkDF = spark.createDataFrame(data = data, schema = columns)
+pysparkDF.printSchema()
+pysparkDF.show(truncate=False)
+
+pandasDF = pysparkDF.toPandas()  # PY24-30-002: PySpark 3.0 requires a pandas version of 0.23.2 or higher to use toPandas()
+print(pandasDF)
 """
     assert modified_code == expected_code
