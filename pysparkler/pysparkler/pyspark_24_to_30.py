@@ -188,11 +188,16 @@ class PyArrowEnabledCommentWriter(StatementLineCommentWriter):
         if m.matches(
             node,
             m.Call(
-                func=m.Attribute(
-                    value=m.Attribute(
-                        attr=m.Name("conf"),
+                func=m.OneOf(
+                    m.Attribute(
+                        value=m.Attribute(
+                            attr=m.Name("conf"),
+                        ),
+                        attr=m.Name("set"),
                     ),
-                    attr=m.Name("set"),
+                    m.Attribute(
+                        attr=m.Name("config"),
+                    ),
                 ),
                 args=[
                     m.Arg(
