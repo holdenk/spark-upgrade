@@ -19,33 +19,44 @@ repos:
     rev: v5.10.1
     hooks:
       - id: isort
-        args: [ --settings-path=pysparkler/pyproject.toml ]
+        args:
+          - --settings-path=pysparkler/pyproject.toml
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.1.1
     hooks:
       - id: mypy
-        args: [ --install-types, --non-interactive, --config=pysparkler/pyproject.toml]
+        args:
+          - --install-types
+          - --non-interactive
+          - --config=pysparkler/pyproject.toml
   - repo: https://github.com/hadialqattan/pycln
     rev: v2.1.3
     hooks:
       - id: pycln
-        args: [--config=pysparkler/pyproject.toml]
+        args:
+          - --config=pysparkler/pyproject.toml
   - repo: https://github.com/asottile/pyupgrade
     rev: v3.3.1
     hooks:
       - id: pyupgrade
-        args: [ --py310-plus, --keep-runtime-typing ]
+        args:
+          - --py310-plus
+          - --keep-runtime-typing
   - repo: https://github.com/pycqa/pylint
     rev: v2.17.1
     hooks:
       - id: pylint
-        args: [ --rcfile=pysparkler/pylintrc ]
+        args:
+          - --rcfile=pysparkler/pylintrc
   - repo: https://github.com/pycqa/flake8
     rev: 6.0.0
     hooks:
       - id: flake8
-        args: [ "--ignore=E501" ]
-        additional_dependencies: [ flake8-bugbear==22.12.6, flake8-comprehensions==3.10.1 ]
+        args:
+          - --ignore=E501
+        additional_dependencies:
+          - flake8-bugbear
+          - flake8-comprehensions
   - repo: https://github.com/executablebooks/mdformat
     rev: 0.7.16
     hooks:
