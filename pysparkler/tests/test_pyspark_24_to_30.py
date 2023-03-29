@@ -148,7 +148,7 @@ str_len = pandas_udf(lambda s: s.str.len(), IntegerType())
 """
     modified_code = rewrite(given_code, PandasUdfUsageTransformer())
     expected_code = """\
-import pyspark.sql.functions.pandas_udf  # PY24-30-003: PySpark 3.0 requires a PyArrow version of 0.12.1 or higher to use pandas_udf
+import pyspark.sql.functions.pandas_udf  # PY24-30-003: PySpark 3.0 requires PyArrow version 0.12.1 or higher to use pandas_udf
 import pyspark.sql.functions.PandasUDFType
 
 from pyspark.sql.types import IntegerType, StringType
@@ -167,7 +167,7 @@ str_len = pandas_udf(lambda s: s.str.len(), IntegerType())
 """
     modified_code = rewrite(given_code, PandasUdfUsageTransformer())
     expected_code = """\
-from pyspark.sql.functions import pandas_udf, PandasUDFType  # PY24-30-003: PySpark 3.0 requires a PyArrow version of 0.12.1 or higher to use pandas_udf
+from pyspark.sql.functions import pandas_udf, PandasUDFType  # PY24-30-003: PySpark 3.0 requires PyArrow version 0.12.1 or higher to use pandas_udf
 from pyspark.sql.types import IntegerType, StringType
 
 str_len = pandas_udf(lambda s: s.str.len(), IntegerType())

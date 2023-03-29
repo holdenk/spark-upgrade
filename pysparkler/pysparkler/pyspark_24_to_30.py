@@ -19,17 +19,42 @@
 import libcst as cst
 import libcst.matchers as m
 
-from pysparkler import (
-    BaseMatcherDecoratableTransformer,
-    BaseTransformer,
-    add_comment_to_end_of_a_simple_statement_line,
-)
+from pysparkler import BaseTransformer, add_comment_to_end_of_a_simple_statement_line
 
 # Migration rules for PySpark 2.4 to 3.0
 # https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_2.4_to_3.0.html
 
 
-class RequiredDependencyVersionCommentWriter(BaseTransformer):
+class StatementLineCommentWriter(BaseTransformer):
+    """Base class for adding comments to the end of the statement line when a matching condition is found"""
+
+    def __init__(
+        self,
+        transformer_id: str,
+        comment: str,
+    ):
+        super().__init__(transformer_id)
+        self._comment = comment
+        self.match_found = False
+
+    @property
+    def comment(self):
+        return self._comment
+
+    def leave_SimpleStatementLine(self, original_node, updated_node):
+        """Add a comment where to Pandas is being used"""
+        if self.match_found:
+            self.match_found = False
+            return add_comment_to_end_of_a_simple_statement_line(
+                updated_node,
+                self.transformer_id,
+                f"# {self.transformer_id}: {self.comment}",
+            )
+        else:
+            return original_node
+
+
+class RequiredDependencyVersionCommentWriter(StatementLineCommentWriter):
     """Base class for adding comments to the import statements of required dependencies version of PySpark"""
 
     def __init__(
@@ -38,37 +63,49 @@ class RequiredDependencyVersionCommentWriter(BaseTransformer):
         pyspark_version: str,
         required_dependency_name: str,
         required_dependency_version: str,
+        import_name: str | None = None,
     ):
-        super().__init__(transformer_id)
-        self.pyspark_version = pyspark_version
-        self.required_dependency_version = required_dependency_version
+        super().__init__(
+            transformer_id=transformer_id,
+            comment=f"PySpark {pyspark_version} requires {required_dependency_name} version {required_dependency_version} or higher",
+        )
         self.required_dependency_name = required_dependency_name
+        self._import_name = import_name
 
-    def leave_SimpleStatementLine(self, original_node, updated_node):
-        """Add a comment to the dependency import statement"""
-        match_found = False
-        for child in original_node.body:
-            if isinstance(child, cst.Import):
-                for alias in child.names:
-                    if alias.name.value == self.required_dependency_name:
-                        match_found = True
-                        break
-            elif isinstance(child, cst.ImportFrom):
-                if (
-                    child.module is not None
-                    and child.module.value == self.required_dependency_name
-                ):
-                    match_found = True
-                    break
+    @property
+    def import_name(self):
+        return (
+            self.required_dependency_name
+            if self._import_name is None
+            else self._import_name
+        )
 
-        if match_found:
-            return add_comment_to_end_of_a_simple_statement_line(
-                updated_node,
-                self.transformer_id,
-                f"# {self.transformer_id}: PySpark {self.pyspark_version} requires {self.required_dependency_name} version {self.required_dependency_version} or higher",
-            )
+    @property
+    def comment(self):
+        if self._import_name is None:
+            return super().comment
         else:
-            return updated_node
+            return f"{super().comment} to use {self._import_name}"
+
+    def visit_Import(self, node: cst.Import) -> None:
+        """Check if pandas_udf is being used in an import statement"""
+        if m.matches(
+            node,
+            m.Import(
+                names=[m.ImportAlias(name=m.Attribute(attr=m.Name(self.import_name)))]
+            ),
+        ):
+            self.match_found = True
+
+    def visit_ImportAlias(self, node: cst.ImportAlias) -> None:
+        """Check if pandas_udf is being used in a from import statement"""
+        if m.matches(node, m.ImportAlias(name=m.Name(self.import_name))):
+            self.match_found = True
+
+    def visit_ImportFrom(self, node: cst.ImportFrom) -> None:
+        """Check if pandas_udf is being used in a from import statement"""
+        if m.matches(node, m.ImportFrom(module=m.Name(self.import_name))):
+            self.match_found = True
 
 
 class RequiredPandasVersionCommentWriter(RequiredDependencyVersionCommentWriter):
@@ -89,7 +126,7 @@ class RequiredPandasVersionCommentWriter(RequiredDependencyVersionCommentWriter)
         )
 
 
-class ToPandasUsageTransformer(BaseMatcherDecoratableTransformer):
+class ToPandasUsageTransformer(StatementLineCommentWriter):
     """In Spark 3.0, PySpark requires a pandas version of 0.23.2 or higher to use pandas related functionality,
     such as toPandas, createDataFrame from pandas DataFrame, and so on."""
 
@@ -99,31 +136,18 @@ class ToPandasUsageTransformer(BaseMatcherDecoratableTransformer):
         required_dependency_name: str = "pandas",
         required_dependency_version: str = "0.23.2",
     ):
-        super().__init__(transformer_id="PY24-30-002")
-        self.pyspark_version = pyspark_version
-        self.required_dependency_version = required_dependency_version
-        self.required_dependency_name = required_dependency_name
-        self.match_found = False
+        super().__init__(
+            transformer_id="PY24-30-002",
+            comment=f"PySpark {pyspark_version} requires a {required_dependency_name} version of {required_dependency_version} or higher to use toPandas()",
+        )
 
     def visit_Attribute(self, node: cst.Attribute) -> None:
         """Check if toPandas is being used"""
         if m.matches(node, m.Attribute(attr=m.Name("toPandas"))):
             self.match_found = True
 
-    def leave_SimpleStatementLine(self, original_node, updated_node):
-        """Add a comment where to Pandas is being used"""
-        if self.match_found:
-            self.match_found = False
-            return add_comment_to_end_of_a_simple_statement_line(
-                updated_node,
-                self.transformer_id,
-                f"# {self.transformer_id}: PySpark {self.pyspark_version} requires a {self.required_dependency_name} version of {self.required_dependency_version} or higher to use toPandas()",
-            )
-        else:
-            return original_node
 
-
-class PandasUdfUsageTransformer(BaseMatcherDecoratableTransformer):
+class PandasUdfUsageTransformer(RequiredDependencyVersionCommentWriter):
     """In Spark 3.0, PySpark requires a PyArrow version of 0.12.1 or higher to use PyArrow related functionality, such
     as pandas_udf, toPandas and createDataFrame with “spark.sql.execution.arrow.enabled=true”, etc.
     """
@@ -134,35 +158,10 @@ class PandasUdfUsageTransformer(BaseMatcherDecoratableTransformer):
         required_dependency_name: str = "PyArrow",
         required_dependency_version: str = "0.12.1",
     ):
-        super().__init__(transformer_id="PY24-30-003")
-        self.pyspark_version = pyspark_version
-        self.required_dependency_version = required_dependency_version
-        self.required_dependency_name = required_dependency_name
-        self.match_found = False
-
-    def visit_Import(self, node: cst.Import) -> None:
-        """Check if pandas_udf is being used in an import statement"""
-        if m.matches(
-            node,
-            m.Import(
-                names=[m.ImportAlias(name=m.Attribute(attr=m.Name("pandas_udf")))]
-            ),
-        ):
-            self.match_found = True
-
-    def visit_ImportAlias(self, node: cst.ImportAlias) -> None:
-        """Check if pandas_udf is being used in a from import statement"""
-        if m.matches(node, m.ImportAlias(name=m.Name("pandas_udf"))):
-            self.match_found = True
-
-    def leave_SimpleStatementLine(self, original_node, updated_node):
-        """Add a comment where to pandas_udf is being used"""
-        if self.match_found:
-            self.match_found = False
-            return add_comment_to_end_of_a_simple_statement_line(
-                updated_node,
-                self.transformer_id,
-                f"# {self.transformer_id}: PySpark {self.pyspark_version} requires a {self.required_dependency_name} version of {self.required_dependency_version} or higher to use pandas_udf",
-            )
-        else:
-            return original_node
+        super().__init__(
+            transformer_id="PY24-30-003",
+            pyspark_version=pyspark_version,
+            required_dependency_name=required_dependency_name,
+            required_dependency_version=required_dependency_version,
+            import_name="pandas_udf",
+        )

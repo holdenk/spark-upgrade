@@ -19,22 +19,8 @@ import libcst as cst
 import libcst.matchers as m
 
 
-class BaseTransformer(cst.CSTTransformer):
+class BaseTransformer(m.MatcherDecoratableTransformer):
     """Base class for all transformers.
-
-    Attributes:
-        transformer_id: A unique identifier for the transformer rule. Follows the format PY<From-Major-Version>-<To-Major-Version>-<Rule-Number>
-            Important for idempotency checks and debugging.
-
-    """
-
-    def __init__(self, transformer_id: str):
-        super().__init__()
-        self.transformer_id = transformer_id
-
-
-class BaseMatcherDecoratableTransformer(m.MatcherDecoratableTransformer):
-    """Base class for all Matcher Decoratable Transformers.
 
     Attributes:
         transformer_id: A unique identifier for the transformer rule. Follows the format PY<From-Major-Version>-<To-Major-Version>-<Rule-Number>
