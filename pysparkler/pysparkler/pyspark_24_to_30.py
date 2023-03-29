@@ -141,9 +141,9 @@ class ToPandasUsageTransformer(StatementLineCommentWriter):
             comment=f"PySpark {pyspark_version} requires a {required_dependency_name} version of {required_dependency_version} or higher to use toPandas()",
         )
 
-    def visit_Attribute(self, node: cst.Attribute) -> None:
-        """Check if toPandas is being used"""
-        if m.matches(node, m.Attribute(attr=m.Name("toPandas"))):
+    def visit_Call(self, node: cst.Call) -> None:
+        """Check if toPandas is being called"""
+        if m.matches(node, m.Call(func=m.Attribute(attr=m.Name("toPandas")))):
             self.match_found = True
 
 
