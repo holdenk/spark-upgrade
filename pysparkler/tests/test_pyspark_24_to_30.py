@@ -18,6 +18,7 @@
 
 from pysparkler.pyspark_24_to_30 import (
     PandasUdfUsageTransformer,
+    PyArrowEnabledCommentWriter,
     RequiredPandasVersionCommentWriter,
     ToPandasUsageTransformer,
 )
@@ -171,5 +172,51 @@ from pyspark.sql.functions import pandas_udf, PandasUDFType  # PY24-30-003: PySp
 from pyspark.sql.types import IntegerType, StringType
 
 str_len = pandas_udf(lambda s: s.str.len(), IntegerType())
+"""
+    assert modified_code == expected_code
+
+
+def test_writes_comment_when_spark_sql_execution_arrow_enabled():
+    given_code = """\
+import numpy as np
+import pandas as pd
+
+spark.conf.set("spark.sql.execution.arrow.enabled", "true")
+pdf = pd.DataFrame(np.random.rand(100, 3))
+df = spark.createDataFrame(pdf)
+result_pdf = df.select("*").toPandas()
+"""
+    modified_code = rewrite(given_code, PyArrowEnabledCommentWriter())
+    expected_code = """\
+import numpy as np
+import pandas as pd
+
+spark.conf.set("spark.sql.execution.arrow.enabled", "true")  # PY24-30-004: PySpark 3.0 requires PyArrow version 0.12.1 or higher when spark.sql.execution.arrow.enabled is set to true
+pdf = pd.DataFrame(np.random.rand(100, 3))
+df = spark.createDataFrame(pdf)
+result_pdf = df.select("*").toPandas()
+"""
+    assert modified_code == expected_code
+
+
+def test_writes_comment_when_spark_sql_execution_arrow_pyspark_enabled():
+    given_code = """\
+import numpy as np
+import pandas as pd
+
+spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
+pdf = pd.DataFrame(np.random.rand(100, 3))
+df = spark.createDataFrame(pdf)
+result_pdf = df.select("*").toPandas()
+"""
+    modified_code = rewrite(given_code, PyArrowEnabledCommentWriter())
+    expected_code = """\
+import numpy as np
+import pandas as pd
+
+spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")  # PY24-30-004: PySpark 3.0 requires PyArrow version 0.12.1 or higher when spark.sql.execution.arrow.enabled is set to true
+pdf = pd.DataFrame(np.random.rand(100, 3))
+df = spark.createDataFrame(pdf)
+result_pdf = df.select("*").toPandas()
 """
     assert modified_code == expected_code

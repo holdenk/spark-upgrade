@@ -165,3 +165,46 @@ class PandasUdfUsageTransformer(RequiredDependencyVersionCommentWriter):
             required_dependency_version=required_dependency_version,
             import_name="pandas_udf",
         )
+
+
+class PyArrowEnabledCommentWriter(StatementLineCommentWriter):
+    """In Spark 3.0, PySpark requires a PyArrow version of 0.12.1 or higher to use PyArrow related functionality, such
+    as pandas_udf, toPandas and createDataFrame with “spark.sql.execution.arrow.enabled=true”, etc.
+    """
+
+    def __init__(
+        self,
+        pyspark_version: str = "3.0",
+        required_dependency_name: str = "PyArrow",
+        required_dependency_version: str = "0.12.1",
+    ):
+        super().__init__(
+            transformer_id="PY24-30-004",
+            comment=f"PySpark {pyspark_version} requires {required_dependency_name} version {required_dependency_version} or higher when spark.sql.execution.arrow.enabled is set to true",
+        )
+
+    def visit_Call(self, node: cst.Call) -> None:
+        """Check if spark_session.conf.set("spark.sql.execution.arrow.enabled", "true")"""
+        if m.matches(
+            node,
+            m.Call(
+                func=m.Attribute(
+                    value=m.Attribute(
+                        attr=m.Name("conf"),
+                    ),
+                    attr=m.Name("set"),
+                ),
+                args=[
+                    m.Arg(
+                        value=m.OneOf(
+                            m.SimpleString(value='"spark.sql.execution.arrow.enabled"'),
+                            m.SimpleString(
+                                value='"spark.sql.execution.arrow.pyspark.enabled"'
+                            ),
+                        )
+                    ),
+                    m.Arg(value=m.SimpleString(value='"true"')),
+                ],
+            ),
+        ):
+            self.match_found = True
