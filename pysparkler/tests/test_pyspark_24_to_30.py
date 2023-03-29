@@ -17,6 +17,7 @@
 #
 
 from pysparkler.pyspark_24_to_30 import (
+    PandasUdfUsageTransformer,
     RequiredPandasVersionCommentWriter,
     ToPandasUsageTransformer,
 )
@@ -113,8 +114,6 @@ data = [("James","","Smith","36636","M",60000),
 
 columns = ["first_name","middle_name","last_name","dob","gender","salary"]
 pysparkDF = spark.createDataFrame(data = data, schema = columns)
-pysparkDF.printSchema()
-pysparkDF.show(truncate=False)
 
 pandasDF = pysparkDF.toPandas()
 print(pandasDF)
@@ -131,10 +130,46 @@ data = [("James","","Smith","36636","M",60000),
 
 columns = ["first_name","middle_name","last_name","dob","gender","salary"]
 pysparkDF = spark.createDataFrame(data = data, schema = columns)
-pysparkDF.printSchema()
-pysparkDF.show(truncate=False)
 
 pandasDF = pysparkDF.toPandas()  # PY24-30-002: PySpark 3.0 requires a pandas version of 0.23.2 or higher to use toPandas()
 print(pandasDF)
+"""
+    assert modified_code == expected_code
+
+
+def test_writes_comment_when_pandas_udf_is_used_in_an_import():
+    given_code = """\
+import pyspark.sql.functions.pandas_udf
+import pyspark.sql.functions.PandasUDFType
+
+from pyspark.sql.types import IntegerType, StringType
+
+str_len = pandas_udf(lambda s: s.str.len(), IntegerType())
+"""
+    modified_code = rewrite(given_code, PandasUdfUsageTransformer())
+    expected_code = """\
+import pyspark.sql.functions.pandas_udf  # PY24-30-003: PySpark 3.0 requires a PyArrow version of 0.12.1 or higher to use pandas_udf
+import pyspark.sql.functions.PandasUDFType
+
+from pyspark.sql.types import IntegerType, StringType
+
+str_len = pandas_udf(lambda s: s.str.len(), IntegerType())
+"""
+    assert modified_code == expected_code
+
+
+def test_writes_comment_when_pandas_udf_is_used_in_a_from_import():
+    given_code = """\
+from pyspark.sql.functions import pandas_udf, PandasUDFType
+from pyspark.sql.types import IntegerType, StringType
+
+str_len = pandas_udf(lambda s: s.str.len(), IntegerType())
+"""
+    modified_code = rewrite(given_code, PandasUdfUsageTransformer())
+    expected_code = """\
+from pyspark.sql.functions import pandas_udf, PandasUDFType  # PY24-30-003: PySpark 3.0 requires a PyArrow version of 0.12.1 or higher to use pandas_udf
+from pyspark.sql.types import IntegerType, StringType
+
+str_len = pandas_udf(lambda s: s.str.len(), IntegerType())
 """
     assert modified_code == expected_code

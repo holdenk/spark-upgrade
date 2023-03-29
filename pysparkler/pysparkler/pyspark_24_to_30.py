@@ -121,3 +121,48 @@ class ToPandasUsageTransformer(BaseMatcherDecoratableTransformer):
             )
         else:
             return original_node
+
+
+class PandasUdfUsageTransformer(BaseMatcherDecoratableTransformer):
+    """In Spark 3.0, PySpark requires a PyArrow version of 0.12.1 or higher to use PyArrow related functionality, such
+    as pandas_udf, toPandas and createDataFrame with “spark.sql.execution.arrow.enabled=true”, etc.
+    """
+
+    def __init__(
+        self,
+        pyspark_version: str = "3.0",
+        required_dependency_name: str = "PyArrow",
+        required_dependency_version: str = "0.12.1",
+    ):
+        super().__init__(transformer_id="PY24-30-003")
+        self.pyspark_version = pyspark_version
+        self.required_dependency_version = required_dependency_version
+        self.required_dependency_name = required_dependency_name
+        self.match_found = False
+
+    def visit_Import(self, node: cst.Import) -> None:
+        """Check if pandas_udf is being used in an import statement"""
+        if m.matches(
+            node,
+            m.Import(
+                names=[m.ImportAlias(name=m.Attribute(attr=m.Name("pandas_udf")))]
+            ),
+        ):
+            self.match_found = True
+
+    def visit_ImportAlias(self, node: cst.ImportAlias) -> None:
+        """Check if pandas_udf is being used in a from import statement"""
+        if m.matches(node, m.ImportAlias(name=m.Name("pandas_udf"))):
+            self.match_found = True
+
+    def leave_SimpleStatementLine(self, original_node, updated_node):
+        """Add a comment where to pandas_udf is being used"""
+        if self.match_found:
+            self.match_found = False
+            return add_comment_to_end_of_a_simple_statement_line(
+                updated_node,
+                self.transformer_id,
+                f"# {self.transformer_id}: PySpark {self.pyspark_version} requires a {self.required_dependency_name} version of {self.required_dependency_version} or higher to use pandas_udf",
+            )
+        else:
+            return original_node
