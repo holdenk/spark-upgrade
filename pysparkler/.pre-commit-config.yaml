@@ -12,7 +12,7 @@ repos:
       - id: check-yaml
       - id: check-ast
   - repo: https://github.com/ambv/black
-    rev: 23.1.0
+    rev: 23.3.0
     hooks:
       - id: black
   - repo: https://github.com/pre-commit/mirrors-isort
@@ -21,7 +21,7 @@ repos:
       - id: isort
         args: [ --settings-path=pysparkler/pyproject.toml ]
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v0.991
+    rev: v1.1.1
     hooks:
       - id: mypy
         args: [ --install-types, --non-interactive, --config=pysparkler/pyproject.toml]
@@ -34,17 +34,17 @@ repos:
     rev: v3.3.1
     hooks:
       - id: pyupgrade
-        args: [ --py38-plus, --keep-runtime-typing ]
+        args: [ --py310-plus, --keep-runtime-typing ]
   - repo: https://github.com/pycqa/pylint
-    rev: v2.16.0
+    rev: v2.17.1
     hooks:
       - id: pylint
         args: [ --rcfile=pysparkler/pylintrc ]
   - repo: https://github.com/pycqa/flake8
-    rev: '6.0.0'
+    rev: 6.0.0
     hooks:
       - id: flake8
-        args: [ "--ignore=E501,W503,E203,B024" ]
+        args: [ "--ignore=E501" ]
         additional_dependencies: [ flake8-bugbear==22.12.6, flake8-comprehensions==3.10.1 ]
   - repo: https://github.com/executablebooks/mdformat
     rev: 0.7.16
