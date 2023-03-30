@@ -286,3 +286,37 @@ class RowFieldNamesNotSortedCommentWriter(StatementLineCommentWriter):
             ),
         ):
             self.match_found = True
+
+
+class MlParamMixinsSetterCommentWriter(StatementLineCommentWriter):
+    """In Spark 3.0, pyspark.ml.param.shared.Has* mixins do not provide any set*(self, value) setter methods anymore,
+    use the respective self.set(self.*, value) instead. See SPARK-29093 for details.
+    """
+
+    def __init__(
+        self,
+        pyspark_version: str = "3.0",
+    ):
+        super().__init__(
+            transformer_id="PY24-30-008",
+            comment=f"In Spark {pyspark_version}, pyspark.ml.param.shared.Has* mixins do not provide any set*(self, value) setter methods anymore, use the respective self.set(self.*, value) instead.",
+        )
+
+    def visit_ImportFrom(self, node: cst.ImportFrom) -> None:
+        """Check if pyspark.ml.param.shared is being used in a from import statement"""
+        if m.matches(
+            node,
+            m.ImportFrom(
+                module=m.Attribute(
+                    value=m.Attribute(
+                        value=m.Attribute(
+                            value=m.Name("pyspark"),
+                            attr=m.Name("ml"),
+                        ),
+                        attr=m.Name("param"),
+                    ),
+                    attr=m.Name("shared"),
+                ),
+            ),
+        ):
+            self.match_found = True

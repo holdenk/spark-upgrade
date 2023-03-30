@@ -18,6 +18,7 @@
 
 from pysparkler.pyspark_24_to_30 import (
     CreateDataFrameVerifySchemaCommentWriter,
+    MlParamMixinsSetterCommentWriter,
     PandasConvertToArrowArraySafelyCommentWriter,
     PandasUdfUsageTransformer,
     PyArrowEnabledCommentWriter,
@@ -358,3 +359,14 @@ print(rdd.collect())
 """
     modified_code = rewrite(given_code, RowFieldNamesNotSortedCommentWriter())
     assert modified_code == given_code
+
+
+def test_writes_comment_when_pyspark_ml_param_shared_is_used_in_from_import():
+    given_code = """\
+from pyspark.ml.param.shared import *
+"""
+    modified_code = rewrite(given_code, MlParamMixinsSetterCommentWriter())
+    expected_code = """\
+from pyspark.ml.param.shared import *  # PY24-30-008: In Spark 3.0, pyspark.ml.param.shared.Has* mixins do not provide any set*(self, value) setter methods anymore, use the respective self.set(self.*, value) instead.
+"""
+    assert modified_code == expected_code
