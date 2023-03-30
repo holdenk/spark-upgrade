@@ -17,6 +17,7 @@
 #
 
 from pysparkler.pyspark_24_to_30 import (
+    PandasConvertToArrowArraySafelyCommentWriter,
     PandasUdfUsageTransformer,
     PyArrowEnabledCommentWriter,
     RequiredPandasVersionCommentWriter,
@@ -232,7 +233,7 @@ spark = (
     .builder
     .appName("Your App Name")
     .config("spark.some.config.option1", "some-value")
-    .config("spark.sql.execution.arrow.enabled", "true")
+    .config('spark.sql.execution.arrow.enabled', 'true')
     .getOrCreate())
 
 pdf = pd.DataFrame(np.random.rand(100, 3))
@@ -249,9 +250,32 @@ spark = (
     .builder
     .appName("Your App Name")
     .config("spark.some.config.option1", "some-value")
-    .config("spark.sql.execution.arrow.enabled", "true")
+    .config('spark.sql.execution.arrow.enabled', 'true')
     .getOrCreate())  # PY24-30-004: PySpark 3.0 requires PyArrow version 0.12.1 or higher when spark.sql.execution.arrow.enabled is set to true
 
+pdf = pd.DataFrame(np.random.rand(100, 3))
+df = spark.createDataFrame(pdf)
+result_pdf = df.select("*").toPandas()
+"""
+    assert modified_code == expected_code
+
+
+def test_writes_comment_for_convert_to_arrow_array_safely_when_spark_sql_execution_arrow_enabled():
+    given_code = """\
+import numpy as np
+import pandas as pd
+
+spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
+pdf = pd.DataFrame(np.random.rand(100, 3))
+df = spark.createDataFrame(pdf)
+result_pdf = df.select("*").toPandas()
+"""
+    modified_code = rewrite(given_code, PandasConvertToArrowArraySafelyCommentWriter())
+    expected_code = """\
+import numpy as np
+import pandas as pd
+
+spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")  # PY24-30-005: Consider setting spark.sql.execution.pandas.convertToArrowArraySafely to true to raise errors in case of Integer overflow or Floating point truncation, instead of silent allows.
 pdf = pd.DataFrame(np.random.rand(100, 3))
 df = spark.createDataFrame(pdf)
 result_pdf = df.select("*").toPandas()

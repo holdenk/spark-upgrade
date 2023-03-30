@@ -67,3 +67,14 @@ def add_comment_to_end_of_a_simple_statement_line(
                 ),
             )
         )
+
+
+def one_of_matching_strings(*strings: str) -> m.OneOf[m.SimpleString]:
+    """Returns a one of matcher that matches a string regardless of the quotes used"""
+    return m.OneOf(
+        *[
+            m.SimpleString(value=quoted_str)
+            for string in strings
+            for quoted_str in (f'"{string}"', f"'{string}'")
+        ]
+    )

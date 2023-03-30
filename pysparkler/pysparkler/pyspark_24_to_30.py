@@ -19,7 +19,11 @@
 import libcst as cst
 import libcst.matchers as m
 
-from pysparkler import BaseTransformer, add_comment_to_end_of_a_simple_statement_line
+from pysparkler import (
+    BaseTransformer,
+    add_comment_to_end_of_a_simple_statement_line,
+    one_of_matching_strings,
+)
 
 # Migration rules for PySpark 2.4 to 3.0
 # https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_2.4_to_3.0.html
@@ -194,15 +198,29 @@ class PyArrowEnabledCommentWriter(StatementLineCommentWriter):
                 ),
                 args=[
                     m.Arg(
-                        value=m.OneOf(
-                            m.SimpleString(value='"spark.sql.execution.arrow.enabled"'),
-                            m.SimpleString(
-                                value='"spark.sql.execution.arrow.pyspark.enabled"'
-                            ),
+                        value=one_of_matching_strings(
+                            "spark.sql.execution.arrow.enabled",
+                            "spark.sql.execution.arrow.pyspark.enabled",
                         )
                     ),
-                    m.Arg(value=m.SimpleString(value='"true"')),
+                    m.Arg(value=one_of_matching_strings("true")),
                 ],
             ),
         ):
             self.match_found = True
+
+
+class PandasConvertToArrowArraySafelyCommentWriter(PyArrowEnabledCommentWriter):
+    """In PySpark, when PyArrow optimization is enabled, Arrow can perform safe type conversion when converting
+    pandas.Series to an Arrow array during serialization. Arrow raises errors when detecting unsafe type conversions
+    like overflow. You enable it by setting spark.sql.execution.pandas.convertToArrowArraySafely to true.
+    The default setting is false.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.transformer_id = "PY24-30-005"
+
+    @property
+    def comment(self):
+        return "Consider setting spark.sql.execution.pandas.convertToArrowArraySafely to true to raise errors in case of Integer overflow or Floating point truncation, instead of silent allows."
