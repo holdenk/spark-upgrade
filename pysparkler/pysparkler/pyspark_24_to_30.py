@@ -224,3 +224,34 @@ class PandasConvertToArrowArraySafelyCommentWriter(PyArrowEnabledCommentWriter):
     @property
     def comment(self):
         return "Consider setting spark.sql.execution.pandas.convertToArrowArraySafely to true to raise errors in case of Integer overflow or Floating point truncation, instead of silent allows."
+
+
+class CreateDataFrameVerifySchemaCommentWriter(StatementLineCommentWriter):
+    """In Spark 3.0, createDataFrame(..., verifySchema=True) validates LongType as well in PySpark. Previously, LongType
+    was not verified and resulted in None in case the value overflows. To restore this behavior, verifySchema can be set
+    to `False` to disable the validation.
+    """
+
+    def __init__(
+        self,
+        pyspark_version: str = "3.0",
+    ):
+        super().__init__(
+            transformer_id="PY24-30-006",
+            comment=f"Setting verifySchema to True validates LongType as well in PySpark {pyspark_version}. Previously, LongType was not verified and resulted in None in case the value overflows.",
+        )
+
+    def visit_Call(self, node: cst.Call) -> None:
+        """Check if createDataFrame(..., verifySchema=True) is being called"""
+        if m.matches(
+            node,
+            m.Call(
+                func=m.Attribute(attr=m.Name("createDataFrame")),
+                args=[
+                    m.ZeroOrMore(),
+                    m.Arg(keyword=m.Name("verifySchema"), value=m.Name("True")),
+                    m.ZeroOrMore(),
+                ],
+            ),
+        ):
+            self.match_found = True

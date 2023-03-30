@@ -17,6 +17,7 @@
 #
 
 from pysparkler.pyspark_24_to_30 import (
+    CreateDataFrameVerifySchemaCommentWriter,
     PandasConvertToArrowArraySafelyCommentWriter,
     PandasUdfUsageTransformer,
     PyArrowEnabledCommentWriter,
@@ -279,5 +280,40 @@ spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")  # PY24-30-0
 pdf = pd.DataFrame(np.random.rand(100, 3))
 df = spark.createDataFrame(pdf)
 result_pdf = df.select("*").toPandas()
+"""
+    assert modified_code == expected_code
+
+
+def test_writes_comment_when_verify_schema_set_to_true_while_creating_data_frame():
+    given_code = """\
+import pyspark
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder.appName('example').getOrCreate()
+
+data = [("James","","Smith","36636","M",60000),
+        ("Jen","Mary","Brown","","F",0)]
+
+columns = ["first_name","middle_name","last_name","dob","gender","salary"]
+pysparkDF = spark.createDataFrame(data = data, schema = columns, verifySchema = True)
+
+pandasDF = pysparkDF.toPandas()
+print(pandasDF)
+"""
+    modified_code = rewrite(given_code, CreateDataFrameVerifySchemaCommentWriter())
+    expected_code = """\
+import pyspark
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder.appName('example').getOrCreate()
+
+data = [("James","","Smith","36636","M",60000),
+        ("Jen","Mary","Brown","","F",0)]
+
+columns = ["first_name","middle_name","last_name","dob","gender","salary"]
+pysparkDF = spark.createDataFrame(data = data, schema = columns, verifySchema = True)  # PY24-30-006: Setting verifySchema to True validates LongType as well in PySpark 3.0. Previously, LongType was not verified and resulted in None in case the value overflows.
+
+pandasDF = pysparkDF.toPandas()
+print(pandasDF)
 """
     assert modified_code == expected_code
