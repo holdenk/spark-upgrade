@@ -255,3 +255,34 @@ class CreateDataFrameVerifySchemaCommentWriter(StatementLineCommentWriter):
             ),
         ):
             self.match_found = True
+
+
+class RowFieldNamesNotSortedCommentWriter(StatementLineCommentWriter):
+    """As of Spark 3.0, Row field names are no longer sorted alphabetically when constructing with named arguments for
+    Python versions 3.6 and above, and the order of fields will match that as entered. For Python versions less than
+    3.6, the field names will be sorted alphabetically as the only option.
+    """
+
+    def __init__(
+        self,
+        pyspark_version: str = "3.0",
+    ):
+        super().__init__(
+            transformer_id="PY24-30-007",
+            comment=f"As of Spark {pyspark_version}, Row field names are no longer sorted alphabetically when constructing with named arguments.",
+        )
+
+    def visit_Call(self, node: cst.Call) -> None:
+        """Check if Row(...) is being called with named arguments"""
+        if m.matches(
+            node,
+            m.Call(
+                func=m.Name("Row"),
+                args=[
+                    m.ZeroOrMore(),
+                    m.Arg(keyword=m.Name()),
+                    m.ZeroOrMore(),
+                ],
+            ),
+        ):
+            self.match_found = True

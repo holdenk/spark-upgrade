@@ -22,6 +22,7 @@ from pysparkler.pyspark_24_to_30 import (
     PandasUdfUsageTransformer,
     PyArrowEnabledCommentWriter,
     RequiredPandasVersionCommentWriter,
+    RowFieldNamesNotSortedCommentWriter,
     ToPandasUsageTransformer,
 )
 from tests.conftest import rewrite
@@ -317,3 +318,43 @@ pandasDF = pysparkDF.toPandas()
 print(pandasDF)
 """
     assert modified_code == expected_code
+
+
+def test_writes_comment_when_row_with_field_names_are_constructed():
+    given_code = """\
+from pyspark.sql import SparkSession, Row
+spark = SparkSession.builder.appName('example').getOrCreate()
+
+data = [Row(name="James,,Smith",lang=["Java","Scala","C++"],state="CA"),
+    Row(name="Robert,,Williams",lang=["CSharp","VB"],state="NV")]
+
+rdd=spark.sparkContext.parallelize(data)
+print(rdd.collect())
+"""
+    modified_code = rewrite(given_code, RowFieldNamesNotSortedCommentWriter())
+    expected_code = """\
+from pyspark.sql import SparkSession, Row
+spark = SparkSession.builder.appName('example').getOrCreate()
+
+data = [Row(name="James,,Smith",lang=["Java","Scala","C++"],state="CA"),
+    Row(name="Robert,,Williams",lang=["CSharp","VB"],state="NV")]  # PY24-30-007: As of Spark 3.0, Row field names are no longer sorted alphabetically when constructing with named arguments.
+
+rdd=spark.sparkContext.parallelize(data)
+print(rdd.collect())
+"""
+    assert modified_code == expected_code
+
+
+def test_does_not_write_comment_when_row_are_constructed_without_field_names_():
+    given_code = """\
+from pyspark.sql import SparkSession, Row
+spark = SparkSession.builder.appName('example').getOrCreate()
+
+data = [Row("James,,Smith",["Java","Scala","C++"],"CA"),
+    Row("Robert,,Williams",["CSharp","VB"],"NV")]
+
+rdd=spark.sparkContext.parallelize(data)
+print(rdd.collect())
+"""
+    modified_code = rewrite(given_code, RowFieldNamesNotSortedCommentWriter())
+    assert modified_code == given_code
