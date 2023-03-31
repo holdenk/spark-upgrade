@@ -1,0 +1,2 @@
+rootProject.name = 'sparkdemoproject'
+include('src')
