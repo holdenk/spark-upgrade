@@ -15,6 +15,8 @@ maintainers = [
 [tool.poetry.dependencies]
 python = "^3.10"
 libcst = "^0.4.9"
+click = "^8.1.3"
+rich = "^13.3.3"
 
 
 [tool.poetry.group.test.dependencies]
@@ -24,14 +26,29 @@ pytest = "^7.2.2"
 [tool.poetry.group.lint.dependencies]
 pre-commit = "^3.2.1"
 
+
+[tool.poetry.scripts]
+pysparkler = "pysparkler.cli:run"
+
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+
+[tool.isort]
+src_paths = ["pysparkler/", "tests/"]
+profile = 'black'
+
 
 [[tool.mypy.overrides]]
 module = "libcst.*"
 ignore_missing_imports = true
 
-[tool.isort]
-src_paths = ["pysparkler/", "tests/"]
-profile = 'black'
+[[tool.mypy.overrides]]
+module = "click.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "rich.*"
+ignore_missing_imports = true
