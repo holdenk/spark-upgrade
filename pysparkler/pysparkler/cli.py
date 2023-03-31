@@ -17,9 +17,9 @@
 #
 
 import difflib
-from importlib import metadata
 from collections.abc import Callable
 from functools import wraps
+from importlib import metadata
 from typing import Any
 
 import click
@@ -93,14 +93,17 @@ def upgrade(
     """Upgrade the PySparkler file to the latest version and provides comments as hints for manual changes"""
 
     print_command_params(ctx)
-    pysparkler = PySparkler()
-    output_file_content = pysparkler.upgrade(
-        input_file, output_file if not dry_run else None
-    )
+    pysparkler = PySparkler(dry_run=dry_run)
+    output_file_content = pysparkler.upgrade(input_file, output_file)
 
-    if ctx.obj["verbose"] or dry_run:
-        with open(input_file, encoding="utf-8") as f:
-            input_file_content = f.read()
+    with open(input_file, encoding="utf-8") as f:
+        input_file_content = f.read()
+
+    if input_file_content == output_file_content:
+        stdout.print(
+            f"No upgrades detected in {output_file or input_file}", style="green"
+        )
+        return None
 
     if ctx.obj["verbose"]:
         stdout.rule("Input")
@@ -116,6 +119,8 @@ def upgrade(
         for line in diff:
             stdout.print(Syntax(line, "python"))
         stdout.rule("End of Diff")
+    else:
+        stdout.print(f"Output written to {output_file or input_file}", style="green")
 
 
 @run.command()
@@ -129,7 +134,7 @@ def version(ctx: Context) -> None:
         table.add_column("Metadata")
         table.add_column("Value")
 
-        for key, value in metadata.metadata("pysparkler").items():
+        for key, value in metadata.metadata("pysparkler").items():  # type: ignore
             table.add_row(key, str(value))
 
         stdout.print(table)
