@@ -35,6 +35,8 @@ dependencies {
     testImplementation group: "org.scalatest", name : "scalatest_2.12", version: "3.2.2"
     testImplementation group: "org.scalacheck", name: 'scalacheck_2.12', version: '1.15.2'
     testImplementation group: "com.holdenkarau", name: 'spark-testing-base_2.12', version: '2.4.8_1.3.0'
+
+    scalafix group: "com.holdenkarau", name: 'spark-scalafix-rules-2.4.8_2.12', version: '0.1.9'
 }
 
 configurations {
