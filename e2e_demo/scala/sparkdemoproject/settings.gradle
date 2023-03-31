@@ -1,2 +1,2 @@
-rootProject.name = 'sparkdemoproject'
+rootProject.name = 'sparkdemoproject-2.4.8'
 include('src')
