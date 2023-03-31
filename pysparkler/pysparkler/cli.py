@@ -17,6 +17,10 @@
 #
 
 import difflib
+from importlib import metadata
+from collections.abc import Callable
+from functools import wraps
+from typing import Any
 
 import click
 from click import Context
@@ -27,7 +31,26 @@ from rich.table import Table
 from pysparkler.api import PySparkler
 
 stdout = Console()
-stderr = Console(stderr=True, style="bold red")
+stderr = Console(stderr=True)
+
+
+def catch_exception() -> Callable:
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        def wrapper(*args: Any, **kwargs: Any):
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:  # pylint: disable=broad-except
+                ctx: Context = click.get_current_context(silent=True)
+                if ctx.obj["verbose"]:
+                    stderr.print_exception()
+                else:
+                    stderr.print(e)
+                ctx.exit(1)
+
+        return wrapper
+
+    return decorator
 
 
 @click.group()
@@ -60,6 +83,7 @@ def run(ctx: Context, verbose: bool) -> None:
     help="Dry run mode, just shows a unified diff across input and output.",
 )
 @click.pass_context
+@catch_exception()
 def upgrade(
     ctx: Context,
     input_file: str,
@@ -92,6 +116,23 @@ def upgrade(
         for line in diff:
             stdout.print(Syntax(line, "python"))
         stdout.rule("End of Diff")
+
+
+@run.command()
+@click.pass_context
+@catch_exception()
+def version(ctx: Context) -> None:
+    """Prints version and other metadata about package PySparkler"""
+    stdout.print(f"PySparkler Version: {metadata.version('pysparkler')}")
+    if ctx.obj["verbose"]:
+        table = Table(title="PySparkler Metadata")
+        table.add_column("Metadata")
+        table.add_column("Value")
+
+        for key, value in metadata.metadata("pysparkler").items():
+            table.add_row(key, str(value))
+
+        stdout.print(table)
 
 
 def print_command_params(ctx):
