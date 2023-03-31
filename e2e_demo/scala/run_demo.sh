@@ -129,6 +129,13 @@ mkdir -p /tmp/spark-migration-jars
 cp -af sparkdemoproject*/target/scala-*/*.jar /tmp/spark-migration-jars
 echo "Excellent news! All done. Now we just need to make sure we have the same pipeline. Let's magic it!"
 cd ../../
+
+#Build the iceperg spark upgrade plugin
+cd iceberg-spark-upgrade-wap-plugin
+sbt clean compile test package
+
+#Go into the pipeline compare dir
+cd ..
 cd pipelinecompare
 echo "There is some trickery in our spark-submit2 v.s. spark-submit3 including the right iceberg version"
 echo "Provided you have iceberg in your environment pre-insalled this should be equivelent to prod but... yeah."
