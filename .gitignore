@@ -19,3 +19,6 @@ project/metals.sbt
 **/dist/*
 **/__pycache__/*
 .DS_Store
+
+# Annoying macOS Ignores
+**.DS_Store

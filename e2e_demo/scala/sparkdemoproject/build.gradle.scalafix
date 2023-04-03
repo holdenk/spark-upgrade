@@ -1,0 +1,48 @@
+plugins {
+    id "scala"
+    id 'java-library'
+    id "io.github.cosmicsilence.scalafix" version "0.1.14"
+}
+
+scala {
+    sourceCompatibility = "2.12"
+    targetCompatibility = "2.12"
+}
+
+java {
+    withSourcesJar()
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        name "sonatype-releases"
+        url "https://oss.sonatype.org/content/repositories/releases/"
+    }
+    maven {
+        name "Typesafe repository"
+        url "https://repo.typesafe.com/typesafe/releases/"
+    }
+    maven {
+        name "Second Typesafe repo"
+        url "https://repo.typesafe.com/typesafe/maven-releases/"
+    }
+}
+
+dependencies {
+    compileOnly group: "org.apache.spark", name: 'spark-streaming_2.12', version: '2.4.8'
+    compileOnly group: "org.apache.spark", name: 'spark-sql_2.12', version: '2.4.8'
+
+    testImplementation group: "org.scalatest", name : "scalatest_2.12", version: "3.2.2"
+    testImplementation group: "org.scalacheck", name: 'scalacheck_2.12', version: '1.15.2'
+    testImplementation group: "com.holdenkarau", name: 'spark-testing-base_2.12', version: '2.4.8_1.3.0'
+
+    scalafix group: "com.holdenkarau", name: 'spark-scalafix-rules-2.4.8_2.12', version: '0.1.9'
+}
+
+configurations {
+    testImplementation.extendsFrom compileOnly
+}
+
+group "com.holdenkarau"
+version "0.0.1"
