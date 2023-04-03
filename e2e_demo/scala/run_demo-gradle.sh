@@ -12,7 +12,7 @@ prompt () {
   fi
 }
 
-#bash ./cleanup.sh
+bash ./cleanup.sh
 
 ########################################################################
 # Define variables
@@ -38,7 +38,7 @@ prompt "Env setup done. Next we'll download dependencies."
 # Downloading dependencies
 ########################################################################
 
-#bash ./fetch_dependencies.sh $CORE_SPARK2 $SPARK2_DETAILS $SPARK3_DETAILS
+bash ./fetch_dependencies.sh $CORE_SPARK2 $SPARK2_DETAILS $SPARK3_DETAILS
 
 prompt "Dependencies fetched. Will proceed to setup now."
 ########################################################################
@@ -64,19 +64,23 @@ cp build.gradle.scalafix build.gradle
 cp ../../../scalafix/.scalafix.conf ./
 
 prompt "Setup for scalafix complete"
+
 echo "Great! Now we'll try and run the scala fix rules in your project! Yay!. This might fail if you have interesting build targets."
 gradle scalafix #|| (echo "Linter warnings were found"; prompt)
 
 echo "ScalaFix is done, you should probably review the changes (e.g. git diff)"
+
 prompt "Scalafix run complete"
+
 # We don't run compile test because some changes are not back compat (see value/key change).
-cp -af settings.gradle settings.gradle.scalafix.bak.pre3
-cat settings.gradle | \
-  python -c "import re,sys;print(sys.stdin.read().replace(\"${INITIAL_VERSION}\", \"${TARGET_VERSION}\"))" > settings.gradle
+mv settings.gradle settings.gradle.scalafix.bak.pre3
+cat settings.gradle.scalafix.bak.pre3 | python -c "import re,sys;print(sys.stdin.read().replace(\"${INITIAL_VERSION}\", \"${TARGET_VERSION}\"))" > settings.gradle
 echo "You will also need to update dependency versions now (e.g. Spark to 3.3 and libs)"
 echo "Please address those and then press enter."
 prompt "Build file setup done. Next, we will build a jar"
 gradle jar
+
+prompt "Jar has been built. Check build/libs for the jar"
 
 echo "Lovely! Now we \"simulate\" publishing these jars to an S3 bucket (using local fs)"
 cd ..
@@ -84,6 +88,9 @@ mkdir -p /tmp/spark-migration-jars
 cp -af sparkdemoproject*/build/libs/*.jar /tmp/spark-migration-jars
 echo "Excellent news! All done. Now we just need to make sure we have the same pipeline. Let's magic it!"
 cd ../../
+
+prompt "Jars published. Check /tmp/spark-migration-jars."
+
 
 ## AT THIS POINT WE HAVE TWO JARS, ONE FROM e2e_demo/scala/sparkdemoproject/build/libs/sparkdemoproject-2.4.8-0.0.1.jar
 ## OTHER FROM e2e_demo/scala/sparkdemoproject-3/build/libs/sparkdemoproject-3.3.1-0.0.1.jar
@@ -98,7 +105,8 @@ cd iceberg-spark-upgrade-wap-plugin
 sbt clean compile test package
 cd ..
 
-prompt "Iceberg spark plugin build. Next we will run a pipeline comparison"
+echo "Iceberg spark plugin built. Next we will run a pipeline comparison"
+prompt "Creating temp iceberg table next"
 
 #Go into the pipeline compare dir
 cd pipelinecompare
@@ -115,6 +123,50 @@ ${spark_sql3}     --conf spark.sql.catalog.spark_catalog=org.apache.iceberg.spar
 
 # TODO : Call the domagic script. Not entirely sure about why the original script calls /tmp/spark-migration-jars/sparkdemoproject_2.12-0.0.1.jar for the domagic?
 # Maybe I've messed up the jar name on creation, mine is called sparkdemoproject-2.4.8-0.0.1.jar
+prompt "Plugin built. Moving on to comparison jobs. This one should pass"
+
+python domagic.py --iceberg --spark-control-command ${spark_submit2} --spark-new-command ${spark_submit3} \
+       --spark-command ${spark_submit3} \
+       --new-jar-suffix "-3" \
+       --warehouse-config " \
+    --conf spark.sql.catalog.spark_catalog=org.apache.iceberg.spark.SparkSessionCatalog \
+    --conf spark.sql.catalog.spark_catalog.type=hive \
+    --conf spark.sql.catalog.local=org.apache.iceberg.spark.SparkCatalog \
+    --conf spark.sql.catalog.local.type=hadoop \
+    --conf spark.sql.catalog.local.warehouse=$PWD/warehouse \
+    " \
+       --combined-pipeline " \
+    --conf spark.sql.catalog.spark_catalog=org.apache.iceberg.spark.SparkSessionCatalog \
+    --conf spark.sql.catalog.spark_catalog.type=hive \
+    --conf spark.sql.catalog.local=org.apache.iceberg.spark.SparkCatalog \
+    --conf spark.sql.catalog.local.type=hadoop \
+    --conf spark.sql.catalog.local.warehouse=$PWD/warehouse \
+    --class com.holdenkarau.sparkDemoProject.CountingLocalApp \
+    /tmp/spark-migration-jars/sparkdemoproject_2.12-0.0.1.jar utils.py ${outputTable}"
+echo "Pipeline migration passed! Yay!"
+echo "Press enter to see how it can fail (e.g. using /var/log/syslog which gets extra records as we go)"
+echo "In that case the user would need to configure a tolerance value for difference."
+
+prompt "This next job should fail"
+# Expected to fail because syslog changes between runs.
+(python domagic.py --iceberg --spark-control-command ${spark_submit2} --spark-new-command ${spark_submit3} \
+       --spark-command ${spark_submit3} \
+       --new-jar-suffix "-3" \
+       --warehouse-config " \
+    --conf spark.sql.catalog.spark_catalog=org.apache.iceberg.spark.SparkSessionCatalog \
+    --conf spark.sql.catalog.spark_catalog.type=hive \
+    --conf spark.sql.catalog.local=org.apache.iceberg.spark.SparkCatalog \
+    --conf spark.sql.catalog.local.type=hadoop \
+    --conf spark.sql.catalog.local.warehouse=$PWD/warehouse \
+    " \
+       --combined-pipeline " \
+    --conf spark.sql.catalog.spark_catalog=org.apache.iceberg.spark.SparkSessionCatalog \
+    --conf spark.sql.catalog.spark_catalog.type=hive \
+    --conf spark.sql.catalog.local=org.apache.iceberg.spark.SparkCatalog \
+    --conf spark.sql.catalog.local.type=hadoop \
+    --conf spark.sql.catalog.local.warehouse=$PWD/warehouse \
+    --class com.holdenkarau.sparkDemoProject.CountingLocalApp \
+    /tmp/spark-migration-jars/sparkdemoproject_2.12-0.0.1.jar /var/log/syslog local.old_farttable" && exit 1) || echo "Failed as expected."
 
 
 
