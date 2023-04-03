@@ -29,13 +29,16 @@ SPARK3_DETAILS="spark-3.3.1-bin-hadoop2"
 spark_submit2="$(pwd)/${SPARK2_DETAILS}/bin/spark-submit"
 spark_submit3="$(pwd)/${SPARK3_DETAILS}/bin/spark-submit"
 spark_sql3="$(pwd)/${SPARK3_DETAILS}/bin/spark-sql"
+prompt
 
 ########################################################################
 # Downloading dependencies
 ########################################################################
 
 #SKIPPING THIS PART FOR NOW. ASSUMING THIS IS RUN AFTER THE OG DEMO
+bash ./fetch_dependencies.sh $CORE_SPARK2 $SPARK2_DETAILS $SPARK3_DETAILS
 
+prompt
 ########################################################################
 # Run scalafix in a cloned dir
 ########################################################################
