@@ -16,6 +16,7 @@
 #  under the License.
 #
 import json
+
 import libcst as cst
 import nbformat
 
@@ -71,14 +72,15 @@ class PySparkler:
         # Apply the re-writer to the AST to each code cell
         for cell in nb.cells:
             if cell.cell_type == "code":
-                original_code = cell.source
+                original_code = "".join(cell.source)
                 original_tree = cst.parse_module(original_code)
                 modified_tree = visit_pyspark_24_to_30(original_tree)
-                cell.source = modified_tree.code
+                cell.source = modified_tree.code.splitlines(keepends=True)
 
         # Update the kernel name if requested
         if output_kernel_name:
             nb.metadata.kernelspec.name = output_kernel_name
+            nb.metadata.kernelspec.display_name = output_kernel_name
 
         if not self.dry_run:
             if output_file:
@@ -90,4 +92,3 @@ class PySparkler:
 
         # Return the modified Jupyter Notebook as String
         return json.dumps(nb.dict(), indent=1)
-
