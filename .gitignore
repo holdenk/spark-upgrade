@@ -11,6 +11,7 @@ sparkdemoproject-3
 project/metals.sbt
 */*.egg-info/*
 .bsp/
+hadoop-*
 
 # PyCharm/Intellij Ignores
 **/.idea/*
