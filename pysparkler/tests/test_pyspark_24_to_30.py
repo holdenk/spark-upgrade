@@ -337,8 +337,8 @@ print(rdd.collect())
 from pyspark.sql import SparkSession, Row
 spark = SparkSession.builder.appName('example').getOrCreate()
 
-data = [Row(name="James,,Smith",lang=["Java","Scala","C++"],state="CA"),
-    Row(name="Robert,,Williams",lang=["CSharp","VB"],state="NV")]  # PY24-30-007: As of Spark 3.0, Row field names are no longer sorted alphabetically when constructing with named arguments.
+data = [Row(lang=["Java","Scala","C++"],name="James,,Smith",state="CA"),
+    Row(lang=["CSharp","VB"],name="Robert,,Williams",state="NV")]  # PY24-30-007: Sorting Row fields by name alphabetically since as of Spark 3.0, they are no longer when constructed with named arguments.
 
 rdd=spark.sparkContext.parallelize(data)
 print(rdd.collect())
