@@ -77,6 +77,12 @@ def run(ctx: Context, verbose: bool) -> None:
     help="Output file to be written against the input. This is ignored in dry-run mode.",
 )
 @click.option(
+    "-t",
+    "--file-type",
+    type=click.Choice(["py", "ipynb"]),
+    help="To override the input file type, by default PySparkler infers this from input file extension.",
+)
+@click.option(
     "-d",
     "--dry-run",
     is_flag=True,
@@ -89,12 +95,18 @@ def upgrade(
     input_file: str,
     output_file: str | None,
     dry_run: bool,
+    file_type: str | None,
 ) -> None:
     """Upgrade the PySparkler file to the latest version and provides comments as hints for manual changes"""
 
     print_command_params(ctx)
     pysparkler = PySparkler(dry_run=dry_run)
-    output_file_content = pysparkler.upgrade(input_file, output_file)
+
+    file_type = file_type or input_file.split(".")[-1]
+    if file_type == "ipynb":
+        output_file_content = pysparkler.upgrade_notebook(input_file, output_file)
+    else:
+        output_file_content = pysparkler.upgrade_script(input_file, output_file)
 
     with open(input_file, encoding="utf-8") as f:
         input_file_content = f.read()
@@ -106,10 +118,11 @@ def upgrade(
         return None
 
     if ctx.obj["verbose"]:
+        lexer = "python" if file_type == "py" else "json" if file_type == "ipynb" else file_type
         stdout.rule("Input")
-        stdout.print(Syntax(input_file_content, "python"))
+        stdout.print(Syntax(input_file_content, lexer))
         stdout.rule("Output")
-        stdout.print(Syntax(output_file_content, "python"))
+        stdout.print(Syntax(output_file_content, lexer))
 
     if dry_run:
         stdout.rule("Unified Diff")
