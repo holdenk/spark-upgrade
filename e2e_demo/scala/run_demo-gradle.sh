@@ -52,10 +52,10 @@ cd ..
 cd sparkdemoproject-3
 echo "Now we run the migration setup."
 
-#backup the 
+#backup the build files
 # TODO : Make some script to edit in the scalafix dependencies
-mv build.gradle build.gradle.bak
-mv build.gradle.scalafix build.gradle
+cp build.gradle build.gradle.bak
+cp build.gradle.scalafix build.gradle
 
 #Copy scalafix
 cp ../../../scalafix/.scalafix.conf ./
