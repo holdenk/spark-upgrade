@@ -34,7 +34,7 @@ spark_sql3="$(pwd)/${SPARK3_DETAILS}/bin/spark-sql"
 # Downloading dependencies
 ########################################################################
 
-#SKIPPING THIS PART FOR NOW. ASSUMING THIS IS RUN AFTER THE OG DEMO
+source dl_dependencies.sh
 
 ########################################################################
 # Run scalafix in a cloned dir
@@ -44,15 +44,22 @@ rm -rf sparkdemoproject-3
 cp -af sparkdemoproject sparkdemoproject-3
 echo "Build the current demo project"
 cd sparkdemoproject
-gradle jar
+gradle clean test jar
 cd ..
 cd sparkdemoproject-3
 echo "Now we run the migration setup."
+cat ../../../docs/scala/gradle.md
 
-#backup the 
-# TODO : Make some script to edit in the scalafix dependencies
-mv build.gradle build.gradle.bak
-mv build.gradle.scalafix build.gradle
+cp build.gradle build.gradle.bak
+cp gradle.properties gradle.properties.bak
+cp settings.gradle settings.gradle.bak
+cat settings.gradle.bak | \
+  python ../update_gradle_settings.py > settings.gradle
+
+cat build.gradle.bak | \
+    python ../update_gradle_build.py  > build.gradle
+
+
 
 #Copy scalafix
 cp ../../../scalafix/.scalafix.conf ./
@@ -70,7 +77,7 @@ cat settings.gradle | \
 echo "You will also need to update dependency versions now (e.g. Spark to 3.3 and libs)"
 echo "Please address those and then press enter."
 prompt
-gradle jar
+gradle clean test jar
 
 echo "Lovely! Now we \"simulate\" publishing these jars to an S3 bucket (using local fs)"
 cd ..
@@ -102,11 +109,28 @@ ${spark_sql3}     --conf spark.sql.catalog.spark_catalog=org.apache.iceberg.spar
     --conf spark.sql.catalog.local=org.apache.iceberg.spark.SparkCatalog \
     --conf spark.sql.catalog.local.type=hadoop \
     --conf spark.sql.catalog.local.warehouse=$PWD/warehouse \
-   -e "CREATE TABLE ${outputTable} (word string, count long) USING iceberg TBLPROPERTIES('write.wap.enabled' = 'true')"
+   -e "CREATE TABLE IF NOT EXISTS ${outputTable} (word string, count long) USING iceberg TBLPROPERTIES('write.wap.enabled' = 'true')"
 
 
-# TODO : Call the domagic script. Not entirely sure about why the original script calls /tmp/spark-migration-jars/sparkdemoproject_2.12-0.0.1.jar for the domagic?
-# Maybe I've messed up the jar name on creation, mine is called sparkdemoproject-2.4.8-0.0.1.jar
+python domagic.py --iceberg --spark-control-command ${spark_submit2} --spark-new-command ${spark_submit3} \
+       --spark-command ${spark_submit3} \
+       --new-jar-suffix "-3" \
+       --warehouse-config " \
+    --conf spark.sql.catalog.spark_catalog=org.apache.iceberg.spark.SparkSessionCatalog \
+    --conf spark.sql.catalog.spark_catalog.type=hive \
+    --conf spark.sql.catalog.local=org.apache.iceberg.spark.SparkCatalog \
+    --conf spark.sql.catalog.local.type=hadoop \
+    --conf spark.sql.catalog.local.warehouse=$PWD/warehouse \
+    " \
+       --combined-pipeline " \
+    --conf spark.sql.catalog.spark_catalog=org.apache.iceberg.spark.SparkSessionCatalog \
+    --conf spark.sql.catalog.spark_catalog.type=hive \
+    --conf spark.sql.catalog.local=org.apache.iceberg.spark.SparkCatalog \
+    --conf spark.sql.catalog.local.type=hadoop \
+    --conf spark.sql.catalog.local.warehouse=$PWD/warehouse \
+    --class com.holdenkarau.sparkDemoProject.CountingLocalApp \
+    /tmp/spark-migration-jars/sparkdemoproject-0.0.1.jar utils.py ${outputTable}"
+echo "Pipeline migration passed! Yay!"
 
 
 
