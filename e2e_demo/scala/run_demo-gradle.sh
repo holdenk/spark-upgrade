@@ -12,6 +12,8 @@ prompt () {
   fi
 }
 
+#bash ./cleanup.sh
+
 ########################################################################
 # Define variables
 ########################################################################
@@ -36,8 +38,7 @@ prompt "Env setup done. Next we'll download dependencies."
 # Downloading dependencies
 ########################################################################
 
-#SKIPPING THIS PART FOR NOW. ASSUMING THIS IS RUN AFTER THE OG DEMO
-bash ./fetch_dependencies.sh $CORE_SPARK2 $SPARK2_DETAILS $SPARK3_DETAILS
+#bash ./fetch_dependencies.sh $CORE_SPARK2 $SPARK2_DETAILS $SPARK3_DETAILS
 
 prompt "Dependencies fetched. Will proceed to setup now."
 ########################################################################
