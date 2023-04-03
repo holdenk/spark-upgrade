@@ -7,7 +7,8 @@ set -ex
 
 prompt () {
   if [ -z "$NO_PROMPT" ]; then
-    read -p "Press enter to continue:" hifriends
+    echo $'\n\n\n'
+    read -p "$1. Press enter to continue:" hifriends
   fi
 }
 
@@ -29,7 +30,7 @@ SPARK3_DETAILS="spark-3.3.1-bin-hadoop2"
 spark_submit2="$(pwd)/${SPARK2_DETAILS}/bin/spark-submit"
 spark_submit3="$(pwd)/${SPARK3_DETAILS}/bin/spark-submit"
 spark_sql3="$(pwd)/${SPARK3_DETAILS}/bin/spark-sql"
-prompt
+prompt "Env setup done. Next we'll download dependencies."
 
 ########################################################################
 # Downloading dependencies
@@ -38,7 +39,7 @@ prompt
 #SKIPPING THIS PART FOR NOW. ASSUMING THIS IS RUN AFTER THE OG DEMO
 bash ./fetch_dependencies.sh $CORE_SPARK2 $SPARK2_DETAILS $SPARK3_DETAILS
 
-prompt
+prompt "Dependencies fetched. Will proceed to setup now."
 ########################################################################
 # Run scalafix in a cloned dir
 ########################################################################
@@ -50,7 +51,8 @@ cd sparkdemoproject
 gradle jar
 cd ..
 cd sparkdemoproject-3
-echo "Now we run the migration setup."
+
+prompt "Now we run the migration setup."
 
 #backup the build files
 # TODO : Make some script to edit in the scalafix dependencies
@@ -60,19 +62,19 @@ cp build.gradle.scalafix build.gradle
 #Copy scalafix
 cp ../../../scalafix/.scalafix.conf ./
 
-prompt
+prompt "Setup for scalafix complete"
 echo "Great! Now we'll try and run the scala fix rules in your project! Yay!. This might fail if you have interesting build targets."
-gradle scalafix || (echo "Linter warnings were found"; prompt)
+gradle scalafix #|| (echo "Linter warnings were found"; prompt)
 
 echo "ScalaFix is done, you should probably review the changes (e.g. git diff)"
-prompt
+prompt "Scalafix run complete"
 # We don't run compile test because some changes are not back compat (see value/key change).
 cp -af settings.gradle settings.gradle.scalafix.bak.pre3
 cat settings.gradle | \
   python -c "import re,sys;print(sys.stdin.read().replace(\"${INITIAL_VERSION}\", \"${TARGET_VERSION}\"))" > settings.gradle
 echo "You will also need to update dependency versions now (e.g. Spark to 3.3 and libs)"
 echo "Please address those and then press enter."
-prompt
+prompt "Build file setup done. Next, we will build a jar"
 gradle jar
 
 echo "Lovely! Now we \"simulate\" publishing these jars to an S3 bucket (using local fs)"
@@ -94,6 +96,8 @@ cd ../../
 cd iceberg-spark-upgrade-wap-plugin
 sbt clean compile test package
 cd ..
+
+prompt "Iceberg spark plugin build. Next we will run a pipeline comparison"
 
 #Go into the pipeline compare dir
 cd pipelinecompare
