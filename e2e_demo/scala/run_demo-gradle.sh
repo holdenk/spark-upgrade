@@ -3,6 +3,8 @@
 echo "Hi Friend! If you have questions running this script please reach out on Slack :D"
 
 set -ex
+set -o pipefail
+
 
 prompt () {
   if [ -z "$NO_PROMPT" ]; then
@@ -75,9 +77,6 @@ gradle scalafix #|| (echo "Linter warnings were found"; prompt)
 echo "ScalaFix is done, you should probably review the changes (e.g. git diff)"
 
 prompt "Scalafix run complete"
-
-# We don't run compile test because some changes are not back compat (see value/key change).
-mv settings.gradle settings.gradle.scalafix.bak.pre3
 
 echo "You will also need to update dependency versions now (e.g. Spark to 3.3 and libs)"
 echo "Please address those and then press enter."
@@ -168,9 +167,3 @@ prompt "This next job should fail"
     --conf spark.sql.catalog.local.warehouse=$PWD/warehouse \
     --class com.holdenkarau.sparkDemoProject.CountingLocalApp \
     /tmp/spark-migration-jars/sparkdemoproject_2.12-0.0.1.jar /var/log/syslog local.old_farttable" && exit 1) || echo "Failed as expected."
-
-
-
-
-
-
