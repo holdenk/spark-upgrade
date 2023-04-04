@@ -18,6 +18,9 @@ And add:
 
 To your plugins.
 
+If your including ScalaFix through "classpath" rather than "plugins" you will want add `apply plugin: 'io.github.cosmicsilence.scalafix'`.
+
+
 And update your build file to add a "-3" to the artifact name so we can tell the difference between your Spark 3 & Spark 2 jars.
 
 Thanks friend!
