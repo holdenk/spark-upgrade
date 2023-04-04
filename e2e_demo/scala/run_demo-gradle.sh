@@ -48,7 +48,7 @@ cat ../../../docs/scala/gradle.md
 
 cp build.gradle build.gradle.bak
 cp gradle.properties gradle.properties.bak
-cp gradle settings.gradle.bak
+cp settings.gradle settings.gradle.bak
 cat settings.gradle.bak | \
   python ../update_gradle_settings.py > settings.gradle
 
