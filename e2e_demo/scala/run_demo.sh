@@ -1,14 +1,8 @@
 #!/bin/bash
 
-bash ./cleanup.sh
 echo "Hi Friend! If you have questions running this script please reach out on Slack :D"
 
 set -ex
-
-INITIAL_VERSION=${INITIAL_VERSION:-2.4.8}
-TARGET_VERSION=${TARGET_VERSION:-3.3.1}
-SCALAFIX_RULES_VERSION=${SCALAFIX_RULES_VERSION:-0.1.9}
-outputTable="local.newest_farttable"
 
 prompt () {
   if [ -z "$NO_PROMPT" ]; then
@@ -16,13 +10,27 @@ prompt () {
   fi
 }
 
+bash ./cleanup.sh
+cd ./sparkdemoproject && sbt clean && ..
+
 ########################################################################
 # Downloading dependencies
 ########################################################################
 
+INITIAL_VERSION=${INITIAL_VERSION:-2.4.8}
+TARGET_VERSION=${TARGET_VERSION:-3.3.1}
+SCALAFIX_RULES_VERSION=${SCALAFIX_RULES_VERSION:-0.1.9}
+outputTable="local.newest_farttable"
+
+########################################################################
+# Downloading dependencies
+########################################################################
 
 source dl_dependencies.sh
 
+########################################################################
+# Run scalafix in a cloned dir
+########################################################################
 echo "Making a copy of the demo project so we can have side-by-side migrated / non-migrated."
 rm -rf sparkdemoproject-3
 cp -af sparkdemoproject sparkdemoproject-3

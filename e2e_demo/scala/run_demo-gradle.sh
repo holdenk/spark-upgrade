@@ -13,6 +13,7 @@ prompt () {
 }
 
 bash ./cleanup.sh
+cd ./sparkdemoproject && gradle clean && ..
 
 ########################################################################
 # Define variables
@@ -22,7 +23,6 @@ INITIAL_VERSION=${INITIAL_VERSION:-2.4.8}
 TARGET_VERSION=${TARGET_VERSION:-3.3.1}
 SCALAFIX_RULES_VERSION=${SCALAFIX_RULES_VERSION:-0.1.9}
 outputTable="local.newest_farttable"
-
 
 # We DL Spark2 but also slipstreamed spark
 SPARK2_DETAILS="spark-2.4.8-bin-without-hadoop-scala-2.12"

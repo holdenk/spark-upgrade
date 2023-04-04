@@ -1,9 +1,10 @@
 #!/bin/bash
 
+set -ex
+
 CORE_SPARK2=$1
 SPARK2_DETAILS=$2
 SPARK3_DETAILS=$3
-
 
 echo "Downloading Spark 2 and 3"
 if [ ! -f ${CORE_SPARK2}.tgz ]; then
