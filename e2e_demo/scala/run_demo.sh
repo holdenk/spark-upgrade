@@ -22,6 +22,14 @@ TARGET_VERSION=${TARGET_VERSION:-3.3.1}
 SCALAFIX_RULES_VERSION=${SCALAFIX_RULES_VERSION:-0.1.9}
 outputTable="local.newest_farttable"
 
+SPARK2_DETAILS="spark-2.4.8-bin-without-hadoop-scala-2.12"
+CORE_SPARK2="spark-2.4.8-bin-hadoop2.7"
+SPARK3_DETAILS="spark-3.3.1-bin-hadoop2"
+
+spark_submit2="$(pwd)/${SPARK2_DETAILS}/bin/spark-submit"
+spark_submit3="$(pwd)/${SPARK3_DETAILS}/bin/spark-submit"
+spark_sql3="$(pwd)/${SPARK3_DETAILS}/bin/spark-sql"
+
 ########################################################################
 # Downloading dependencies
 ########################################################################
