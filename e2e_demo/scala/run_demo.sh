@@ -10,8 +10,8 @@ prompt () {
   fi
 }
 
-bash ./cleanup.sh
-cd ./sparkdemoproject && sbt clean && ..
+./cleanup.sh
+cd ./sparkdemoproject && sbt clean && cd ..
 
 ########################################################################
 # Setting variables

@@ -12,7 +12,7 @@ prompt () {
 }
 
 bash ./cleanup.sh
-cd ./sparkdemoproject && gradle clean && ..
+cd ./sparkdemoproject && gradle clean && cd ..
 
 ########################################################################
 # Define variables
