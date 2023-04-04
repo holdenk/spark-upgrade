@@ -3,7 +3,6 @@
 echo "Hi Friend! If you have questions running this script please reach out on Slack :D"
 
 set -ex
-set -o pipefail
 
 
 prompt () {
