@@ -11,6 +11,9 @@ sparkdemoproject-3
 project/metals.sbt
 */*.egg-info/*
 .bsp/
+hadoop-*
+pipelinecompare/warehouse/
+pipelinecompare/metastore_db/
 
 # PyCharm/Intellij Ignores
 **/.idea/*
