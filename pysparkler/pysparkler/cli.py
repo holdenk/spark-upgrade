@@ -77,6 +77,18 @@ def run(ctx: Context, verbose: bool) -> None:
     help="Output file to be written against the input. This is ignored in dry-run mode.",
 )
 @click.option(
+    "-t",
+    "--file-type",
+    type=click.Choice(["py", "ipynb"]),
+    help="To override the input file type, by default PySparkler infers this from input file extension.",
+)
+@click.option(
+    "-k",
+    "--output-kernel",
+    type=click.STRING,
+    help="The kernel name in the output Jupyter Notebook. This option is ignored if the file type is not `ipynb`",
+)
+@click.option(
     "-d",
     "--dry-run",
     is_flag=True,
@@ -89,12 +101,21 @@ def upgrade(
     input_file: str,
     output_file: str | None,
     dry_run: bool,
+    file_type: str | None,
+    output_kernel: str | None,
 ) -> None:
     """Upgrade the PySparkler file to the latest version and provides comments as hints for manual changes"""
 
     print_command_params(ctx)
     pysparkler = PySparkler(dry_run=dry_run)
-    output_file_content = pysparkler.upgrade(input_file, output_file)
+
+    file_type = file_type or input_file.split(".")[-1]
+    if file_type == "ipynb":
+        output_file_content = pysparkler.upgrade_notebook(
+            input_file, output_file, output_kernel
+        )
+    else:
+        output_file_content = pysparkler.upgrade_script(input_file, output_file)
 
     with open(input_file, encoding="utf-8") as f:
         input_file_content = f.read()
@@ -105,11 +126,15 @@ def upgrade(
         )
         return None
 
+    lexer = (
+        "python" if file_type == "py" else "json" if file_type == "ipynb" else file_type
+    )
+
     if ctx.obj["verbose"]:
         stdout.rule("Input")
-        stdout.print(Syntax(input_file_content, "python"))
+        stdout.print(Syntax(input_file_content, lexer, line_numbers=True))
         stdout.rule("Output")
-        stdout.print(Syntax(output_file_content, "python"))
+        stdout.print(Syntax(output_file_content, lexer, line_numbers=True))
 
     if dry_run:
         stdout.rule("Unified Diff")
@@ -117,7 +142,7 @@ def upgrade(
             input_file_content.splitlines(), output_file_content.splitlines()
         )
         for line in diff:
-            stdout.print(Syntax(line, "python"))
+            stdout.print(Syntax(line, lexer))
         stdout.rule("End of Diff")
     else:
         stdout.print(f"Output written to {output_file or input_file}", style="green")
