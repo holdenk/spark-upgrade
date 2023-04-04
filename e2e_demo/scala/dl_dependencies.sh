@@ -20,7 +20,7 @@ wait
 
 
 ########################################################################
-# Setting variables
+# Extracting artifacts
 ########################################################################
 echo "Unzipping downloaded files"
 if [ ! -d ${SPARK3_DETAILS} ]; then
