@@ -2,6 +2,6 @@
 
 set -ex
 
-rm -rf sparkdemoproject-3 spark-* *.jar *.tgz *.gz hadoop-*
+rm -rf sparkdemoproject-3
 rm -rf ../../pipelinecompare/warehouse/*
 rm -f /tmp/spark-migration-jars/*
