@@ -49,16 +49,22 @@ rm -rf sparkdemoproject-3
 cp -af sparkdemoproject sparkdemoproject-3
 echo "Build the current demo project"
 cd sparkdemoproject
-gradle jar
+gradle clean test jar
 cd ..
 cd sparkdemoproject-3
 
-prompt "Now we run the migration setup."
+echo "Now we run the migration setup."
+cat ../../../docs/scala/gradle.md
 
-#backup the build files
-# TODO : Make some script to edit in the scalafix dependencies
 cp build.gradle build.gradle.bak
-cp build.gradle.scalafix build.gradle
+cp gradle.properties gradle.properties.bak
+cp gradle settings.gradle.bak
+cat settings.gradle.bak | \
+  python ../update_gradle_settings.py > settings.gradle
+
+cat build.gradle.bak | \
+    python ../update_gradle_build.py  > build.gradle
+
 
 #Copy scalafix
 cp ../../../scalafix/.scalafix.conf ./
@@ -74,10 +80,10 @@ prompt "Scalafix run complete"
 
 # We don't run compile test because some changes are not back compat (see value/key change).
 mv settings.gradle settings.gradle.scalafix.bak.pre3
-cat settings.gradle.scalafix.bak.pre3 | python -c "import re,sys;print(sys.stdin.read().replace(\"sparkdemoproject\", \"sparkdemoproject-3\"))" > settings.gradle
-#cat settings.gradle.scalafix.bak.pre3 | python -c "import re,sys;print(sys.stdin.read().replace(\"${INITIAL_VERSION}\", \"${TARGET_VERSION}\"))" > settings.gradle
+
 echo "You will also need to update dependency versions now (e.g. Spark to 3.3 and libs)"
 echo "Please address those and then press enter."
+
 prompt "Build file setup done. Next, we will build a jar"
 gradle jar
 
@@ -119,12 +125,8 @@ ${spark_sql3}     --conf spark.sql.catalog.spark_catalog=org.apache.iceberg.spar
     --conf spark.sql.catalog.local=org.apache.iceberg.spark.SparkCatalog \
     --conf spark.sql.catalog.local.type=hadoop \
     --conf spark.sql.catalog.local.warehouse=$PWD/warehouse \
-   -e "CREATE TABLE ${outputTable} (word string, count long) USING iceberg TBLPROPERTIES('write.wap.enabled' = 'true')"
+   -e "CREATE TABLE IF NOT EXISTS ${outputTable} (word string, count long) USING iceberg TBLPROPERTIES('write.wap.enabled' = 'true')"
 
-
-# TODO : Call the domagic script. Not entirely sure about why the original script calls /tmp/spark-migration-jars/sparkdemoproject_2.12-0.0.1.jar for the domagic?
-# Maybe I've messed up the jar name on creation, mine is called sparkdemoproject-2.4.8-0.0.1.jar
-prompt "Plugin built. Moving on to comparison jobs. This one should pass"
 
 python domagic.py --iceberg --spark-control-command ${spark_submit2} --spark-new-command ${spark_submit3} \
        --spark-command ${spark_submit3} \

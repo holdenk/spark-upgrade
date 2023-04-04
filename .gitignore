@@ -25,3 +25,12 @@ pipelinecompare/metastore_db/
 
 # Annoying macOS Ignores
 **.DS_Store
+
+
+# Some deps we download
+hadoop-2.*.0*
+# Generated in testing
+spark-warehouse
+metastore_db
+warehouse
+

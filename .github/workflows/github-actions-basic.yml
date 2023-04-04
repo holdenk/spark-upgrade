@@ -79,6 +79,9 @@ jobs:
       with:
         path: e2e_demo/scala/hadoop-2*
         key: ${{ runner.os }}-extract-hadoop2
-    # Run the e2e demo with the local version
-    - name: e2e demo
+    # Run the sbt e2e demo with the local version
+    - name: sbt e2e demo
       run: cd e2e_demo/scala; SCALAFIX_RULES_VERSION=$(cat ~/rules_version) NO_PROMPT="yes" ./run_demo.sh
+    # Run the gradle e2e demo with the local version
+    - name: gradle e2e demo
+      run: cd e2e_demo/scala; SCALAFIX_RULES_VERSION=$(cat ~/rules_version) NO_PROMPT="yes" ./run_demo-gradle.sh
