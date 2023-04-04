@@ -74,7 +74,8 @@ prompt "Scalafix run complete"
 
 # We don't run compile test because some changes are not back compat (see value/key change).
 mv settings.gradle settings.gradle.scalafix.bak.pre3
-cat settings.gradle.scalafix.bak.pre3 | python -c "import re,sys;print(sys.stdin.read().replace(\"${INITIAL_VERSION}\", \"${TARGET_VERSION}\"))" > settings.gradle
+cat settings.gradle.scalafix.bak.pre3 | python -c "import re,sys;print(sys.stdin.read().replace(\"sparkdemoproject\", \"sparkdemoproject-3\"))" > settings.gradle
+#cat settings.gradle.scalafix.bak.pre3 | python -c "import re,sys;print(sys.stdin.read().replace(\"${INITIAL_VERSION}\", \"${TARGET_VERSION}\"))" > settings.gradle
 echo "You will also need to update dependency versions now (e.g. Spark to 3.3 and libs)"
 echo "Please address those and then press enter."
 prompt "Build file setup done. Next, we will build a jar"
