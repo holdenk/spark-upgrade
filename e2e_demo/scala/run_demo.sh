@@ -14,7 +14,7 @@ bash ./cleanup.sh
 cd ./sparkdemoproject && sbt clean && ..
 
 ########################################################################
-# Downloading dependencies
+# Setting variables
 ########################################################################
 
 INITIAL_VERSION=${INITIAL_VERSION:-2.4.8}

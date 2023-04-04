@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 echo "Hi Friend! If you have questions running this script please reach out on Slack :D"
@@ -24,21 +23,12 @@ TARGET_VERSION=${TARGET_VERSION:-3.3.1}
 SCALAFIX_RULES_VERSION=${SCALAFIX_RULES_VERSION:-0.1.9}
 outputTable="local.newest_farttable"
 
-# We DL Spark2 but also slipstreamed spark
-SPARK2_DETAILS="spark-2.4.8-bin-without-hadoop-scala-2.12"
-CORE_SPARK2="spark-2.4.8-bin-hadoop2.7"
-SPARK3_DETAILS="spark-3.3.1-bin-hadoop2"
-
-spark_submit2="$(pwd)/${SPARK2_DETAILS}/bin/spark-submit"
-spark_submit3="$(pwd)/${SPARK3_DETAILS}/bin/spark-submit"
-spark_sql3="$(pwd)/${SPARK3_DETAILS}/bin/spark-sql"
 prompt "Env setup done. Next we'll download dependencies."
-
 ########################################################################
 # Downloading dependencies
 ########################################################################
 
-bash ./fetch_dependencies.sh $CORE_SPARK2 $SPARK2_DETAILS $SPARK3_DETAILS
+source dl_dependencies.sh
 
 prompt "Dependencies fetched. Will proceed to setup now."
 ########################################################################
