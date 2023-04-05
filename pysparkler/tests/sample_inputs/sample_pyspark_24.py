@@ -23,3 +23,12 @@ data = [Row(name="James,,Smith", lang=["Java", "Scala", "C++"], state="CA"),
 
 rdd = spark.sparkContext.parallelize(data)
 print(rdd.collect())
+
+
+def truncate(truncate=True):
+        try:
+                int_truncate = int(truncate)
+        except ValueError as ex:
+                raise TypeError(
+                        "Parameter 'truncate={}' should be either bool or int.".format(truncate)
+                )

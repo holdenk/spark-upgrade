@@ -97,3 +97,8 @@ class SqlMlMethodsRaiseTypeErrorCommentWriter(StatementLineCommentWriter):
         ):
             if self._has_sql_or_ml_import:
                 self.match_found = True
+
+
+def visit_pyspark_31_to_32(parsed_module: cst.Module) -> cst.Module:
+    """Visit a parsed module and add comments for PySpark 3.1 to 3.2 migration guide"""
+    return parsed_module.visit(SqlMlMethodsRaiseTypeErrorCommentWriter())
