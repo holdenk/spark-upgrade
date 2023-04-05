@@ -19,43 +19,10 @@
 import libcst as cst
 import libcst.matchers as m
 
-from pysparkler.base import (
-    BaseTransformer,
-    add_comment_to_end_of_a_simple_statement_line,
-    one_of_matching_strings,
-)
+from pysparkler.base import StatementLineCommentWriter, one_of_matching_strings
 
 # Migration rules for PySpark 2.4 to 3.0
 # https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_2.4_to_3.0.html
-
-
-class StatementLineCommentWriter(BaseTransformer):
-    """Base class for adding comments to the end of the statement line when a matching condition is found"""
-
-    def __init__(
-        self,
-        transformer_id: str,
-        comment: str,
-    ):
-        super().__init__(transformer_id)
-        self._comment = comment
-        self.match_found = False
-
-    @property
-    def comment(self):
-        return self._comment
-
-    def leave_SimpleStatementLine(self, original_node, updated_node):
-        """Add a comment where to Pandas is being used"""
-        if self.match_found:
-            self.match_found = False
-            return add_comment_to_end_of_a_simple_statement_line(
-                updated_node,
-                self.transformer_id,
-                f"# {self.transformer_id}: {self.comment}",
-            )
-        else:
-            return original_node
 
 
 class RequiredDependencyVersionCommentWriter(StatementLineCommentWriter):

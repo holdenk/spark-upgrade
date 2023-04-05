@@ -21,6 +21,7 @@ import libcst as cst
 import nbformat
 
 from pysparkler.pyspark_24_to_30 import visit_pyspark_24_to_30
+from pysparkler.pyspark_31_to_32 import visit_pyspark_31_to_32
 
 
 class PySparkler:
@@ -43,6 +44,7 @@ class PySparkler:
 
         # Apply the re-writer to the AST
         modified_tree = visit_pyspark_24_to_30(original_tree)
+        modified_tree = visit_pyspark_31_to_32(modified_tree)
 
         if not self.dry_run:
             if output_file:
@@ -75,6 +77,7 @@ class PySparkler:
                 original_code = "".join(cell.source)
                 original_tree = cst.parse_module(original_code)
                 modified_tree = visit_pyspark_24_to_30(original_tree)
+                modified_tree = visit_pyspark_31_to_32(modified_tree)
                 cell.source = modified_tree.code.splitlines(keepends=True)
 
         # Update the kernel name if requested
