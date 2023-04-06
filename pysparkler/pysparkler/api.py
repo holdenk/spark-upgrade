@@ -20,8 +20,8 @@ import json
 import libcst as cst
 import nbformat
 
-from pysparkler.pyspark_24_to_30 import visit_pyspark_24_to_30
-from pysparkler.pyspark_31_to_32 import visit_pyspark_31_to_32
+from pysparkler.pyspark_24_to_30 import pyspark_24_to_30_transformers
+from pysparkler.pyspark_31_to_32 import pyspark_31_to_32_transformers
 
 
 class PySparkler:
@@ -34,6 +34,13 @@ class PySparkler:
         self.to_pyspark = to_pyspark
         self.dry_run = dry_run
 
+    @property
+    def transformers(self):
+        return [
+            *pyspark_24_to_30_transformers(),
+            *pyspark_31_to_32_transformers(),
+        ]
+
     def upgrade_script(self, input_file: str, output_file: str | None = None) -> str:
         """Upgrade a PySpark Python script file to the latest version and provides comments as hints for manual
         changes"""
@@ -43,8 +50,7 @@ class PySparkler:
         original_tree = cst.parse_module(original_code)
 
         # Apply the re-writer to the AST
-        modified_tree = visit_pyspark_24_to_30(original_tree)
-        modified_tree = visit_pyspark_31_to_32(modified_tree)
+        modified_tree = self.visit(original_tree)
 
         if not self.dry_run:
             if output_file:
@@ -76,8 +82,7 @@ class PySparkler:
             if cell.cell_type == "code":
                 original_code = "".join(cell.source)
                 original_tree = cst.parse_module(original_code)
-                modified_tree = visit_pyspark_24_to_30(original_tree)
-                modified_tree = visit_pyspark_31_to_32(modified_tree)
+                modified_tree = self.visit(original_tree)
                 cell.source = modified_tree.code.splitlines(keepends=True)
 
         # Update the kernel name if requested
@@ -95,3 +100,9 @@ class PySparkler:
 
         # Return the modified Jupyter Notebook as String
         return json.dumps(nb.dict(), indent=1)
+
+    def visit(self, module: cst.Module) -> cst.Module:
+        """Visit a CSTModule and apply the transformers"""
+        for transformer in self.transformers:
+            module = module.visit(transformer)
+        return module

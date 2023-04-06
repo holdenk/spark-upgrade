@@ -301,15 +301,15 @@ class MlParamMixinsSetterCommentWriter(StatementLineCommentWriter):
             self.match_found = True
 
 
-def visit_pyspark_24_to_30(parsed_module: cst.Module) -> cst.Module:
-    """Visit a parsed module and add comments for PySpark 2.4 to 3.0 migration guide"""
-    return (
-        parsed_module.visit(RequiredPandasVersionCommentWriter())
-        .visit(ToPandasUsageTransformer())
-        .visit(PandasUdfUsageTransformer())
-        .visit(PyArrowEnabledCommentWriter())
-        .visit(PandasConvertToArrowArraySafelyCommentWriter())
-        .visit(CreateDataFrameVerifySchemaCommentWriter())
-        .visit(RowFieldNamesNotSortedCommentWriter())
-        .visit(MlParamMixinsSetterCommentWriter())
-    )
+def pyspark_24_to_30_transformers() -> list[cst.CSTTransformer]:
+    """Return a list of transformers for PySpark 2.4 to 3.0 migration guide"""
+    return [
+        RequiredPandasVersionCommentWriter(),
+        ToPandasUsageTransformer(),
+        PandasUdfUsageTransformer(),
+        PyArrowEnabledCommentWriter(),
+        PandasConvertToArrowArraySafelyCommentWriter(),
+        CreateDataFrameVerifySchemaCommentWriter(),
+        RowFieldNamesNotSortedCommentWriter(),
+        MlParamMixinsSetterCommentWriter(),
+    ]
