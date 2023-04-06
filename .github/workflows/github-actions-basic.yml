@@ -16,6 +16,7 @@ jobs:
     env:
       SPARK_VERSION: ${{ matrix.spark }}
     steps:
+    - uses: coursier/cache-action@v6
     - name: sbt
       run: |
         sudo apt-get update
@@ -35,6 +36,10 @@ jobs:
       run: pip install -r sql/requirements.txt
     # Run the scala tests.
     # We are exctracting the dynamic version from something like [info] 0.1.9+18-ddfaf3e6-SNAPSHOT (non-snapshots will not have +...)
+    - name: Run scalafix sbt Spark 2.3.2 tests
+      run: cd scalafix; sbt ";clean;compile;test" -DsparkVersion=2.3.2 ;cd ..
+    - name: Run scalafix sbt Spark 2.1.1 tests
+      run: cd scalafix; sbt ";clean;compile;test" -DsparkVersion=2.3.2 ;cd ..
     - name: Run sbt tests on scalafix & extract the dynver
       run: cd scalafix; sbt ";clean;compile;test;publishLocal;+publishLocal"; sbt "show rules/dynver" |grep "\[info\]" |grep "[0-9].[0-9].[0-9]" | cut -f 2 -d " " > ~/rules_version
     - name: Run sbt tests on our WAP plugin
