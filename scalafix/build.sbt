@@ -30,12 +30,20 @@ inThisBuild(
         url("https://github.com/holdenk/spark-auto-upgrade")
       )
     ),
-    scalaVersion := V.scala212,
+    scalaVersion := {
+      if (sparkVersion.value > "2.4") {
+        V.scala212
+      } else {
+        V.scala211
+      }
+    },
     crossScalaVersions := {
       if (sparkVersion.value > "3.1.0") {
         List(V.scala212, V.scala213)
-      } else {
+      } else if (sparkVersion.value > "2.4") {
         List(V.scala211, V.scala212)
+      } else {
+        List(V.scala211)
       }
     },
     addCompilerPlugin(scalafixSemanticdb),
