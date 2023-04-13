@@ -18,7 +18,10 @@
 import libcst as cst
 import libcst.matchers as m
 
-from pysparkler.base import StatementLineCommentWriter
+from pysparkler.base import (
+    RequiredDependencyVersionCommentWriter,
+    StatementLineCommentWriter,
+)
 
 
 class DataframeDropAxisIndexByDefaultCommentWriter(StatementLineCommentWriter):
@@ -66,6 +69,26 @@ class DataframeDropAxisIndexByDefaultCommentWriter(StatementLineCommentWriter):
             return original_node
 
 
+class RequiredPandasVersionCommentWriter(RequiredDependencyVersionCommentWriter):
+    """In Spark 3.3, PySpark upgrades Pandas version, the new minimum required version changes from 0.23.2 to 1.0.5."""
+
+    def __init__(
+        self,
+        pyspark_version: str = "3.3",
+        required_dependency_name: str = "pandas",
+        required_dependency_version: str = "1.0.5",
+    ):
+        super().__init__(
+            transformer_id="PY32-33-002",
+            pyspark_version=pyspark_version,
+            required_dependency_name=required_dependency_name,
+            required_dependency_version=required_dependency_version,
+        )
+
+
 def pyspark_32_to_33_transformers() -> list[cst.CSTTransformer]:
     """Return a list of transformers for PySpark 3.2 to 3.3 migration guide"""
-    return [DataframeDropAxisIndexByDefaultCommentWriter()]
+    return [
+        DataframeDropAxisIndexByDefaultCommentWriter(),
+        RequiredPandasVersionCommentWriter(),
+    ]

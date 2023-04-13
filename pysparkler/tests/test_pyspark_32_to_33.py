@@ -16,7 +16,10 @@
 #  under the License.
 #
 
-from pysparkler.pyspark_32_to_33 import DataframeDropAxisIndexByDefaultCommentWriter
+from pysparkler.pyspark_32_to_33 import (
+    DataframeDropAxisIndexByDefaultCommentWriter,
+    RequiredPandasVersionCommentWriter,
+)
 from tests.conftest import rewrite
 
 
@@ -96,3 +99,16 @@ df.drop(index=[0, 1], columns='A')
 """
     modified_code = rewrite(given_code, DataframeDropAxisIndexByDefaultCommentWriter())
     assert modified_code == given_code
+
+
+def test_adds_required_pandas_version_comment_to_import_statements():
+    given_code = """
+import pandas
+import pyspark
+"""
+    modified_code = rewrite(given_code, RequiredPandasVersionCommentWriter())
+    expected_code = """
+import pandas  # PY32-33-002: PySpark 3.3 requires pandas version 1.0.5 or higher
+import pyspark
+"""
+    assert modified_code == expected_code
