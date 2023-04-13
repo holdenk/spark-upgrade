@@ -1,0 +1,98 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#  #
+#    http://www.apache.org/licenses/LICENSE-2.0
+#  #
+#  Unless required by applicable law or agreed to in writing,
+#  software distributed under the License is distributed on an
+#  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#  KIND, either express or implied.  See the License for the
+#  specific language governing permissions and limitations
+#  under the License.
+#
+
+from pysparkler.pyspark_32_to_33 import DataframeDropAxisIndexByDefaultCommentWriter
+from tests.conftest import rewrite
+
+
+def test_preserves_drop_by_column_behavior_when_axis_not_specified_without_labels_keyword():
+    given_code = """
+import pyspark.pandas as ps
+
+df = ps.DataFrame(np.arange(12).reshape(3, 4), columns=['A', 'B', 'C', 'D'])
+df.drop(['B', 'C'])
+"""
+    modified_code = rewrite(given_code, DataframeDropAxisIndexByDefaultCommentWriter())
+    expected_code = """
+import pyspark.pandas as ps
+
+df = ps.DataFrame(np.arange(12).reshape(3, 4), columns=['A', 'B', 'C', 'D'])
+df.drop(['B', 'C'], axis = 1)  # PY32-33-001: As of PySpark 3.3, the drop method of pandas API on Spark DataFrame supports dropping rows by index, and sets dropping by index instead of column by default.
+"""
+    assert modified_code == expected_code
+
+
+def test_preserves_drop_by_column_behavior_when_axis_not_specified_with_labels_keyword():
+    given_code = """
+import pyspark.pandas as ps
+
+df = ps.DataFrame(np.arange(12).reshape(3, 4), columns=['A', 'B', 'C', 'D'])
+df.drop(labels=['B', 'C'])
+"""
+    modified_code = rewrite(given_code, DataframeDropAxisIndexByDefaultCommentWriter())
+    expected_code = """
+import pyspark.pandas as ps
+
+df = ps.DataFrame(np.arange(12).reshape(3, 4), columns=['A', 'B', 'C', 'D'])
+df.drop(labels=['B', 'C'], axis = 1)  # PY32-33-001: As of PySpark 3.3, the drop method of pandas API on Spark DataFrame supports dropping rows by index, and sets dropping by index instead of column by default.
+"""
+    assert modified_code == expected_code
+
+
+def test_does_nothing_when_drop_by_column_with_axis_one_specified():
+    given_code = """
+import pyspark.pandas as ps
+
+df = ps.DataFrame(np.arange(12).reshape(3, 4), columns=['A', 'B', 'C', 'D'])
+df.drop(['B', 'C'], axis=1)
+"""
+    modified_code = rewrite(given_code, DataframeDropAxisIndexByDefaultCommentWriter())
+    assert modified_code == given_code
+
+
+def test_does_nothing_when_drop_by_column_with_axis_zero_specified():
+    given_code = """
+import pyspark.pandas as ps
+
+df = ps.DataFrame(np.arange(12).reshape(3, 4), columns=['A', 'B', 'C', 'D'])
+df.drop(['B', 'C'], axis=0)
+"""
+    modified_code = rewrite(given_code, DataframeDropAxisIndexByDefaultCommentWriter())
+    assert modified_code == given_code
+
+
+def test_does_nothing_when_drop_by_columns_keyword():
+    given_code = """
+import pyspark.pandas as ps
+
+df = ps.DataFrame(np.arange(12).reshape(3, 4), columns=['A', 'B', 'C', 'D'])
+df.drop(columns=['B', 'C'])
+"""
+    modified_code = rewrite(given_code, DataframeDropAxisIndexByDefaultCommentWriter())
+    assert modified_code == given_code
+
+
+def test_does_nothing_when_drop_by_index_keyword():
+    given_code = """
+import pyspark.pandas as ps
+
+df = ps.DataFrame(np.arange(12).reshape(3, 4), columns=['A', 'B', 'C', 'D'])
+df.drop(index=[0, 1], columns='A')
+"""
+    modified_code = rewrite(given_code, DataframeDropAxisIndexByDefaultCommentWriter())
+    assert modified_code == given_code
