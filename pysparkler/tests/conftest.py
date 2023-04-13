@@ -15,6 +15,9 @@
 #  specific language governing permissions and limitations
 #  under the License.
 #
+
+import os
+
 import libcst as cst
 
 
@@ -23,3 +26,21 @@ def rewrite(given_code: str, cst_transformer: cst.CSTTransformer):
     modified_tree = given_tree.visit(cst_transformer)
     modified_code = modified_tree.code
     return modified_code
+
+
+def absolute_path(relative_path: str):
+    cwd = os.getcwd()
+    # Tokenize on the path separator
+    relative_path_tokens = relative_path.split(os.path.sep)
+    cwd_tokens = cwd.split(os.path.sep)
+
+    # Check if last token of cwd is the same as the first token of the relative path
+    if cwd_tokens[-1] == relative_path_tokens[0]:
+        # Remove the first token of the relative path
+        relative_path_tokens.pop(0)
+        # Join the remaining tokens
+        relative_path = os.path.sep.join(relative_path_tokens)
+        # Return the relative path
+
+    # Join with the current directory to make the absolute path
+    return os.path.join(cwd, relative_path)

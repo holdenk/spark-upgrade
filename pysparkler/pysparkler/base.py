@@ -62,6 +62,60 @@ class StatementLineCommentWriter(BaseTransformer):
             return original_node
 
 
+class RequiredDependencyVersionCommentWriter(StatementLineCommentWriter):
+    """Base class for adding comments to the import statements of required dependencies version of PySpark"""
+
+    def __init__(
+        self,
+        transformer_id: str,
+        pyspark_version: str,
+        required_dependency_name: str,
+        required_dependency_version: str,
+        import_name: str | None = None,
+    ):
+        super().__init__(
+            transformer_id=transformer_id,
+            comment=f"PySpark {pyspark_version} requires {required_dependency_name} version {required_dependency_version} or higher",
+        )
+        self.required_dependency_name = required_dependency_name
+        self._import_name = import_name
+
+    @property
+    def import_name(self):
+        return (
+            self.required_dependency_name
+            if self._import_name is None
+            else self._import_name
+        )
+
+    @property
+    def comment(self):
+        if self._import_name is None:
+            return super().comment
+        else:
+            return f"{super().comment} to use {self._import_name}"
+
+    def visit_Import(self, node: cst.Import) -> None:
+        """Check if pandas_udf is being used in an import statement"""
+        if m.matches(
+            node,
+            m.Import(
+                names=[m.ImportAlias(name=m.Attribute(attr=m.Name(self.import_name)))]
+            ),
+        ):
+            self.match_found = True
+
+    def visit_ImportAlias(self, node: cst.ImportAlias) -> None:
+        """Check if pandas_udf is being used in a from import statement"""
+        if m.matches(node, m.ImportAlias(name=m.Name(self.import_name))):
+            self.match_found = True
+
+    def visit_ImportFrom(self, node: cst.ImportFrom) -> None:
+        """Check if pandas_udf is being used in a from import statement"""
+        if m.matches(node, m.ImportFrom(module=m.Name(self.import_name))):
+            self.match_found = True
+
+
 def add_comment_to_end_of_a_simple_statement_line(
     node: cst.SimpleStatementLine, transformer_id: str, comment: str
 ) -> cst.SimpleStatementLine:
