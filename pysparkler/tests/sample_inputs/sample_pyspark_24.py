@@ -1,5 +1,7 @@
 import pyspark
+import numpy as np
 import pandas as pd
+import pyspark.pandas as ps
 
 from pandas import DataFrame as df
 from pyspark.sql import SparkSession, Row
@@ -23,6 +25,12 @@ data = [Row(name="James,,Smith", lang=["Java", "Scala", "C++"], state="CA"),
 
 rdd = spark.sparkContext.parallelize(data)
 print(rdd.collect())
+
+ps_df = ps.DataFrame(np.arange(12).reshape(3, 4), columns=['A', 'B', 'C', 'D'])
+ps_df.drop(['B', 'C'])
+
+a_column_values = list(ps_df['A'].unique())
+repr_a_column_values = [repr(value) for value in a_column_values]
 
 
 def truncate(truncate=True):
