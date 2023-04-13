@@ -19,6 +19,7 @@
 from pysparkler.pyspark_32_to_33 import (
     DataframeDropAxisIndexByDefaultCommentWriter,
     RequiredPandasVersionCommentWriter,
+    SQLDataTypesReprReturnsObjectCommentWriter,
 )
 from tests.conftest import rewrite
 
@@ -110,5 +111,24 @@ import pyspark
     expected_code = """
 import pandas  # PY32-33-002: PySpark 3.3 requires pandas version 1.0.5 or higher
 import pyspark
+"""
+    assert modified_code == expected_code
+
+
+def test_adds_comment_when_repr_is_called_on_sql_data_types():
+    given_code = """
+import pyspark.pandas as ps
+
+df = ps.DataFrame(np.arange(12).reshape(3, 4), columns=['A', 'B', 'C', 'D'])
+a_column_values = list(df['A'].unique())
+repr_a_column_values = [repr(value) for value in a_column_values]
+"""
+    modified_code = rewrite(given_code, SQLDataTypesReprReturnsObjectCommentWriter())
+    expected_code = """
+import pyspark.pandas as ps
+
+df = ps.DataFrame(np.arange(12).reshape(3, 4), columns=['A', 'B', 'C', 'D'])
+a_column_values = list(df['A'].unique())
+repr_a_column_values = [repr(value) for value in a_column_values]  # PY32-33-003: As of PySpark 3.3, the repr return values of SQL DataTypes have been changed to yield an object with the same value when passed to eval.
 """
     assert modified_code == expected_code

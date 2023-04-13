@@ -86,9 +86,33 @@ class RequiredPandasVersionCommentWriter(RequiredDependencyVersionCommentWriter)
         )
 
 
+class SQLDataTypesReprReturnsObjectCommentWriter(StatementLineCommentWriter):
+    """In Spark 3.3, the repr return values of SQL DataTypes have been changed to yield an object with the same value
+    when passed to eval.
+    """
+
+    def __init__(
+        self,
+        pyspark_version: str = "3.3",
+    ):
+        super().__init__(
+            transformer_id="PY32-33-003",
+            comment=f"As of PySpark {pyspark_version}, the repr return values of SQL DataTypes have been changed to yield an object with the same value when passed to eval.",
+        )
+
+    def visit_Call(self, node: cst.Call) -> None:
+        """Check if the repr method of SQL DataTypes is called"""
+        if m.matches(
+            node,
+            m.Call(func=m.Name("repr")),
+        ):
+            self.match_found = True
+
+
 def pyspark_32_to_33_transformers() -> list[cst.CSTTransformer]:
     """Return a list of transformers for PySpark 3.2 to 3.3 migration guide"""
     return [
         DataframeDropAxisIndexByDefaultCommentWriter(),
         RequiredPandasVersionCommentWriter(),
+        SQLDataTypesReprReturnsObjectCommentWriter(),
     ]
