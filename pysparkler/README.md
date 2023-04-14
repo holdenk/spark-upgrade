@@ -20,6 +20,88 @@ Provide the path to the script you want to upgrade:
 pysparkler upgrade --input-file /path/to/script.py
 ```
 
+## PySpark Upgrades Supported
+
+This tool follows the [Apache Spark Migration guide for PySpark](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html)
+to upgrade your PySpark scripts. In the latest stable version it supports the following upgrades from the migration guide:
+
+| Migration                                       | Supported | Details                                                                                                                                      |
+|-------------------------------------------------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| Upgrading from PySpark 3.3 to 3.4               | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-3-to-3-4)               |
+| Upgrading from PySpark 3.2 to 3.3               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-2-to-3-3)               |
+| Upgrading from PySpark 3.1 to 3.2               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-1-to-3-2)               |
+| Upgrading from PySpark 2.4 to 3.0               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-4-to-3-0)               |
+| Upgrading from PySpark 2.3 to 2.4               | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-3-to-2-4)               |
+| Upgrading from PySpark 2.3.0 to 2.3.1 and above | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-3-0-to-2-3-1-and-above) |
+| Upgrading from PySpark 2.2 to 2.3               | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-2-to-2-3)               |
+| Upgrading from PySpark 1.4 to 1.5               | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-1-4-to-1-5)               |
+| Upgrading from PySpark 1.0-1.2 to 1.3           | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-1-0-1-2-to-1-3)           |
+
+## Features Supported
+
+The tool supports the following features:
+
+| Feature                          | Supported |
+|----------------------------------|-----------|
+| Upgrade PySpark Python script    | ✅         |
+| Upgrade PySpark Jupyter Notebook | ✅         |
+| Dry-run Mode                     | ✅         |
+| Verbose Mode                     | ✅         |
+
+### Upgrade PySpark Python script
+
+The tool can upgrade a PySpark Python script. It takes the path to the script as input and upgrades it in place:
+
+```bash
+pysparkler upgrade --input-file /path/to/script.py
+```
+
+If you want to output the upgraded script to a different directory, you can use the `--output-file` flag:
+
+```bash
+pysparkler upgrade --input-file /path/to/script.py --output-file /path/to/output.py
+```
+
+### Upgrade PySpark Jupyter Notebook
+
+The tool can upgrade a PySpark Jupyter Notebook to Spark 3.3. It takes the path to the notebook as input and upgrades
+it in place:
+
+```bash
+pysparkler upgrade --input-file /path/to/notebook.ipynb
+```
+
+Similar to upgrading python scripts, if you want to output the upgraded notebook to a different directory, you can use
+the `--output-file` flag:
+
+```bash
+pysparkler upgrade --input-file /path/to/notebook.ipynb --output-file /path/to/output.ipynb
+```
+
+To change the output kernel name in the output Jupyter notebook, you can use the `--output-kernel` flag:
+
+```bash
+pysparkler upgrade --input-file /path/to/notebook.ipynb --output-kernel spark33-python3
+```
+
+### Dry-Run Mode
+
+For both the above upgrade options, to run in dry mode, you can use the `--dry-run` flag. This will not write the
+upgraded script but will print a unified diff of the input and output scripts for you to inspect the changes:
+
+```bash
+pysparkler upgrade --input-file /path/to/script.py --dry-run
+```
+
+### Verbose Mode
+
+For both the above upgrade options, to run in verbose mode, you can use the `--verbose` flag. This will print tool's
+input variables, the input file content, the output content, and a unified diff of the input and output content:
+
+```bash
+pysparkler --verbose upgrade --input-file /path/to/script.py
+```
+
 ## Contributing
 
 For the development, Poetry is used for packing and dependency management. You can install this using:

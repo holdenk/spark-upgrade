@@ -104,7 +104,9 @@ def upgrade(
     file_type: str | None,
     output_kernel: str | None,
 ) -> None:
-    """Upgrade the PySparkler file to the latest version and provides comments as hints for manual changes"""
+    """Upgrades a PySpark script or Jupyter Notebook to the latest version, and where not context, provides comments as
+    code hints for manual changes.
+    """
 
     print_command_params(ctx)
     pysparkler = PySparkler(dry_run=dry_run)
