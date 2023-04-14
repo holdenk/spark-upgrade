@@ -21,7 +21,7 @@ from tests.conftest import absolute_path
 
 def test_upgrade_pyspark_python_script():
     modified_code = PySparkler(dry_run=True).upgrade_script(
-        absolute_path("tests/sample_inputs/sample_pyspark_24.py")
+        absolute_path("tests/sample_inputs/sample_pyspark.py")
     )
     expected_code = """\
 import pyspark
@@ -43,7 +43,7 @@ data = [("James", "", "Smith", "36636", "M", 60000),
 columns = ["first_name", "middle_name", "last_name", "dob", "gender", "salary"]
 pysparkDF = spark.createDataFrame(data=data, schema=columns, verifySchema=True)  # PY24-30-006: Setting verifySchema to True validates LongType as well in PySpark 3.0. Previously, LongType was not verified and resulted in None in case the value overflows.
 
-pandasDF = pysparkDF.toPandas()  # PY24-30-002: PySpark 3.0 requires a pandas version of 0.23.2 or higher to use toPandas()
+pandasDF = pysparkDF.toPandas()  # PY23-24-001: As of PySpark 2.4 toPandas() allows fallback to non-optimization by default when Arrow optimization is unable to be used. This can be switched off by spark.sql.execution.arrow.fallback.enabled  # PY24-30-002: PySpark 3.0 requires a pandas version of 0.23.2 or higher to use toPandas()
 print(pandasDF)
 
 data = [Row(lang=["Java", "Scala", "C++"], name="James,,Smith", state="CA"),
@@ -72,7 +72,7 @@ def truncate(truncate=True):
 
 def test_upgrade_pyspark_jupyter_notebook():
     modified_code = PySparkler(dry_run=True).upgrade_notebook(
-        absolute_path("tests/sample_inputs/SamplePySpark24Notebook.ipynb"),
+        absolute_path("tests/sample_inputs/SamplePySparkNotebook.ipynb"),
         output_kernel_name="spark33-python3-venv",
     )
     expected_code = r"""{
@@ -103,7 +103,7 @@ def test_upgrade_pyspark_jupyter_notebook():
     "columns = [\"first_name\", \"middle_name\", \"last_name\", \"dob\", \"gender\", \"salary\"]\n",
     "pysparkDF = spark.createDataFrame(data=data, schema=columns, verifySchema=True)  # PY24-30-006: Setting verifySchema to True validates LongType as well in PySpark 3.0. Previously, LongType was not verified and resulted in None in case the value overflows.\n",
     "\n",
-    "pandasDF = pysparkDF.toPandas()  # PY24-30-002: PySpark 3.0 requires a pandas version of 0.23.2 or higher to use toPandas()\n",
+    "pandasDF = pysparkDF.toPandas()  # PY23-24-001: As of PySpark 2.4 toPandas() allows fallback to non-optimization by default when Arrow optimization is unable to be used. This can be switched off by spark.sql.execution.arrow.fallback.enabled  # PY24-30-002: PySpark 3.0 requires a pandas version of 0.23.2 or higher to use toPandas()\n",
     "print(pandasDF)\n",
     "\n",
     "data = [Row(lang=[\"Java\", \"Scala\", \"C++\"], name=\"James,,Smith\", state=\"CA\"),\n",

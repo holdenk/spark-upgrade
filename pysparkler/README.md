@@ -2,8 +2,8 @@
 
 ## About
 
-PySparkler is a tool that upgrades your PySpark scripts to Spark 3.3. It is a command line tool that takes a PySpark
-script as input and outputs a Spark 3.3 compatible script. It is written in Python and uses the
+PySparkler is a tool that upgrades your PySpark scripts to latest Spark version. It is a command line tool that takes a
+PySpark script as input and outputs a latest Spark version compatible script. It is written in Python and uses the
 [LibCST](https://github.com/Instagram/LibCST) module to parse the input script and generate the output script.
 
 ## Basic Usage
@@ -31,8 +31,8 @@ to upgrade your PySpark scripts. In the latest stable version it supports the fo
 | Upgrading from PySpark 3.2 to 3.3               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-2-to-3-3)               |
 | Upgrading from PySpark 3.1 to 3.2               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-1-to-3-2)               |
 | Upgrading from PySpark 2.4 to 3.0               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-4-to-3-0)               |
-| Upgrading from PySpark 2.3 to 2.4               | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-3-to-2-4)               |
-| Upgrading from PySpark 2.3.0 to 2.3.1 and above | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-3-0-to-2-3-1-and-above) |
+| Upgrading from PySpark 2.3 to 2.4               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-3-to-2-4)               |
+| Upgrading from PySpark 2.3.0 to 2.3.1 and above | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-3-0-to-2-3-1-and-above) |
 | Upgrading from PySpark 2.2 to 2.3               | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-2-to-2-3)               |
 | Upgrading from PySpark 1.4 to 1.5               | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-1-4-to-1-5)               |
 | Upgrading from PySpark 1.0-1.2 to 1.3           | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-1-0-1-2-to-1-3)           |
@@ -64,8 +64,8 @@ pysparkler upgrade --input-file /path/to/script.py --output-file /path/to/output
 
 ### Upgrade PySpark Jupyter Notebook
 
-The tool can upgrade a PySpark Jupyter Notebook to Spark 3.3. It takes the path to the notebook as input and upgrades
-it in place:
+The tool can upgrade a PySpark Jupyter Notebook to latest Spark version. It takes the path to the notebook as input and
+upgrades it in place:
 
 ```bash
 pysparkler upgrade --input-file /path/to/notebook.ipynb
@@ -185,8 +185,8 @@ make test PYTEST_ARGS="-v"
 
 ### Why LibCST?
 
-LibCST is a Python library that provides a concrete syntax tree (CST) for Python code. CST preserves even the whitespaces
-of the source code which is very important since we only want to modify the code and not the formatting.
+LibCST is a Python library that provides a concrete syntax tree (CST) for Python code. CST preserves even the
+whitespaces of the source code which is very important since we only want to modify the code and not the formatting.
 
 ### How does it work?
 
