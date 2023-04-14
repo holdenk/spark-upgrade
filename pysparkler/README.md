@@ -2,8 +2,8 @@
 
 ## About
 
-PySparkler is a tool that upgrades your PySpark scripts to Spark 3.3. It is a command line tool that takes a PySpark
-script as input and outputs a Spark 3.3 compatible script. It is written in Python and uses the
+PySparkler is a tool that upgrades your PySpark scripts to latest Spark version. It is a command line tool that takes a
+PySpark script as input and outputs a latest Spark version compatible script. It is written in Python and uses the
 [LibCST](https://github.com/Instagram/LibCST) module to parse the input script and generate the output script.
 
 ## Basic Usage
@@ -64,8 +64,8 @@ pysparkler upgrade --input-file /path/to/script.py --output-file /path/to/output
 
 ### Upgrade PySpark Jupyter Notebook
 
-The tool can upgrade a PySpark Jupyter Notebook to Spark 3.3. It takes the path to the notebook as input and upgrades
-it in place:
+The tool can upgrade a PySpark Jupyter Notebook to latest Spark version. It takes the path to the notebook as input and
+upgrades it in place:
 
 ```bash
 pysparkler upgrade --input-file /path/to/notebook.ipynb
@@ -185,8 +185,8 @@ make test PYTEST_ARGS="-v"
 
 ### Why LibCST?
 
-LibCST is a Python library that provides a concrete syntax tree (CST) for Python code. CST preserves even the whitespaces
-of the source code which is very important since we only want to modify the code and not the formatting.
+LibCST is a Python library that provides a concrete syntax tree (CST) for Python code. CST preserves even the
+whitespaces of the source code which is very important since we only want to modify the code and not the formatting.
 
 ### How does it work?
 
