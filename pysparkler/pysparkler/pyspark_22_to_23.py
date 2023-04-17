@@ -16,8 +16,13 @@
 #  under the License.
 #
 import libcst as cst
+import libcst.matchers as m
 
-from pysparkler.base import RequiredDependencyVersionCommentWriter
+from pysparkler.base import (
+    RequiredDependencyVersionCommentWriter,
+    StatementLineCommentWriter,
+    one_of_matching_strings,
+)
 
 
 class RequiredPandasVersionCommentWriter(RequiredDependencyVersionCommentWriter):
@@ -36,6 +41,41 @@ class RequiredPandasVersionCommentWriter(RequiredDependencyVersionCommentWriter)
             required_dependency_name=required_dependency_name,
             required_dependency_version=required_dependency_version,
         )
+
+
+class PandasRespectSessionTimeZone(StatementLineCommentWriter):
+    """In PySpark 2.3, the behavior of timestamp values for Pandas related functionalities was changed to respect
+    session timezone. If you want to use the old behavior, you need to set a configuration
+    spark.sql.execution.pandas.respectSessionTimeZone to False. See SPARK-22395 for details.
+    """
+
+    def __init__(
+        self,
+        pyspark_version: str = "2.3",
+    ):
+        super().__init__(
+            transformer_id="PY22-23-002",
+            comment=f"As of PySpark {pyspark_version} the behavior of timestamp values for Pandas related \
+functionalities was changed to respect session timezone. If you want to use the old behavior, you need to set a \
+configuration spark.sql.execution.pandas.respectSessionTimeZone to False.",
+        )
+
+    def visit_Call(self, node: cst.Call) -> None:
+        """Check if spark_session.conf.set("spark.sql.session.timeZone", "some_timezone")"""
+        if m.matches(
+            node,
+            m.Call(
+                func=m.OneOf(
+                    m.Attribute(attr=m.Name("set")),
+                    m.Attribute(attr=m.Name("config")),
+                ),
+                args=[
+                    m.Arg(value=one_of_matching_strings("spark.sql.session.timeZone")),
+                    m.ZeroOrMore(),
+                ],
+            ),
+        ):
+            self.match_found = True
 
 
 def pyspark_22_to_23_transformers() -> list[cst.CSTTransformer]:

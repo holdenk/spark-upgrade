@@ -16,7 +16,10 @@
 #  under the License.
 #
 
-from pysparkler.pyspark_22_to_23 import RequiredPandasVersionCommentWriter
+from pysparkler.pyspark_22_to_23 import (
+    PandasRespectSessionTimeZone,
+    RequiredPandasVersionCommentWriter,
+)
 from tests.conftest import rewrite
 
 
@@ -29,5 +32,30 @@ import pyspark
     expected_code = """
 import pandas  # PY22-23-001: PySpark 2.3 requires pandas version 0.19.2 or higher
 import pyspark
+"""
+    assert modified_code == expected_code
+
+
+def test_adds_pandas_respects_session_timezone_comment_when_session_timezone_config_is_being_set():
+    given_code = """
+import pandas
+import pyspark
+
+spark.conf.set("spark.sql.session.timeZone", "America/Los_Angeles")
+df = spark.createDataFrame([28801], "long").selectExpr("timestamp(value) as ts")
+df.show()
+
+df.toPandas()
+"""
+    modified_code = rewrite(given_code, PandasRespectSessionTimeZone())
+    expected_code = """
+import pandas
+import pyspark
+
+spark.conf.set("spark.sql.session.timeZone", "America/Los_Angeles")  # PY22-23-002: As of PySpark 2.3 the behavior of timestamp values for Pandas related functionalities was changed to respect session timezone. If you want to use the old behavior, you need to set a configuration spark.sql.execution.pandas.respectSessionTimeZone to False.
+df = spark.createDataFrame([28801], "long").selectExpr("timestamp(value) as ts")
+df.show()
+
+df.toPandas()
 """
     assert modified_code == expected_code
