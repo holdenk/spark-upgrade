@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pysparkler"
-version = "0.4.dev"
+version = "0.4.0"
 description = "A tool that upgrades your PySpark scripts to the latest Spark version as per Spark migration Guideline"
 authors = ["Dhruv Pratap <dhruv.pratap@gmail.com>"]
 readme = "README.md"
