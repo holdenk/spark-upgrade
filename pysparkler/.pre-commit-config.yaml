@@ -1,5 +1,5 @@
 files: ^pysparkler/
-exclude: ^pysparkler/tests/sample_inputs
+exclude: ^pysparkler/tests/sample
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
