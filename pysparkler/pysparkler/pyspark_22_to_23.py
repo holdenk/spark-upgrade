@@ -95,7 +95,7 @@ and error-prone.",
         )
 
     def visit_Call(self, node: cst.Call) -> None:
-        """Check if replace is being called on a DataFrame with only one argument"""
+        """Check if replace is being called on a DataFrame with only one argument that is not a dictionary"""
         if m.matches(
             node,
             m.Call(
