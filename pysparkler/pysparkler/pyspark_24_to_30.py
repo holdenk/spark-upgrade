@@ -189,10 +189,11 @@ class RowFieldNamesNotSortedCommentWriter(StatementLineCommentWriter):
             comment=f"Sorting Row fields by name alphabetically since as of Spark {pyspark_version}, they are no longer when constructed with named arguments.",
         )
 
-    def visit_Call(self, node: cst.Call) -> None:
-        """Check if Row(...) is being called with named arguments"""
+    def leave_Call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.Call:
+        """Check if Row(...) is being called with named arguments and sort Dataframe Row fields by name alphabetically
+        when constructed with named arguments for backwards compatibility"""
         if m.matches(
-            node,
+            original_node,
             m.Call(
                 func=m.Name("Row"),
                 args=[
@@ -203,18 +204,13 @@ class RowFieldNamesNotSortedCommentWriter(StatementLineCommentWriter):
             ),
         ):
             self.match_found = True
-
-    def leave_Call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.Call:
-        """Sort Dataframe Row fields by name alphabetically when constructed with named arguments for backwards
-        compatibility"""
-        if self.match_found:
             row_fields = sorted(
                 updated_node.args,
                 key=lambda arg: arg.keyword.value,
             )
             return updated_node.with_changes(args=row_fields)
         else:
-            return original_node
+            return updated_node
 
 
 class MlParamMixinsSetterCommentWriter(StatementLineCommentWriter):
