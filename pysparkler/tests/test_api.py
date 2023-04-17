@@ -21,10 +21,12 @@ from tests.conftest import absolute_path
 
 def test_upgrade_pyspark_python_script():
     modified_code = PySparkler(dry_run=True).upgrade_script(
-        absolute_path("tests/sample/input_pyspark.py")
+        input_file=absolute_path("tests/sample/input_pyspark.py")
     )
 
-    with open(absolute_path("tests/sample/output_pyspark.py"), encoding="utf-8") as f:
+    with open(
+        file=absolute_path("tests/sample/output_pyspark.py"), encoding="utf-8"
+    ) as f:
         expected_code = f.read()
 
     assert modified_code == expected_code
@@ -32,12 +34,12 @@ def test_upgrade_pyspark_python_script():
 
 def test_upgrade_pyspark_jupyter_notebook():
     modified_code = PySparkler(dry_run=True).upgrade_notebook(
-        absolute_path("tests/sample/InputPySparkNotebook.ipynb"),
+        input_file=absolute_path("tests/sample/InputPySparkNotebook.ipynb"),
         output_kernel_name="spark33-python3-venv",
     )
 
     with open(
-        absolute_path("tests/sample/OutputPySparkNotebook.ipynb"), encoding="utf-8"
+        file=absolute_path("tests/sample/OutputPySparkNotebook.ipynb"), encoding="utf-8"
     ) as f:
         expected_code = f.read()
 
