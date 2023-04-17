@@ -20,6 +20,7 @@ import json
 import libcst as cst
 import nbformat
 
+from pysparkler.pyspark_22_to_23 import pyspark_22_to_23_transformers
 from pysparkler.pyspark_23_to_24 import pyspark_23_to_24_transformers
 from pysparkler.pyspark_24_to_30 import pyspark_24_to_30_transformers
 from pysparkler.pyspark_31_to_32 import pyspark_31_to_32_transformers
@@ -39,6 +40,7 @@ class PySparkler:
     @property
     def transformers(self):
         return [
+            *pyspark_22_to_23_transformers(),
             *pyspark_23_to_24_transformers(),
             *pyspark_24_to_30_transformers(),
             *pyspark_31_to_32_transformers(),

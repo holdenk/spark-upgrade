@@ -26,10 +26,10 @@ def test_upgrade_pyspark_python_script():
     expected_code = """\
 import pyspark
 import numpy as np
-import pandas as pd  # PY24-30-001: PySpark 3.0 requires pandas version 0.23.2 or higher  # PY32-33-002: PySpark 3.3 requires pandas version 1.0.5 or higher
-import pyspark.pandas as ps  # PY24-30-001: PySpark 3.0 requires pandas version 0.23.2 or higher  # PY32-33-002: PySpark 3.3 requires pandas version 1.0.5 or higher
+import pandas as pd  # PY22-23-001: PySpark 2.3 requires pandas version 0.19.2 or higher  # PY24-30-001: PySpark 3.0 requires pandas version 0.23.2 or higher  # PY32-33-002: PySpark 3.3 requires pandas version 1.0.5 or higher
+import pyspark.pandas as ps  # PY22-23-001: PySpark 2.3 requires pandas version 0.19.2 or higher  # PY24-30-001: PySpark 3.0 requires pandas version 0.23.2 or higher  # PY32-33-002: PySpark 3.3 requires pandas version 1.0.5 or higher
 
-from pandas import DataFrame as df  # PY24-30-001: PySpark 3.0 requires pandas version 0.23.2 or higher  # PY32-33-002: PySpark 3.3 requires pandas version 1.0.5 or higher
+from pandas import DataFrame as df  # PY22-23-001: PySpark 2.3 requires pandas version 0.19.2 or higher  # PY24-30-001: PySpark 3.0 requires pandas version 0.23.2 or higher  # PY32-33-002: PySpark 3.3 requires pandas version 1.0.5 or higher
 from pyspark.sql import SparkSession, Row
 from pyspark.sql.functions import pandas_udf, PandasUDFType  # PY24-30-003: PySpark 3.0 requires PyArrow version 0.12.1 or higher to use pandas_udf
 from pyspark.ml.param.shared import *  # PY24-30-008: In Spark 3.0, pyspark.ml.param.shared.Has* mixins do not provide any set*(self, value) setter methods anymore, use the respective self.set(self.*, value) instead.
@@ -57,6 +57,19 @@ ps_df.drop(['B', 'C'], axis = 1)  # PY32-33-001: As of PySpark 3.3, the drop met
 
 a_column_values = list(ps_df['A'].unique())
 repr_a_column_values = [repr(value) for value in a_column_values]  # PY32-33-003: As of PySpark 3.3, the repr return values of SQL DataTypes have been changed to yield an object with the same value when passed to eval.
+
+spark.conf.set("spark.sql.session.timeZone", "America/Los_Angeles")  # PY22-23-002: As of PySpark 2.3 the behavior of timestamp values for Pandas related functionalities was changed to respect session timezone. If you want to use the old behavior, you need to set a configuration spark.sql.execution.pandas.respectSessionTimeZone to False.
+tz_df = spark.createDataFrame([28801], "long").selectExpr("timestamp(value) as ts")
+tz_df.show()
+
+rp_df = spark.createDataFrame([
+        (10, 80, "Alice"),
+        (5, None, "Bob"),
+        (None, 10, "Tom"),
+        (None, None, None)],
+        schema=["age", "height", "name"])
+
+rp_df.na.replace('Alice').show()  # PY22-23-003: As of PySpark 2.3, df.replace does not allow to omit value when to_replace is not a dictionary. Previously, value could be omitted in the other cases and had None by default, which is counterintuitive and error-prone.
 
 
 def truncate(truncate=True):
@@ -86,10 +99,10 @@ def test_upgrade_pyspark_jupyter_notebook():
    "source": [
     "import pyspark\n",
     "import numpy as np\n",
-    "import pandas as pd  # PY24-30-001: PySpark 3.0 requires pandas version 0.23.2 or higher  # PY32-33-002: PySpark 3.3 requires pandas version 1.0.5 or higher\n",
-    "import pyspark.pandas as ps  # PY24-30-001: PySpark 3.0 requires pandas version 0.23.2 or higher  # PY32-33-002: PySpark 3.3 requires pandas version 1.0.5 or higher\n",
+    "import pandas as pd  # PY22-23-001: PySpark 2.3 requires pandas version 0.19.2 or higher  # PY24-30-001: PySpark 3.0 requires pandas version 0.23.2 or higher  # PY32-33-002: PySpark 3.3 requires pandas version 1.0.5 or higher\n",
+    "import pyspark.pandas as ps  # PY22-23-001: PySpark 2.3 requires pandas version 0.19.2 or higher  # PY24-30-001: PySpark 3.0 requires pandas version 0.23.2 or higher  # PY32-33-002: PySpark 3.3 requires pandas version 1.0.5 or higher\n",
     "\n",
-    "from pandas import DataFrame as df  # PY24-30-001: PySpark 3.0 requires pandas version 0.23.2 or higher  # PY32-33-002: PySpark 3.3 requires pandas version 1.0.5 or higher\n",
+    "from pandas import DataFrame as df  # PY22-23-001: PySpark 2.3 requires pandas version 0.19.2 or higher  # PY24-30-001: PySpark 3.0 requires pandas version 0.23.2 or higher  # PY32-33-002: PySpark 3.3 requires pandas version 1.0.5 or higher\n",
     "from pyspark.sql import SparkSession, Row\n",
     "from pyspark.sql.functions import pandas_udf, PandasUDFType  # PY24-30-003: PySpark 3.0 requires PyArrow version 0.12.1 or higher to use pandas_udf\n",
     "from pyspark.ml.param.shared import *  # PY24-30-008: In Spark 3.0, pyspark.ml.param.shared.Has* mixins do not provide any set*(self, value) setter methods anymore, use the respective self.set(self.*, value) instead.\n",
@@ -117,6 +130,19 @@ def test_upgrade_pyspark_jupyter_notebook():
     "\n",
     "a_column_values = list(ps_df['A'].unique())\n",
     "repr_a_column_values = [repr(value) for value in a_column_values]  # PY32-33-003: As of PySpark 3.3, the repr return values of SQL DataTypes have been changed to yield an object with the same value when passed to eval.\n",
+    "\n",
+    "spark.conf.set(\"spark.sql.session.timeZone\", \"America/Los_Angeles\")  # PY22-23-002: As of PySpark 2.3 the behavior of timestamp values for Pandas related functionalities was changed to respect session timezone. If you want to use the old behavior, you need to set a configuration spark.sql.execution.pandas.respectSessionTimeZone to False.\n",
+    "tz_df = spark.createDataFrame([28801], \"long\").selectExpr(\"timestamp(value) as ts\")\n",
+    "tz_df.show()\n",
+    "\n",
+    "rp_df = spark.createDataFrame([\n",
+    "        (10, 80, \"Alice\"),\n",
+    "        (5, None, \"Bob\"),\n",
+    "        (None, 10, \"Tom\"),\n",
+    "        (None, None, None)],\n",
+    "        schema=[\"age\", \"height\", \"name\"])\n",
+    "\n",
+    "rp_df.na.replace('Alice').show()  # PY22-23-003: As of PySpark 2.3, df.replace does not allow to omit value when to_replace is not a dictionary. Previously, value could be omitted in the other cases and had None by default, which is counterintuitive and error-prone.\n",
     "\n",
     "\n",
     "def truncate(truncate=True):\n",

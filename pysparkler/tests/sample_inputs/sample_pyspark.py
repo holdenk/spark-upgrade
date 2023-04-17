@@ -32,6 +32,19 @@ ps_df.drop(['B', 'C'])
 a_column_values = list(ps_df['A'].unique())
 repr_a_column_values = [repr(value) for value in a_column_values]
 
+spark.conf.set("spark.sql.session.timeZone", "America/Los_Angeles")
+tz_df = spark.createDataFrame([28801], "long").selectExpr("timestamp(value) as ts")
+tz_df.show()
+
+rp_df = spark.createDataFrame([
+        (10, 80, "Alice"),
+        (5, None, "Bob"),
+        (None, 10, "Tom"),
+        (None, None, None)],
+        schema=["age", "height", "name"])
+
+rp_df.na.replace('Alice').show()
+
 
 def truncate(truncate=True):
         try:
