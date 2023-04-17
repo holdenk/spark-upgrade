@@ -30,6 +30,7 @@ import pyspark.pandas as ps
 
 df = ps.DataFrame(np.arange(12).reshape(3, 4), columns=['A', 'B', 'C', 'D'])
 df.drop(['B', 'C'])
+display(df)
 """
     modified_code = rewrite(given_code, DataframeDropAxisIndexByDefaultCommentWriter())
     expected_code = """
@@ -37,6 +38,7 @@ import pyspark.pandas as ps
 
 df = ps.DataFrame(np.arange(12).reshape(3, 4), columns=['A', 'B', 'C', 'D'])
 df.drop(['B', 'C'], axis = 1)  # PY32-33-001: As of PySpark 3.3, the drop method of pandas API on Spark DataFrame supports dropping rows by index, and sets dropping by index instead of column by default.
+display(df)
 """
     assert modified_code == expected_code
 
@@ -46,14 +48,14 @@ def test_preserves_drop_by_column_behavior_when_axis_not_specified_with_labels_k
 import pyspark.pandas as ps
 
 df = ps.DataFrame(np.arange(12).reshape(3, 4), columns=['A', 'B', 'C', 'D'])
-df.drop(labels=['B', 'C'])
+df.drop(labels=['B', 'C']).withColumnRenamed('A', 'B')
 """
     modified_code = rewrite(given_code, DataframeDropAxisIndexByDefaultCommentWriter())
     expected_code = """
 import pyspark.pandas as ps
 
 df = ps.DataFrame(np.arange(12).reshape(3, 4), columns=['A', 'B', 'C', 'D'])
-df.drop(labels=['B', 'C'], axis = 1)  # PY32-33-001: As of PySpark 3.3, the drop method of pandas API on Spark DataFrame supports dropping rows by index, and sets dropping by index instead of column by default.
+df.drop(labels=['B', 'C'], axis = 1).withColumnRenamed('A', 'B')  # PY32-33-001: As of PySpark 3.3, the drop method of pandas API on Spark DataFrame supports dropping rows by index, and sets dropping by index instead of column by default.
 """
     assert modified_code == expected_code
 

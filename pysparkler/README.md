@@ -1,6 +1,7 @@
 # PySparkler
 
-## About
+[![PyPI version](https://badge.fury.io/py/pysparkler.svg)](https://badge.fury.io/py/pysparkler)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 PySparkler is a tool that upgrades your PySpark scripts to latest Spark version. It is a command line tool that takes a
 PySpark script as input and outputs a latest Spark version compatible script. It is written in Python and uses the

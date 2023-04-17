@@ -49,8 +49,12 @@ class StatementLineCommentWriter(BaseTransformer):
     def comment(self):
         return self._comment
 
-    def leave_SimpleStatementLine(self, original_node, updated_node):
-        """Add a comment where to Pandas is being used"""
+    def leave_SimpleStatementLine(
+        self,
+        original_node: cst.SimpleStatementLine,  # pylint: disable=unused-argument
+        updated_node: cst.SimpleStatementLine,
+    ) -> cst.SimpleStatementLine:
+        """Add a comment to the end of the statement line if a matching condition is found"""
         if self.match_found:
             self.match_found = False
             return add_comment_to_end_of_a_simple_statement_line(
@@ -59,7 +63,7 @@ class StatementLineCommentWriter(BaseTransformer):
                 f"# {self.transformer_id}: {self.comment}",
             )
         else:
-            return original_node
+            return updated_node
 
 
 class RequiredDependencyVersionCommentWriter(StatementLineCommentWriter):

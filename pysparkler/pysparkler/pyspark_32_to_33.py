@@ -37,11 +37,12 @@ class DataframeDropAxisIndexByDefaultCommentWriter(StatementLineCommentWriter):
             transformer_id="PY32-33-001",
             comment=f"As of PySpark {pyspark_version}, the drop method of pandas API on Spark DataFrame supports dropping rows by index, and sets dropping by index instead of column by default.",
         )
+        self.inside_drop_call = False
 
-    def visit_Call(self, node: cst.Call) -> None:
-        """Check if the drop method of pandas API on Spark DataFrame is called with only one positional argument"""
+    def leave_Call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.Call:
+        """Specify the axis argument to 1 if it is not specified to maintain the behavior of dropping columns"""
         if m.matches(
-            node,
+            original_node,
             m.Call(
                 func=m.Attribute(
                     attr=m.Name("drop"),
@@ -55,10 +56,6 @@ class DataframeDropAxisIndexByDefaultCommentWriter(StatementLineCommentWriter):
             ),
         ):
             self.match_found = True
-
-    def leave_Call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.Call:
-        """Specify the axis argument to 1 if it is not specified to maintain the behavior of dropping columns"""
-        if self.match_found:
             return updated_node.with_changes(
                 args=[
                     *updated_node.args,
@@ -66,7 +63,7 @@ class DataframeDropAxisIndexByDefaultCommentWriter(StatementLineCommentWriter):
                 ]
             )
         else:
-            return original_node
+            return updated_node
 
 
 class RequiredPandasVersionCommentWriter(RequiredDependencyVersionCommentWriter):
