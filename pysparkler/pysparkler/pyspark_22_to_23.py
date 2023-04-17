@@ -78,6 +78,38 @@ configuration spark.sql.execution.pandas.respectSessionTimeZone to False.",
             self.match_found = True
 
 
+class DataFrameReplaceWithoutUsingDictionary(StatementLineCommentWriter):
+    """In PySpark 2.3, df.replace does not allow to omit value when to_replace is not a dictionary. Previously, value
+    could be omitted in the other cases and had None by default, which is counterintuitive and error-prone.
+    """
+
+    def __init__(
+        self,
+        pyspark_version: str = "2.3",
+    ):
+        super().__init__(
+            transformer_id="PY22-23-003",
+            comment=f"As of PySpark {pyspark_version}, df.replace does not allow to omit value when to_replace is not \
+a dictionary. Previously, value could be omitted in the other cases and had None by default, which is counterintuitive \
+and error-prone.",
+        )
+
+    def visit_Call(self, node: cst.Call) -> None:
+        """Check if replace is being called on a DataFrame with only one argument"""
+        if m.matches(
+            node,
+            m.Call(
+                func=m.Attribute(attr=m.Name("replace")),
+                args=[m.AtMostN(n=1, matcher=m.DoesNotMatch(m.Arg(m.Dict())))],
+            ),
+        ):
+            self.match_found = True
+
+
 def pyspark_22_to_23_transformers() -> list[cst.CSTTransformer]:
     """Return a list of transformers for PySpark 2.2 to 2.3 migration guide"""
-    return [RequiredPandasVersionCommentWriter()]
+    return [
+        RequiredPandasVersionCommentWriter(),
+        PandasRespectSessionTimeZone(),
+        DataFrameReplaceWithoutUsingDictionary(),
+    ]
