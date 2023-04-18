@@ -31,7 +31,7 @@ class PySparkler:
     """Main class for PySparkler"""
 
     def __init__(
-        self, from_pyspark: str = "2.4", to_pyspark: str = "3.0", dry_run: bool = False
+        self, from_pyspark: str = "2.2", to_pyspark: str = "3.3", dry_run: bool = False
     ):
         self.from_pyspark = from_pyspark
         self.to_pyspark = to_pyspark

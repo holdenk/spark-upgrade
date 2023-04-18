@@ -37,13 +37,15 @@ tz_df = spark.createDataFrame([28801], "long").selectExpr("timestamp(value) as t
 tz_df.show()
 
 rp_df = spark.createDataFrame([
-        (10, 80, "Alice"),
-        (5, None, "Bob"),
-        (None, 10, "Tom"),
-        (None, None, None)],
-        schema=["age", "height", "name"])
+        (10, 80.5, "Alice", None),
+        (5, None, "Bob", None),
+        (None, None, "Tom", None),
+        (None, None, None, True)],
+        schema=["age", "height", "name", "bool"])
 
 rp_df.na.replace('Alice').show()
+rp_df.na.fill(False).show()
+rp_df.fillna(True).show()
 
 
 def truncate(truncate=True):

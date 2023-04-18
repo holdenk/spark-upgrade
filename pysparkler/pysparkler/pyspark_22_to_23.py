@@ -106,10 +106,43 @@ and error-prone.",
             self.match_found = True
 
 
+class FillNaReplacesBooleanWithNulls(StatementLineCommentWriter):
+    """In PySpark 2.3, na.fill() or fillna also accepts boolean and replaces nulls with booleans. In prior Spark
+    versions, PySpark just ignores it and returns the original Dataset/DataFrame.
+    """
+
+    def __init__(
+        self,
+        pyspark_version: str = "2.3",
+    ):
+        super().__init__(
+            transformer_id="PY22-23-004",
+            comment=f"As of PySpark {pyspark_version}, na.fill() or fillna also accepts boolean and replaces nulls \
+with booleans. In prior Spark versions, PySpark just ignores it and returns the original Dataset/DataFrame.",
+        )
+
+    def visit_Call(self, node: cst.Call) -> None:
+        """Check if fill is being called on a DataFrame with only one argument that is a boolean"""
+        if m.matches(
+            node,
+            m.Call(
+                func=m.Attribute(attr=m.OneOf(m.Name("fill"), m.Name("fillna"))),
+                args=[
+                    m.AtMostN(
+                        n=1,
+                        matcher=m.Arg(value=m.OneOf(m.Name("True"), m.Name("False"))),
+                    )
+                ],
+            ),
+        ):
+            self.match_found = True
+
+
 def pyspark_22_to_23_transformers() -> list[cst.CSTTransformer]:
     """Return a list of transformers for PySpark 2.2 to 2.3 migration guide"""
     return [
         RequiredPandasVersionCommentWriter(),
         PandasRespectSessionTimeZone(),
         DataFrameReplaceWithoutUsingDictionary(),
+        FillNaReplacesBooleanWithNulls(),
     ]
