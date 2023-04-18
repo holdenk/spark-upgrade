@@ -34,7 +34,8 @@ class ToPandasAllowsFallbackOnArrowOptimization(StatementLineCommentWriter):
     ):
         super().__init__(
             transformer_id="PY23-24-001",
-            comment=f"As of PySpark {pyspark_version} toPandas() allows fallback to non-optimization by default when Arrow optimization is unable to be used. This can be switched off by spark.sql.execution.arrow.fallback.enabled",
+            comment=f"As of PySpark {pyspark_version} toPandas() allows fallback to non-optimization by default when \
+Arrow optimization is unable to be used. This can be switched off by spark.sql.execution.arrow.fallback.enabled",
         )
 
     def visit_Call(self, node: cst.Call) -> None:

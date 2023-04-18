@@ -32,7 +32,8 @@ class SqlMlMethodsRaiseTypeErrorCommentWriter(StatementLineCommentWriter):
     ):
         super().__init__(
             transformer_id="PY31-32-001",
-            comment=f"As of PySpark {pyspark_version}, the methods from sql, ml, spark_on_pandas modules raise the TypeError instead of ValueError when are applied to a param of inappropriate type.",
+            comment=f"As of PySpark {pyspark_version}, the methods from sql, ml, spark_on_pandas modules raise the \
+TypeError instead of ValueError when are applied to a param of inappropriate type.",
         )
         self._has_sql_or_ml_import = False
 

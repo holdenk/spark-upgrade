@@ -23,7 +23,8 @@ class BaseTransformer(m.MatcherDecoratableTransformer):
     """Base class for all transformers.
 
     Attributes:
-        transformer_id: A unique identifier for the transformer rule. Follows the format PY<From-Major-Version>-<To-Major-Version>-<Rule-Number>
+        transformer_id: A unique identifier for the transformer rule. Follows the format
+            PY<From-Major-Version>-<To-Major-Version>-<Rule-Number>
             Important for idempotency checks and debugging.
 
     """
@@ -79,7 +80,8 @@ class RequiredDependencyVersionCommentWriter(StatementLineCommentWriter):
     ):
         super().__init__(
             transformer_id=transformer_id,
-            comment=f"PySpark {pyspark_version} requires {required_dependency_name} version {required_dependency_version} or higher",
+            comment=f"PySpark {pyspark_version} requires {required_dependency_name} version \
+{required_dependency_version} or higher",
         )
         self.required_dependency_name = required_dependency_name
         self._import_name = import_name

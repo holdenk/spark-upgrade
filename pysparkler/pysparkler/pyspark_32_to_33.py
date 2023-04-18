@@ -102,7 +102,8 @@ class SQLDataTypesReprReturnsObjectCommentWriter(StatementLineCommentWriter):
     ):
         super().__init__(
             transformer_id="PY32-33-003",
-            comment=f"As of PySpark {pyspark_version}, the repr return values of SQL DataTypes have been changed to yield an object with the same value when passed to eval.",
+            comment=f"As of PySpark {pyspark_version}, the repr return values of SQL DataTypes have been changed to \
+yield an object with the same value when passed to eval.",
         )
 
     def visit_Call(self, node: cst.Call) -> None:
