@@ -125,9 +125,11 @@ def add_comment_to_end_of_a_simple_statement_line(
 ) -> cst.SimpleStatementLine:
     """Adds a comment to the end of a statement line"""
 
+    ignore_line_too_long = "# noqa: E501"
     if node.trailing_whitespace.comment:
         # If there is already a comment
-        if transformer_id in node.trailing_whitespace.comment.value:
+        original_comment = node.trailing_whitespace.comment.value
+        if transformer_id in original_comment:
             # If the comment is already added by this transformer, do nothing
             return node
         else:
@@ -136,7 +138,7 @@ def add_comment_to_end_of_a_simple_statement_line(
                 trailing_whitespace=cst.TrailingWhitespace(
                     whitespace=node.trailing_whitespace.whitespace,
                     comment=node.trailing_whitespace.comment.with_changes(
-                        value=f"{node.trailing_whitespace.comment.value}  {comment}",
+                        value=f"{original_comment.replace(ignore_line_too_long, '').rstrip()}  {comment}  {ignore_line_too_long}",
                     ),
                     newline=node.trailing_whitespace.newline,
                 )
@@ -148,7 +150,7 @@ def add_comment_to_end_of_a_simple_statement_line(
                 whitespace=cst.SimpleWhitespace(
                     value="  ",
                 ),
-                comment=cst.Comment(value=comment),
+                comment=cst.Comment(value=f"{comment}  {ignore_line_too_long}"),
                 newline=cst.Newline(
                     value=None,
                 ),

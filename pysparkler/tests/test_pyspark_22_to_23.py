@@ -32,7 +32,7 @@ import pyspark
 """
     modified_code = rewrite(given_code, RequiredPandasVersionCommentWriter())
     expected_code = """
-import pandas  # PY22-23-001: PySpark 2.3 requires pandas version 0.19.2 or higher
+import pandas  # PY22-23-001: PySpark 2.3 requires pandas version 0.19.2 or higher  # noqa: E501
 import pyspark
 """
     assert modified_code == expected_code
@@ -54,7 +54,7 @@ df.toPandas()
 import pandas
 import pyspark
 
-spark.conf.set("spark.sql.session.timeZone", "America/Los_Angeles")  # PY22-23-002: As of PySpark 2.3 the behavior of timestamp values for Pandas related functionalities was changed to respect session timezone. If you want to use the old behavior, you need to set a configuration spark.sql.execution.pandas.respectSessionTimeZone to False.
+spark.conf.set("spark.sql.session.timeZone", "America/Los_Angeles")  # PY22-23-002: As of PySpark 2.3 the behavior of timestamp values for Pandas related functionalities was changed to respect session timezone. If you want to use the old behavior, you need to set a configuration spark.sql.execution.pandas.respectSessionTimeZone to False.  # noqa: E501
 df = spark.createDataFrame([28801], "long").selectExpr("timestamp(value) as ts")
 df.show()
 
@@ -87,7 +87,7 @@ df = spark.createDataFrame([
     (None, None, None)],
     schema=["age", "height", "name"])
 
-df.na.replace('Alice').show()  # PY22-23-003: As of PySpark 2.3, df.replace does not allow to omit value when to_replace is not a dictionary. Previously, value could be omitted in the other cases and had None by default, which is counterintuitive and error-prone.
+df.na.replace('Alice').show()  # PY22-23-003: As of PySpark 2.3, df.replace does not allow to omit value when to_replace is not a dictionary. Previously, value could be omitted in the other cases and had None by default, which is counterintuitive and error-prone.  # noqa: E501
 """
     assert modified_code == expected_code
 
@@ -170,7 +170,7 @@ df = spark.createDataFrame([
     (None, None, None, True)],
     schema=["age", "height", "name", "bool"])
 
-df.na.fill(False).show()  # PY22-23-004: As of PySpark 2.3, na.fill() or fillna also accepts boolean and replaces nulls with booleans. In prior Spark versions, PySpark just ignores it and returns the original Dataset/DataFrame.
+df.na.fill(False).show()  # PY22-23-004: As of PySpark 2.3, na.fill() or fillna also accepts boolean and replaces nulls with booleans. In prior Spark versions, PySpark just ignores it and returns the original Dataset/DataFrame.  # noqa: E501
 """
     assert modified_code == expected_code
 
@@ -199,7 +199,7 @@ df = spark.createDataFrame([
     (None, None, None, True)],
     schema=["age", "height", "name", "bool"])
 
-df.fillna(True).show()  # PY22-23-004: As of PySpark 2.3, na.fill() or fillna also accepts boolean and replaces nulls with booleans. In prior Spark versions, PySpark just ignores it and returns the original Dataset/DataFrame.
+df.fillna(True).show()  # PY22-23-004: As of PySpark 2.3, na.fill() or fillna also accepts boolean and replaces nulls with booleans. In prior Spark versions, PySpark just ignores it and returns the original Dataset/DataFrame.  # noqa: E501
 """
     assert modified_code == expected_code
 

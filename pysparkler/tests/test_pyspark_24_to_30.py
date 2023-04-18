@@ -36,7 +36,7 @@ import pyspark
 """
     modified_code = rewrite(given_code, RequiredPandasVersionCommentWriter())
     expected_code = """
-import pandas  # PY24-30-001: PySpark 3.0 requires pandas version 0.23.2 or higher
+import pandas  # PY24-30-001: PySpark 3.0 requires pandas version 0.23.2 or higher  # noqa: E501
 import pyspark
 """
     assert modified_code == expected_code
@@ -49,7 +49,7 @@ import pyspark
 """
     modified_code = rewrite(given_code, RequiredPandasVersionCommentWriter())
     expected_code = """
-import pandas as pd  # PY24-30-001: PySpark 3.0 requires pandas version 0.23.2 or higher
+import pandas as pd  # PY24-30-001: PySpark 3.0 requires pandas version 0.23.2 or higher  # noqa: E501
 import pyspark
 """
     assert modified_code == expected_code
@@ -62,7 +62,7 @@ import pyspark
 """
     modified_code = rewrite(given_code, RequiredPandasVersionCommentWriter())
     expected_code = """
-from pandas import DataFrame  # PY24-30-001: PySpark 3.0 requires pandas version 0.23.2 or higher
+from pandas import DataFrame  # PY24-30-001: PySpark 3.0 requires pandas version 0.23.2 or higher  # noqa: E501
 import pyspark
 """
     assert modified_code == expected_code
@@ -75,7 +75,7 @@ import pyspark
 """
     modified_code = rewrite(given_code, RequiredPandasVersionCommentWriter())
     expected_code = """
-from pandas import DataFrame as df  # PY24-30-001: PySpark 3.0 requires pandas version 0.23.2 or higher
+from pandas import DataFrame as df  # PY24-30-001: PySpark 3.0 requires pandas version 0.23.2 or higher  # noqa: E501
 import pyspark
 """
     assert modified_code == expected_code
@@ -83,12 +83,12 @@ import pyspark
 
 def test_required_pandas_version_comment_idempotency():
     given_code = """
-import pandas as pd # PY24-30-001: An existing comment added by this transformer
+import pandas as pd # PY24-30-001: An existing comment added by this transformer  # noqa: E501
 import pyspark
 """
     modified_code = rewrite(given_code, RequiredPandasVersionCommentWriter())
     expected_code = """
-import pandas as pd # PY24-30-001: An existing comment added by this transformer
+import pandas as pd # PY24-30-001: An existing comment added by this transformer  # noqa: E501
 import pyspark
 """
     assert modified_code == expected_code
@@ -101,7 +101,7 @@ import pyspark
 """
     modified_code = rewrite(given_code, RequiredPandasVersionCommentWriter())
     expected_code = """
-import pandas as pd # An existing comment  # PY24-30-001: PySpark 3.0 requires pandas version 0.23.2 or higher
+import pandas as pd # An existing comment  # PY24-30-001: PySpark 3.0 requires pandas version 0.23.2 or higher  # noqa: E501
 import pyspark
 """
     assert modified_code == expected_code
@@ -136,7 +136,7 @@ data = [("James","","Smith","36636","M",60000),
 columns = ["first_name","middle_name","last_name","dob","gender","salary"]
 pysparkDF = spark.createDataFrame(data = data, schema = columns)
 
-pandasDF = pysparkDF.toPandas()  # PY24-30-002: PySpark 3.0 requires a pandas version of 0.23.2 or higher to use toPandas()
+pandasDF = pysparkDF.toPandas()  # PY24-30-002: PySpark 3.0 requires a pandas version of 0.23.2 or higher to use toPandas()  # noqa: E501
 print(pandasDF)
 """
     assert modified_code == expected_code
@@ -153,7 +153,7 @@ str_len = pandas_udf(lambda s: s.str.len(), IntegerType())
 """
     modified_code = rewrite(given_code, PandasUdfUsageTransformer())
     expected_code = """\
-import pyspark.sql.functions.pandas_udf  # PY24-30-003: PySpark 3.0 requires PyArrow version 0.12.1 or higher to use pandas_udf
+import pyspark.sql.functions.pandas_udf  # PY24-30-003: PySpark 3.0 requires PyArrow version 0.12.1 or higher to use pandas_udf  # noqa: E501
 import pyspark.sql.functions.PandasUDFType
 
 from pyspark.sql.types import IntegerType, StringType
@@ -172,7 +172,7 @@ str_len = pandas_udf(lambda s: s.str.len(), IntegerType())
 """
     modified_code = rewrite(given_code, PandasUdfUsageTransformer())
     expected_code = """\
-from pyspark.sql.functions import pandas_udf, PandasUDFType  # PY24-30-003: PySpark 3.0 requires PyArrow version 0.12.1 or higher to use pandas_udf
+from pyspark.sql.functions import pandas_udf, PandasUDFType  # PY24-30-003: PySpark 3.0 requires PyArrow version 0.12.1 or higher to use pandas_udf  # noqa: E501
 from pyspark.sql.types import IntegerType, StringType
 
 str_len = pandas_udf(lambda s: s.str.len(), IntegerType())
@@ -195,7 +195,7 @@ result_pdf = df.select("*").toPandas()
 import numpy as np
 import pandas as pd
 
-spark.conf.set("spark.sql.execution.arrow.enabled", "true")  # PY24-30-004: PySpark 3.0 requires PyArrow version 0.12.1 or higher when spark.sql.execution.arrow.enabled is set to true
+spark.conf.set("spark.sql.execution.arrow.enabled", "true")  # PY24-30-004: PySpark 3.0 requires PyArrow version 0.12.1 or higher when spark.sql.execution.arrow.enabled is set to true  # noqa: E501
 pdf = pd.DataFrame(np.random.rand(100, 3))
 df = spark.createDataFrame(pdf)
 result_pdf = df.select("*").toPandas()
@@ -218,7 +218,7 @@ result_pdf = df.select("*").toPandas()
 import numpy as np
 import pandas as pd
 
-spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")  # PY24-30-004: PySpark 3.0 requires PyArrow version 0.12.1 or higher when spark.sql.execution.arrow.enabled is set to true
+spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")  # PY24-30-004: PySpark 3.0 requires PyArrow version 0.12.1 or higher when spark.sql.execution.arrow.enabled is set to true  # noqa: E501
 pdf = pd.DataFrame(np.random.rand(100, 3))
 df = spark.createDataFrame(pdf)
 result_pdf = df.select("*").toPandas()
@@ -254,7 +254,7 @@ spark = (
     .appName("Your App Name")
     .config("spark.some.config.option1", "some-value")
     .config('spark.sql.execution.arrow.enabled', 'true')
-    .getOrCreate())  # PY24-30-004: PySpark 3.0 requires PyArrow version 0.12.1 or higher when spark.sql.execution.arrow.enabled is set to true
+    .getOrCreate())  # PY24-30-004: PySpark 3.0 requires PyArrow version 0.12.1 or higher when spark.sql.execution.arrow.enabled is set to true  # noqa: E501
 
 pdf = pd.DataFrame(np.random.rand(100, 3))
 df = spark.createDataFrame(pdf)
@@ -278,7 +278,7 @@ result_pdf = df.select("*").toPandas()
 import numpy as np
 import pandas as pd
 
-spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")  # PY24-30-005: Consider setting spark.sql.execution.pandas.convertToArrowArraySafely to true to raise errors in case of Integer overflow or Floating point truncation, instead of silent allows.
+spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")  # PY24-30-005: Consider setting spark.sql.execution.pandas.convertToArrowArraySafely to true to raise errors in case of Integer overflow or Floating point truncation, instead of silent allows.  # noqa: E501
 pdf = pd.DataFrame(np.random.rand(100, 3))
 df = spark.createDataFrame(pdf)
 result_pdf = df.select("*").toPandas()
@@ -313,7 +313,7 @@ data = [("James","","Smith","36636","M",60000),
         ("Jen","Mary","Brown","","F",0)]
 
 columns = ["first_name","middle_name","last_name","dob","gender","salary"]
-pysparkDF = spark.createDataFrame(data = data, schema = columns, verifySchema = True)  # PY24-30-006: Setting verifySchema to True validates LongType as well in PySpark 3.0. Previously, LongType was not verified and resulted in None in case the value overflows.
+pysparkDF = spark.createDataFrame(data = data, schema = columns, verifySchema = True)  # PY24-30-006: Setting verifySchema to True validates LongType as well in PySpark 3.0. Previously, LongType was not verified and resulted in None in case the value overflows.  # noqa: E501
 
 pandasDF = pysparkDF.toPandas()
 print(pandasDF)
@@ -338,7 +338,7 @@ from pyspark.sql import SparkSession, Row
 spark = SparkSession.builder.appName('example').getOrCreate()
 
 data = [Row(lang=["Java","Scala","C++"],name="James,,Smith",state="CA"),
-    Row(lang=["CSharp","VB"],name="Robert,,Williams",state="NV")]  # PY24-30-007: Sorting Row fields by name alphabetically since as of Spark 3.0, they are no longer when constructed with named arguments.
+    Row(lang=["CSharp","VB"],name="Robert,,Williams",state="NV")]  # PY24-30-007: Sorting Row fields by name alphabetically since as of Spark 3.0, they are no longer when constructed with named arguments.  # noqa: E501
 
 rdd=spark.sparkContext.parallelize(data)
 print(rdd.collect())
@@ -367,6 +367,6 @@ from pyspark.ml.param.shared import *
 """
     modified_code = rewrite(given_code, MlParamMixinsSetterCommentWriter())
     expected_code = """\
-from pyspark.ml.param.shared import *  # PY24-30-008: In Spark 3.0, pyspark.ml.param.shared.Has* mixins do not provide any set*(self, value) setter methods anymore, use the respective self.set(self.*, value) instead.
+from pyspark.ml.param.shared import *  # PY24-30-008: In Spark 3.0, pyspark.ml.param.shared.Has* mixins do not provide any set*(self, value) setter methods anymore, use the respective self.set(self.*, value) instead.  # noqa: E501
 """
     assert modified_code == expected_code
