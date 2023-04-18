@@ -18,6 +18,7 @@
 
 from pysparkler.pyspark_22_to_23 import (
     DataFrameReplaceWithoutUsingDictionary,
+    FillNaReplacesBooleanWithNulls,
     PandasRespectSessionTimeZone,
     RequiredPandasVersionCommentWriter,
 )
@@ -122,4 +123,100 @@ df = spark.createDataFrame([
 df.na.replace({'Alice': 'A', 'Bob': 'B'}).show()
 """
     modified_code = rewrite(given_code, DataFrameReplaceWithoutUsingDictionary())
+    assert modified_code == given_code
+
+
+def test_does_not_add_comment_on_non_na_replace_calls():
+    given_code = """
+import pyspark
+
+df = spark.createDataFrame([
+    (10, 80, "Alice"),
+    (5, None, "Bob"),
+    (None, 10, "Tom"),
+    (None, None, None)],
+    schema=["age", "height", "name"])
+
+df.na.replace({'Alice': 'A', 'Bob': 'B'}).show()
+
+def month_end(date):
+    return date.replace(day=calendar.monthrange(date.year, date.month)[1])
+"""
+    modified_code = rewrite(given_code, DataFrameReplaceWithoutUsingDictionary())
+    assert modified_code == given_code
+
+
+def test_adds_comment_when_dataframe_na_fill_is_called_with_boolean_argument():
+    given_code = """
+import pyspark
+
+df = spark.createDataFrame([
+    (10, 80.5, "Alice", None),
+    (5, None, "Bob", None),
+    (None, None, "Tom", None),
+    (None, None, None, True)],
+    schema=["age", "height", "name", "bool"])
+
+df.na.fill(False).show()
+"""
+    modified_code = rewrite(given_code, FillNaReplacesBooleanWithNulls())
+    expected_code = """
+import pyspark
+
+df = spark.createDataFrame([
+    (10, 80.5, "Alice", None),
+    (5, None, "Bob", None),
+    (None, None, "Tom", None),
+    (None, None, None, True)],
+    schema=["age", "height", "name", "bool"])
+
+df.na.fill(False).show()  # PY22-23-004: As of PySpark 2.3, na.fill() or fillna also accepts boolean and replaces nulls with booleans. In prior Spark versions, PySpark just ignores it and returns the original Dataset/DataFrame.
+"""
+    assert modified_code == expected_code
+
+
+def test_adds_comment_when_dataframe_fillna_is_called_with_boolean_argument():
+    given_code = """
+import pyspark
+
+df = spark.createDataFrame([
+    (10, 80.5, "Alice", None),
+    (5, None, "Bob", None),
+    (None, None, "Tom", None),
+    (None, None, None, True)],
+    schema=["age", "height", "name", "bool"])
+
+df.fillna(True).show()
+"""
+    modified_code = rewrite(given_code, FillNaReplacesBooleanWithNulls())
+    expected_code = """
+import pyspark
+
+df = spark.createDataFrame([
+    (10, 80.5, "Alice", None),
+    (5, None, "Bob", None),
+    (None, None, "Tom", None),
+    (None, None, None, True)],
+    schema=["age", "height", "name", "bool"])
+
+df.fillna(True).show()  # PY22-23-004: As of PySpark 2.3, na.fill() or fillna also accepts boolean and replaces nulls with booleans. In prior Spark versions, PySpark just ignores it and returns the original Dataset/DataFrame.
+"""
+    assert modified_code == expected_code
+
+
+def test_does_not_adds_comment_when_dataframe_na_fill_is_called_with_non_boolean_argument():
+    given_code = """
+import pyspark
+
+df = spark.createDataFrame([
+    (10, 80.5, "Alice", None),
+    (5, None, "Bob", None),
+    (None, None, "Tom", None),
+    (None, None, None, True)],
+    schema=["age", "height", "name", "bool"])
+
+df.na.fill(50).show()
+df.na.fill({'age': 50, 'name': 'unknown'}).show()
+"""
+    modified_code = rewrite(given_code, FillNaReplacesBooleanWithNulls())
     assert modified_code == given_code

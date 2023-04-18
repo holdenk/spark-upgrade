@@ -15,6 +15,8 @@
 #  specific language governing permissions and limitations
 #  under the License.
 #
+import nbformat
+
 from pysparkler.api import PySparkler
 from tests.conftest import absolute_path
 
@@ -43,4 +45,6 @@ def test_upgrade_pyspark_jupyter_notebook():
     ) as f:
         expected_code = f.read()
 
-    assert modified_code == expected_code
+    assert nbformat.reads(
+        modified_code, as_version=nbformat.NO_CONVERT
+    ) == nbformat.reads(expected_code, as_version=nbformat.NO_CONVERT)

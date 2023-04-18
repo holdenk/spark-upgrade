@@ -37,13 +37,15 @@ tz_df = spark.createDataFrame([28801], "long").selectExpr("timestamp(value) as t
 tz_df.show()
 
 rp_df = spark.createDataFrame([
-        (10, 80, "Alice"),
-        (5, None, "Bob"),
-        (None, 10, "Tom"),
-        (None, None, None)],
-        schema=["age", "height", "name"])
+        (10, 80.5, "Alice", None),
+        (5, None, "Bob", None),
+        (None, None, "Tom", None),
+        (None, None, None, True)],
+        schema=["age", "height", "name", "bool"])
 
 rp_df.na.replace('Alice').show()  # PY22-23-003: As of PySpark 2.3, df.replace does not allow to omit value when to_replace is not a dictionary. Previously, value could be omitted in the other cases and had None by default, which is counterintuitive and error-prone.
+rp_df.na.fill(False).show()  # PY22-23-004: As of PySpark 2.3, na.fill() or fillna also accepts boolean and replaces nulls with booleans. In prior Spark versions, PySpark just ignores it and returns the original Dataset/DataFrame.
+rp_df.fillna(True).show()  # PY22-23-004: As of PySpark 2.3, na.fill() or fillna also accepts boolean and replaces nulls with booleans. In prior Spark versions, PySpark just ignores it and returns the original Dataset/DataFrame.
 
 
 def truncate(truncate=True):

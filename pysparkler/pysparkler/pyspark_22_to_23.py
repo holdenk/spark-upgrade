@@ -95,12 +95,51 @@ and error-prone.",
         )
 
     def visit_Call(self, node: cst.Call) -> None:
-        """Check if replace is being called on a DataFrame with only one argument that is not a dictionary"""
+        """Check if df.na.replace is being called on a DataFrame with only one argument that is not a dictionary"""
         if m.matches(
             node,
             m.Call(
-                func=m.Attribute(attr=m.Name("replace")),
+                func=m.Attribute(
+                    value=m.Attribute(attr=m.Name("na")), attr=m.Name("replace")
+                ),
                 args=[m.AtMostN(n=1, matcher=m.DoesNotMatch(m.Arg(m.Dict())))],
+            ),
+        ):
+            self.match_found = True
+
+
+class FillNaReplacesBooleanWithNulls(StatementLineCommentWriter):
+    """In PySpark 2.3, na.fill() or fillna also accepts boolean and replaces nulls with booleans. In prior Spark
+    versions, PySpark just ignores it and returns the original Dataset/DataFrame.
+    """
+
+    def __init__(
+        self,
+        pyspark_version: str = "2.3",
+    ):
+        super().__init__(
+            transformer_id="PY22-23-004",
+            comment=f"As of PySpark {pyspark_version}, na.fill() or fillna also accepts boolean and replaces nulls \
+with booleans. In prior Spark versions, PySpark just ignores it and returns the original Dataset/DataFrame.",
+        )
+
+    def visit_Call(self, node: cst.Call) -> None:
+        """Check if df.na.fill or fillna is being called on a DataFrame with only one argument that is a boolean"""
+        if m.matches(
+            node,
+            m.Call(
+                func=m.OneOf(
+                    m.Attribute(
+                        value=m.Attribute(attr=m.Name("na")), attr=m.Name("fill")
+                    ),
+                    m.Attribute(attr=m.Name("fillna")),
+                ),
+                args=[
+                    m.AtMostN(
+                        n=1,
+                        matcher=m.Arg(value=m.OneOf(m.Name("True"), m.Name("False"))),
+                    )
+                ],
             ),
         ):
             self.match_found = True
@@ -112,4 +151,5 @@ def pyspark_22_to_23_transformers() -> list[cst.CSTTransformer]:
         RequiredPandasVersionCommentWriter(),
         PandasRespectSessionTimeZone(),
         DataFrameReplaceWithoutUsingDictionary(),
+        FillNaReplacesBooleanWithNulls(),
     ]
