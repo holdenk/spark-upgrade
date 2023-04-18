@@ -136,12 +136,11 @@ def add_comment_to_end_of_a_simple_statement_line(
             return node
         else:
             # Add the comment to the end of the comments
+            new_cm = f"{original_comment.replace(ignore_line_too_long, '').rstrip()}  {comment}  {ignore_line_too_long}"
             return node.with_changes(
                 trailing_whitespace=cst.TrailingWhitespace(
                     whitespace=node.trailing_whitespace.whitespace,
-                    comment=node.trailing_whitespace.comment.with_changes(
-                        value=f"{original_comment.replace(ignore_line_too_long, '').rstrip()}  {comment}  {ignore_line_too_long}",
-                    ),
+                    comment=node.trailing_whitespace.comment.with_changes(value=new_cm),
                     newline=node.trailing_whitespace.newline,
                 )
             )
