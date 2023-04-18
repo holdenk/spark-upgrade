@@ -126,6 +126,26 @@ df.na.replace({'Alice': 'A', 'Bob': 'B'}).show()
     assert modified_code == given_code
 
 
+def test_does_not_add_comment_on_non_na_replace_calls():
+    given_code = """
+import pyspark
+
+df = spark.createDataFrame([
+    (10, 80, "Alice"),
+    (5, None, "Bob"),
+    (None, 10, "Tom"),
+    (None, None, None)],
+    schema=["age", "height", "name"])
+
+df.na.replace({'Alice': 'A', 'Bob': 'B'}).show()
+
+def month_end(date):
+    return date.replace(day=calendar.monthrange(date.year, date.month)[1])
+"""
+    modified_code = rewrite(given_code, DataFrameReplaceWithoutUsingDictionary())
+    assert modified_code == given_code
+
+
 def test_adds_comment_when_dataframe_na_fill_is_called_with_boolean_argument():
     given_code = """
 import pyspark
