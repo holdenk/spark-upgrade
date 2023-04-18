@@ -59,7 +59,8 @@ class ToPandasUsageTransformer(StatementLineCommentWriter):
     ):
         super().__init__(
             transformer_id="PY24-30-002",
-            comment=f"PySpark {pyspark_version} requires a {required_dependency_name} version of {required_dependency_version} or higher to use toPandas()",
+            comment=f"PySpark {pyspark_version} requires a {required_dependency_name} version of \
+{required_dependency_version} or higher to use toPandas()",
         )
 
     def visit_Call(self, node: cst.Call) -> None:
@@ -101,7 +102,8 @@ class PyArrowEnabledCommentWriter(StatementLineCommentWriter):
     ):
         super().__init__(
             transformer_id="PY24-30-004",
-            comment=f"PySpark {pyspark_version} requires {required_dependency_name} version {required_dependency_version} or higher when spark.sql.execution.arrow.enabled is set to true",
+            comment=f"PySpark {pyspark_version} requires {required_dependency_name} version \
+{required_dependency_version} or higher when spark.sql.execution.arrow.enabled is set to true",
         )
 
     def visit_Call(self, node: cst.Call) -> None:
@@ -140,7 +142,8 @@ class PandasConvertToArrowArraySafelyCommentWriter(PyArrowEnabledCommentWriter):
 
     @property
     def comment(self):
-        return "Consider setting spark.sql.execution.pandas.convertToArrowArraySafely to true to raise errors in case of Integer overflow or Floating point truncation, instead of silent allows."
+        return "Consider setting spark.sql.execution.pandas.convertToArrowArraySafely to true to raise errors in case \
+of Integer overflow or Floating point truncation, instead of silent allows."
 
 
 class CreateDataFrameVerifySchemaCommentWriter(StatementLineCommentWriter):
@@ -155,7 +158,8 @@ class CreateDataFrameVerifySchemaCommentWriter(StatementLineCommentWriter):
     ):
         super().__init__(
             transformer_id="PY24-30-006",
-            comment=f"Setting verifySchema to True validates LongType as well in PySpark {pyspark_version}. Previously, LongType was not verified and resulted in None in case the value overflows.",
+            comment=f"Setting verifySchema to True validates LongType as well in PySpark {pyspark_version}. \
+Previously, LongType was not verified and resulted in None in case the value overflows.",
         )
 
     def visit_Call(self, node: cst.Call) -> None:
@@ -186,7 +190,8 @@ class RowFieldNamesNotSortedCommentWriter(StatementLineCommentWriter):
     ):
         super().__init__(
             transformer_id="PY24-30-007",
-            comment=f"Sorting Row fields by name alphabetically since as of Spark {pyspark_version}, they are no longer when constructed with named arguments.",
+            comment=f"Sorting Row fields by name alphabetically since as of Spark {pyspark_version}, they are no \
+longer when constructed with named arguments.",
         )
 
     def leave_Call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.Call:
@@ -224,7 +229,8 @@ class MlParamMixinsSetterCommentWriter(StatementLineCommentWriter):
     ):
         super().__init__(
             transformer_id="PY24-30-008",
-            comment=f"In Spark {pyspark_version}, pyspark.ml.param.shared.Has* mixins do not provide any set*(self, value) setter methods anymore, use the respective self.set(self.*, value) instead.",
+            comment=f"In Spark {pyspark_version}, pyspark.ml.param.shared.Has* mixins do not provide any \
+set*(self, value) setter methods anymore, use the respective self.set(self.*, value) instead.",
         )
 
     def visit_ImportFrom(self, node: cst.ImportFrom) -> None:

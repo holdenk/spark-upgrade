@@ -58,7 +58,7 @@ def show(self, n: int = 20, truncate: Union[bool, int] = True, vertical: bool = 
         except ValueError:
             raise TypeError(
                 "Parameter 'truncate={}' should be either bool or int.".format(truncate)
-            )  # PY31-32-001: As of PySpark 3.2, the methods from sql, ml, spark_on_pandas modules raise the TypeError instead of ValueError when are applied to a param of inappropriate type.
+            )  # PY31-32-001: As of PySpark 3.2, the methods from sql, ml, spark_on_pandas modules raise the TypeError instead of ValueError when are applied to a param of inappropriate type.  # noqa: E501
 
         print(self._jdf.showString(n, int_truncate, vertical))
 """
@@ -97,7 +97,7 @@ def show(self, n: int = 20, truncate: Union[bool, int] = True, vertical: bool = 
         except ValueError as ex:
             raise TypeError(
                 "Parameter 'truncate={}' should be either bool or int.".format(truncate)
-            )  # PY31-32-001: As of PySpark 3.2, the methods from sql, ml, spark_on_pandas modules raise the TypeError instead of ValueError when are applied to a param of inappropriate type.
+            )  # PY31-32-001: As of PySpark 3.2, the methods from sql, ml, spark_on_pandas modules raise the TypeError instead of ValueError when are applied to a param of inappropriate type.  # noqa: E501
 
         print(self._jdf.showString(n, int_truncate, vertical))
 """
@@ -136,7 +136,7 @@ def show(self, n: int = 20, truncate: Union[bool, int] = True, vertical: bool = 
         except ValueError as ex:
             raise TypeError(
                 "Parameter 'truncate={}' should be either bool or int.".format(truncate)
-            )  # PY31-32-001: As of PySpark 3.2, the methods from sql, ml, spark_on_pandas modules raise the TypeError instead of ValueError when are applied to a param of inappropriate type.
+            )  # PY31-32-001: As of PySpark 3.2, the methods from sql, ml, spark_on_pandas modules raise the TypeError instead of ValueError when are applied to a param of inappropriate type.  # noqa: E501
 
         print(self._jdf.showString(n, int_truncate, vertical))
 """

@@ -17,7 +17,7 @@
 #
 
 from pysparkler.pyspark_32_to_33 import (
-    DataframeDropAxisIndexByDefaultCommentWriter,
+    DataframeDropAxisIndexByDefault,
     RequiredPandasVersionCommentWriter,
     SQLDataTypesReprReturnsObjectCommentWriter,
 )
@@ -32,12 +32,12 @@ df = ps.DataFrame(np.arange(12).reshape(3, 4), columns=['A', 'B', 'C', 'D'])
 df.drop(['B', 'C'])
 display(df)
 """
-    modified_code = rewrite(given_code, DataframeDropAxisIndexByDefaultCommentWriter())
+    modified_code = rewrite(given_code, DataframeDropAxisIndexByDefault())
     expected_code = """
 import pyspark.pandas as ps
 
 df = ps.DataFrame(np.arange(12).reshape(3, 4), columns=['A', 'B', 'C', 'D'])
-df.drop(['B', 'C'], axis = 1)  # PY32-33-001: As of PySpark 3.3, the drop method of pandas API on Spark DataFrame supports dropping rows by index, and sets dropping by index instead of column by default.
+df.drop(['B', 'C'], axis=1)  # PY32-33-001: Explicitly setting axis to 1 to drop by column, since as of PySpark 3.3 the drop method of pandas API on Spark DataFrame sets drop by index as default, instead of drop by column.  # noqa: E501
 display(df)
 """
     assert modified_code == expected_code
@@ -50,12 +50,12 @@ import pyspark.pandas as ps
 df = ps.DataFrame(np.arange(12).reshape(3, 4), columns=['A', 'B', 'C', 'D'])
 df.drop(labels=['B', 'C']).withColumnRenamed('A', 'B')
 """
-    modified_code = rewrite(given_code, DataframeDropAxisIndexByDefaultCommentWriter())
+    modified_code = rewrite(given_code, DataframeDropAxisIndexByDefault())
     expected_code = """
 import pyspark.pandas as ps
 
 df = ps.DataFrame(np.arange(12).reshape(3, 4), columns=['A', 'B', 'C', 'D'])
-df.drop(labels=['B', 'C'], axis = 1).withColumnRenamed('A', 'B')  # PY32-33-001: As of PySpark 3.3, the drop method of pandas API on Spark DataFrame supports dropping rows by index, and sets dropping by index instead of column by default.
+df.drop(labels=['B', 'C'], axis=1).withColumnRenamed('A', 'B')  # PY32-33-001: Explicitly setting axis to 1 to drop by column, since as of PySpark 3.3 the drop method of pandas API on Spark DataFrame sets drop by index as default, instead of drop by column.  # noqa: E501
 """
     assert modified_code == expected_code
 
@@ -67,7 +67,7 @@ import pyspark.pandas as ps
 df = ps.DataFrame(np.arange(12).reshape(3, 4), columns=['A', 'B', 'C', 'D'])
 df.drop(['B', 'C'], axis=1)
 """
-    modified_code = rewrite(given_code, DataframeDropAxisIndexByDefaultCommentWriter())
+    modified_code = rewrite(given_code, DataframeDropAxisIndexByDefault())
     assert modified_code == given_code
 
 
@@ -78,7 +78,7 @@ import pyspark.pandas as ps
 df = ps.DataFrame(np.arange(12).reshape(3, 4), columns=['A', 'B', 'C', 'D'])
 df.drop(['B', 'C'], axis=0)
 """
-    modified_code = rewrite(given_code, DataframeDropAxisIndexByDefaultCommentWriter())
+    modified_code = rewrite(given_code, DataframeDropAxisIndexByDefault())
     assert modified_code == given_code
 
 
@@ -89,7 +89,7 @@ import pyspark.pandas as ps
 df = ps.DataFrame(np.arange(12).reshape(3, 4), columns=['A', 'B', 'C', 'D'])
 df.drop(columns=['B', 'C'])
 """
-    modified_code = rewrite(given_code, DataframeDropAxisIndexByDefaultCommentWriter())
+    modified_code = rewrite(given_code, DataframeDropAxisIndexByDefault())
     assert modified_code == given_code
 
 
@@ -100,7 +100,7 @@ import pyspark.pandas as ps
 df = ps.DataFrame(np.arange(12).reshape(3, 4), columns=['A', 'B', 'C', 'D'])
 df.drop(index=[0, 1], columns='A')
 """
-    modified_code = rewrite(given_code, DataframeDropAxisIndexByDefaultCommentWriter())
+    modified_code = rewrite(given_code, DataframeDropAxisIndexByDefault())
     assert modified_code == given_code
 
 
@@ -111,7 +111,7 @@ import pyspark
 """
     modified_code = rewrite(given_code, RequiredPandasVersionCommentWriter())
     expected_code = """
-import pandas  # PY32-33-002: PySpark 3.3 requires pandas version 1.0.5 or higher
+import pandas  # PY32-33-002: PySpark 3.3 requires pandas version 1.0.5 or higher  # noqa: E501
 import pyspark
 """
     assert modified_code == expected_code
@@ -131,6 +131,6 @@ import pyspark.pandas as ps
 
 df = ps.DataFrame(np.arange(12).reshape(3, 4), columns=['A', 'B', 'C', 'D'])
 a_column_values = list(df['A'].unique())
-repr_a_column_values = [repr(value) for value in a_column_values]  # PY32-33-003: As of PySpark 3.3, the repr return values of SQL DataTypes have been changed to yield an object with the same value when passed to eval.
+repr_a_column_values = [repr(value) for value in a_column_values]  # PY32-33-003: As of PySpark 3.3, the repr return values of SQL DataTypes have been changed to yield an object with the same value when passed to eval.  # noqa: E501
 """
     assert modified_code == expected_code

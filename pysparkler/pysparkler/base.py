@@ -23,7 +23,8 @@ class BaseTransformer(m.MatcherDecoratableTransformer):
     """Base class for all transformers.
 
     Attributes:
-        transformer_id: A unique identifier for the transformer rule. Follows the format PY<From-Major-Version>-<To-Major-Version>-<Rule-Number>
+        transformer_id: A unique identifier for the transformer rule. Follows the format
+            PY<From-Major-Version>-<To-Major-Version>-<Rule-Number>
             Important for idempotency checks and debugging.
 
     """
@@ -79,7 +80,8 @@ class RequiredDependencyVersionCommentWriter(StatementLineCommentWriter):
     ):
         super().__init__(
             transformer_id=transformer_id,
-            comment=f"PySpark {pyspark_version} requires {required_dependency_name} version {required_dependency_version} or higher",
+            comment=f"PySpark {pyspark_version} requires {required_dependency_name} version \
+{required_dependency_version} or higher",
         )
         self.required_dependency_name = required_dependency_name
         self._import_name = import_name
@@ -125,19 +127,20 @@ def add_comment_to_end_of_a_simple_statement_line(
 ) -> cst.SimpleStatementLine:
     """Adds a comment to the end of a statement line"""
 
+    ignore_line_too_long = "# noqa: E501"
     if node.trailing_whitespace.comment:
         # If there is already a comment
-        if transformer_id in node.trailing_whitespace.comment.value:
+        original_comment = node.trailing_whitespace.comment.value
+        if transformer_id in original_comment:
             # If the comment is already added by this transformer, do nothing
             return node
         else:
             # Add the comment to the end of the comments
+            new_cm = f"{original_comment.replace(ignore_line_too_long, '').rstrip()}  {comment}  {ignore_line_too_long}"
             return node.with_changes(
                 trailing_whitespace=cst.TrailingWhitespace(
                     whitespace=node.trailing_whitespace.whitespace,
-                    comment=node.trailing_whitespace.comment.with_changes(
-                        value=f"{node.trailing_whitespace.comment.value}  {comment}",
-                    ),
+                    comment=node.trailing_whitespace.comment.with_changes(value=new_cm),
                     newline=node.trailing_whitespace.newline,
                 )
             )
@@ -148,7 +151,7 @@ def add_comment_to_end_of_a_simple_statement_line(
                 whitespace=cst.SimpleWhitespace(
                     value="  ",
                 ),
-                comment=cst.Comment(value=comment),
+                comment=cst.Comment(value=f"{comment}  {ignore_line_too_long}"),
                 newline=cst.Newline(
                     value=None,
                 ),

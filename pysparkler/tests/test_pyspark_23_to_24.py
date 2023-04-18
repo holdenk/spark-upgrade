@@ -48,7 +48,7 @@ data = [("James","","Smith","36636","M",60000),
 columns = ["first_name","middle_name","last_name","dob","gender","salary"]
 pysparkDF = spark.createDataFrame(data = data, schema = columns)
 
-pandasDF = pysparkDF.toPandas()  # PY23-24-001: As of PySpark 2.4 toPandas() allows fallback to non-optimization by default when Arrow optimization is unable to be used. This can be switched off by spark.sql.execution.arrow.fallback.enabled
+pandasDF = pysparkDF.toPandas()  # PY23-24-001: As of PySpark 2.4 toPandas() allows fallback to non-optimization by default when Arrow optimization is unable to be used. This can be switched off by spark.sql.execution.arrow.fallback.enabled  # noqa: E501
 print(pandasDF)
 """
     assert modified_code == expected_code

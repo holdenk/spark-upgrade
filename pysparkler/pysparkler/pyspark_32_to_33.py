@@ -24,7 +24,7 @@ from pysparkler.base import (
 )
 
 
-class DataframeDropAxisIndexByDefaultCommentWriter(StatementLineCommentWriter):
+class DataframeDropAxisIndexByDefault(StatementLineCommentWriter):
     """In Spark 3.3, the drop method of pandas API on Spark DataFrame supports dropping rows by index, and sets dropping
     by index instead of column by default.
     """
@@ -35,7 +35,8 @@ class DataframeDropAxisIndexByDefaultCommentWriter(StatementLineCommentWriter):
     ):
         super().__init__(
             transformer_id="PY32-33-001",
-            comment=f"As of PySpark {pyspark_version}, the drop method of pandas API on Spark DataFrame supports dropping rows by index, and sets dropping by index instead of column by default.",
+            comment=f"Explicitly setting axis to 1 to drop by column, since as of PySpark {pyspark_version} the drop \
+method of pandas API on Spark DataFrame sets drop by index as default, instead of drop by column.",
         )
         self.inside_drop_call = False
 
@@ -59,7 +60,14 @@ class DataframeDropAxisIndexByDefaultCommentWriter(StatementLineCommentWriter):
             return updated_node.with_changes(
                 args=[
                     *updated_node.args,
-                    cst.Arg(keyword=cst.Name("axis"), value=cst.Integer("1")),
+                    cst.Arg(
+                        keyword=cst.Name("axis"),
+                        value=cst.Integer("1"),
+                        equal=cst.AssignEqual(
+                            whitespace_before=cst.SimpleWhitespace(""),
+                            whitespace_after=cst.SimpleWhitespace(""),
+                        ),
+                    ),
                 ]
             )
         else:
@@ -94,7 +102,8 @@ class SQLDataTypesReprReturnsObjectCommentWriter(StatementLineCommentWriter):
     ):
         super().__init__(
             transformer_id="PY32-33-003",
-            comment=f"As of PySpark {pyspark_version}, the repr return values of SQL DataTypes have been changed to yield an object with the same value when passed to eval.",
+            comment=f"As of PySpark {pyspark_version}, the repr return values of SQL DataTypes have been changed to \
+yield an object with the same value when passed to eval.",
         )
 
     def visit_Call(self, node: cst.Call) -> None:
@@ -109,7 +118,7 @@ class SQLDataTypesReprReturnsObjectCommentWriter(StatementLineCommentWriter):
 def pyspark_32_to_33_transformers() -> list[cst.CSTTransformer]:
     """Return a list of transformers for PySpark 3.2 to 3.3 migration guide"""
     return [
-        DataframeDropAxisIndexByDefaultCommentWriter(),
+        DataframeDropAxisIndexByDefault(),
         RequiredPandasVersionCommentWriter(),
         SQLDataTypesReprReturnsObjectCommentWriter(),
     ]
