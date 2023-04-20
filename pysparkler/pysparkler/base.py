@@ -15,6 +15,8 @@
 #  specific language governing permissions and limitations
 #  under the License.
 #
+from typing import Any
+
 import libcst as cst
 import libcst.matchers as m
 
@@ -31,7 +33,23 @@ class BaseTransformer(m.MatcherDecoratableTransformer):
 
     def __init__(self, transformer_id: str):
         super().__init__()
-        self.transformer_id = transformer_id
+        self._transformer_id = transformer_id
+
+    @property
+    def transformer_id(self) -> str:
+        """A unique read-only identifier for the transformer rule"""
+        return self._transformer_id
+
+    @transformer_id.setter
+    def transformer_id(self, value):
+        raise AttributeError("Cannot set the read-only transformer_id attribute")
+
+    def override(self, **kwargs: dict[str, Any]) -> "BaseTransformer":
+        """Override the transformer attributes with kwargs passed in"""
+        for key, value in kwargs.items():
+            # Iterate over the kwargs and override the existing attributes
+            setattr(self, key, value)
+        return self
 
 
 class StatementLineCommentWriter(BaseTransformer):
@@ -49,6 +67,10 @@ class StatementLineCommentWriter(BaseTransformer):
     @property
     def comment(self):
         return self._comment
+
+    @comment.setter
+    def comment(self, value):
+        self._comment = value
 
     def leave_SimpleStatementLine(
         self,
@@ -100,6 +122,10 @@ class RequiredDependencyVersionCommentWriter(StatementLineCommentWriter):
             return super().comment
         else:
             return f"{super().comment} to use {self._import_name}"
+
+    @comment.setter
+    def comment(self, value):
+        self._comment = value
 
     def visit_Import(self, node: cst.Import) -> None:
         """Check if pandas_udf is being used in an import statement"""
