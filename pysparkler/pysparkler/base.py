@@ -15,6 +15,7 @@
 #  specific language governing permissions and limitations
 #  under the License.
 #
+from ast import literal_eval
 from typing import Any
 
 import libcst as cst
@@ -24,16 +25,17 @@ import libcst.matchers as m
 class BaseTransformer(m.MatcherDecoratableTransformer):
     """Base class for all transformers.
 
-    Attributes:
+    Properties:
         transformer_id: A unique identifier for the transformer rule. Follows the format
             PY<From-Major-Version>-<To-Major-Version>-<Rule-Number>
             Important for idempotency checks and debugging.
-
+        enabled: A boolean to enable or disable the transformer rule
     """
 
-    def __init__(self, transformer_id: str):
+    def __init__(self, transformer_id: str, enabled: bool = True):
         super().__init__()
         self._transformer_id = transformer_id
+        self._enabled = enabled
 
     @property
     def transformer_id(self) -> str:
@@ -43,6 +45,15 @@ class BaseTransformer(m.MatcherDecoratableTransformer):
     @transformer_id.setter
     def transformer_id(self, value):
         raise AttributeError("Cannot set the read-only transformer_id attribute")
+
+    @property
+    def enabled(self) -> bool:
+        """A boolean to enable or disable the transformer rule"""
+        return self._enabled
+
+    @enabled.setter
+    def enabled(self, value):
+        self._enabled = literal_eval(value)
 
     def override(self, **kwargs: dict[str, Any]) -> "BaseTransformer":
         """Override the transformer attributes with kwargs passed in"""

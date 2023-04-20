@@ -16,10 +16,12 @@
 #  under the License.
 #
 import json
+from typing import Any
 
 import libcst as cst
 import nbformat
 
+from pysparkler.base import BaseTransformer
 from pysparkler.pyspark_22_to_23 import pyspark_22_to_23_transformers
 from pysparkler.pyspark_23_to_24 import pyspark_23_to_24_transformers
 from pysparkler.pyspark_24_to_30 import pyspark_24_to_30_transformers
@@ -31,21 +33,39 @@ class PySparkler:
     """Main class for PySparkler"""
 
     def __init__(
-        self, from_pyspark: str = "2.2", to_pyspark: str = "3.3", dry_run: bool = False
+        self,
+        from_pyspark: str = "2.2",
+        to_pyspark: str = "3.3",
+        dry_run: bool = False,
+        **kwargs: dict[str, Any]
     ):
         self.from_pyspark = from_pyspark
         self.to_pyspark = to_pyspark
         self.dry_run = dry_run
+        self.kwargs = kwargs
 
     @property
-    def transformers(self):
-        return [
+    def transformers(self) -> list[BaseTransformer]:
+        """Returns a list of transformers to be applied to the AST"""
+        all_transformers = [
             *pyspark_22_to_23_transformers(),
             *pyspark_23_to_24_transformers(),
             *pyspark_24_to_30_transformers(),
             *pyspark_31_to_32_transformers(),
             *pyspark_32_to_33_transformers(),
         ]
+        # Override the default values of the transformers with the user provided values
+        for transformer in all_transformers:
+            if transformer.transformer_id in self.kwargs:
+                transformer.override(**self.kwargs[transformer.transformer_id])
+
+        # Filter out disabled transformers
+        enabled_transformers = [
+            transformer for transformer in all_transformers if transformer.enabled
+        ]
+
+        # Return the list of enabled transformers
+        return enabled_transformers
 
     def upgrade_script(self, input_file: str, output_file: str | None = None) -> str:
         """Upgrade a PySpark Python script file to the latest version and provides comments as hints for manual
