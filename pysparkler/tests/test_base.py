@@ -38,10 +38,10 @@ def test_overrides_comment_from_kwargs():
     given_code = """
 import pyspark
 """
-    kwargs = {"comment": "baz"}
+    overrides = {"comment": "baz"}
     comment_writer = StatementLineCommentWriter(transformer_id="foo", comment="bar")
     comment_writer.match_found = True
-    comment_writer.override(**kwargs)
+    comment_writer.override(**overrides)
 
     modified_code = rewrite(given_code, comment_writer)
     expected_code = """
@@ -54,10 +54,10 @@ def test_overrides_with_unknown_attributes_are_silently_ignored():
     given_code = """
 import pyspark
 """
-    kwargs = {"unknown": "attribute"}
+    overrides = {"unknown": "attribute"}
     comment_writer = StatementLineCommentWriter(transformer_id="foo", comment="bar")
     comment_writer.match_found = True
-    comment_writer.override(**kwargs)
+    comment_writer.override(**overrides)
 
     modified_code = rewrite(given_code, comment_writer)
     expected_code = """

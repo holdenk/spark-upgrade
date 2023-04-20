@@ -23,6 +23,7 @@ from importlib import metadata
 from typing import Any
 
 import click
+import yaml
 from click import Context
 from rich.console import Console
 from rich.syntax import Syntax
@@ -55,11 +56,27 @@ def catch_exception() -> Callable:
 
 @click.group()
 @click.option("-v", "--verbose", is_flag=True, help="Verbose mode")
+@click.option(
+    "-c",
+    "--config-yaml",
+    type=click.Path(exists=True, readable=True),
+    help="Config YAML to customize PySparkler behavior. Check documentation for more details.",
+)
 @click.pass_context
-def run(ctx: Context, verbose: bool) -> None:
+def run(ctx: Context, verbose: bool, config_yaml: str) -> None:
     """Pysparkler CLI - A tool to upgrade PySpark scripts to newer versions"""
     ctx.ensure_object(dict)
     ctx.obj["verbose"] = verbose
+    ctx.obj["config"] = {}
+
+    if config_yaml:
+        # Load configuration from YAML file
+        with open(config_yaml, encoding="utf-8") as file:
+            config = yaml.load(file, Loader=yaml.SafeLoader)
+
+        # Set the configuration in PySparkler
+        if "pysparkler" in config:
+            ctx.obj["config"] = config["pysparkler"]
 
 
 @run.command()
@@ -109,7 +126,8 @@ def upgrade(
     """
 
     print_command_params(ctx)
-    pysparkler = PySparkler(dry_run=dry_run)
+    ctx.obj["config"]["dry_run"] = dry_run
+    pysparkler = PySparkler(**ctx.obj["config"])
 
     file_type = file_type or input_file.split(".")[-1]
     if file_type == "ipynb":

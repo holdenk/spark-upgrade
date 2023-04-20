@@ -55,9 +55,9 @@ class BaseTransformer(m.MatcherDecoratableTransformer):
     def enabled(self, value):
         self._enabled = literal_eval(value)
 
-    def override(self, **kwargs: dict[str, Any]) -> "BaseTransformer":
+    def override(self, **overrides: dict[str, Any]) -> "BaseTransformer":
         """Override the transformer attributes with kwargs passed in"""
-        for key, value in kwargs.items():
+        for key, value in overrides.items():
             # Iterate over the kwargs and override the existing attributes
             setattr(self, key, value)
         return self

@@ -37,12 +37,12 @@ class PySparkler:
         from_pyspark: str = "2.2",
         to_pyspark: str = "3.3",
         dry_run: bool = False,
-        **kwargs: dict[str, Any]
+        **overrides: dict[str, Any]
     ):
         self.from_pyspark = from_pyspark
         self.to_pyspark = to_pyspark
         self.dry_run = dry_run
-        self.kwargs = kwargs
+        self.overrides = overrides
 
     @property
     def transformers(self) -> list[BaseTransformer]:
@@ -56,8 +56,8 @@ class PySparkler:
         ]
         # Override the default values of the transformers with the user provided values
         for transformer in all_transformers:
-            if transformer.transformer_id in self.kwargs:
-                transformer.override(**self.kwargs[transformer.transformer_id])
+            if transformer.transformer_id in self.overrides:
+                transformer.override(**self.overrides[transformer.transformer_id])
 
         # Filter out disabled transformers
         enabled_transformers = [
