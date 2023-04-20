@@ -96,12 +96,13 @@ class PyArrowEnabledCommentWriter(StatementLineCommentWriter):
 
     def __init__(
         self,
+        transformer_id: str = "PY24-30-004",
         pyspark_version: str = "3.0",
         required_dependency_name: str = "PyArrow",
         required_dependency_version: str = "0.12.1",
     ):
         super().__init__(
-            transformer_id="PY24-30-004",
+            transformer_id=transformer_id,
             comment=f"PySpark {pyspark_version} requires {required_dependency_name} version \
 {required_dependency_version} or higher when spark.sql.execution.arrow.enabled is set to true",
         )
@@ -137,13 +138,16 @@ class PandasConvertToArrowArraySafelyCommentWriter(PyArrowEnabledCommentWriter):
     """
 
     def __init__(self):
-        super().__init__()
-        self.transformer_id = "PY24-30-005"
+        super().__init__(transformer_id="PY24-30-005")
 
     @property
     def comment(self):
         return "Consider setting spark.sql.execution.pandas.convertToArrowArraySafely to true to raise errors in case \
 of Integer overflow or Floating point truncation, instead of silent allows."
+
+    @comment.setter
+    def comment(self, value):
+        self._comment = value
 
 
 class CreateDataFrameVerifySchemaCommentWriter(StatementLineCommentWriter):

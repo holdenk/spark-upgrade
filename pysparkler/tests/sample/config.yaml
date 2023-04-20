@@ -1,0 +1,6 @@
+pysparkler:
+  dry_run: False
+  PY24-30-001:
+    comment: A new comment
+  PY24-30-002:
+    enabled: False

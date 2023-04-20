@@ -48,3 +48,27 @@ def test_upgrade_pyspark_jupyter_notebook():
     assert nbformat.reads(
         modified_code, as_version=nbformat.NO_CONVERT
     ) == nbformat.reads(expected_code, as_version=nbformat.NO_CONVERT)
+
+
+def test_disable_transformers_are_filtered_out():
+    transformer_id = "PY24-30-001"
+    given_overrides = {
+        transformer_id: {"enabled": False},
+    }
+    transformers = PySparkler(**given_overrides).transformers
+
+    assert transformer_id not in [t.transformer_id for t in transformers]
+
+
+def test_transformer_override_comments_are_taking_effect():
+    transformer_id = "PY24-30-001"
+    overriden_comment = "A new comment"
+    given_overrides = {
+        transformer_id: {"comment": overriden_comment},
+    }
+
+    modified_code = PySparkler(dry_run=True, **given_overrides).upgrade_script(
+        input_file=absolute_path("tests/sample/input_pyspark.py")
+    )
+
+    assert overriden_comment in modified_code
