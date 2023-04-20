@@ -15,7 +15,6 @@
 #  specific language governing permissions and limitations
 #  under the License.
 #
-from ast import literal_eval
 from typing import Any
 
 import libcst as cst
@@ -53,7 +52,7 @@ class BaseTransformer(m.MatcherDecoratableTransformer):
 
     @enabled.setter
     def enabled(self, value):
-        self._enabled = literal_eval(value)
+        self._enabled = value
 
     def override(self, **overrides: dict[str, Any]) -> "BaseTransformer":
         """Override the transformer attributes with kwargs passed in"""

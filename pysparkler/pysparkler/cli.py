@@ -126,7 +126,9 @@ def upgrade(
     """
 
     print_command_params(ctx)
-    ctx.obj["config"]["dry_run"] = dry_run
+    if "dry_run" not in ctx.obj["config"]:
+        ctx.obj["config"]["dry_run"] = dry_run
+
     pysparkler = PySparkler(**ctx.obj["config"])
 
     file_type = file_type or input_file.split(".")[-1]

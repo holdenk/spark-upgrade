@@ -53,7 +53,7 @@ def test_upgrade_pyspark_jupyter_notebook():
 def test_disable_transformers_are_filtered_out():
     transformer_id = "PY24-30-001"
     given_overrides = {
-        transformer_id: {"enabled": "False"},
+        transformer_id: {"enabled": False},
     }
     transformers = PySparkler(**given_overrides).transformers
 

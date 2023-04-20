@@ -45,6 +45,7 @@ def test_upgrade_cli():
     with open(output_file.name, encoding="utf-8") as f:
         modified_code = f.read()
         assert "A new comment" in modified_code
+        assert "PY24-30-002" not in modified_code
 
     # Clean up and delete the temporary file
     output_file.close()
