@@ -42,12 +42,13 @@ to upgrade your PySpark scripts. In the latest stable version it supports the fo
 
 The tool supports the following features:
 
-| Feature                          | Supported |
-|----------------------------------|-----------|
-| Upgrade PySpark Python script    | ✅         |
-| Upgrade PySpark Jupyter Notebook | ✅         |
-| Dry-run Mode                     | ✅         |
-| Verbose Mode                     | ✅         |
+| Feature                                       | Supported |
+|-----------------------------------------------|-----------|
+| Upgrade PySpark Python script                 | ✅         |
+| Upgrade PySpark Jupyter Notebook              | ✅         |
+| Dry-run Mode                                  | ✅         |
+| Verbose Mode                                  | ✅         |
+| Customize code transformers using YAML config | ✅         |
 
 ### Upgrade PySpark Python script
 
@@ -101,6 +102,26 @@ input variables, the input file content, the output content, and a unified diff 
 
 ```bash
 pysparkler --verbose upgrade --input-file /path/to/script.py
+```
+
+### Customize code transformers using YAML config
+
+The tool uses a YAML config file to customize the code transformers. The config file can be passed using the
+`--config-yaml` flag:
+
+```bash
+pysparkler --config-yaml /path/to/config.yaml upgrade --input-file /path/to/script.py
+```
+
+The config file is a YAML file with the following structure:
+
+```yaml
+pysparkler:
+  dry_run: false # Whether to run in dry-run mode
+  PY24-30-001: # The code transformer ID
+    comment: A new comment # The overriden code hint comment to be used by the code transformer
+  PY24-30-002:
+    enabled: false # Disable the code transformer
 ```
 
 ## Contributing
