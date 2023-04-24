@@ -9,8 +9,8 @@ PySpark script as input and outputs latest Spark version compatible script. It i
 
 ## Installation
 
-We recommend installing PySparkler from PyPI using [pipx](https://pypa.github.io/pipx) which allows us to install and 
-run Python Applications in Isolated Environments. To install pipx on your system, follow the instructions 
+We recommend installing PySparkler from PyPI using [pipx](https://pypa.github.io/pipx) which allows us to install and
+run Python Applications in Isolated Environments. To install pipx on your system, follow the instructions
 [here](https://pypa.github.io/pipx/installation/#install-pipx). Once pipx is installed, you can install PySparkler using:
 
 ```bash
@@ -33,26 +33,25 @@ pysparkler upgrade --input-file /path/to/script.py
 
 PySparkler parses the code and can perform either of the following actions:
 
-1. **Code Transformations** - These are modifications that are performed on the code to make it compatible with the
-latest Spark version. For example, if you are upgrading from Spark 2.4 to 3.0, PySparkler will alphabetically sort the
-keyword arguments in the `Row` constructor to preserve backwards compatible behavior. This action will also add a
-comment to the end of statement line being modified to indicate that the code was modified by PySparkler, explaining 
-why.
+- **Code Transformations** - These are modifications that are performed on the code to make it compatible with the
+  latest Spark version. For example, if you are upgrading from Spark 2.4 to 3.0, PySparkler will alphabetically sort the
+  keyword arguments in the `Row` constructor to preserve backwards compatible behavior. This action will also add a
+  comment to the end of statement line being modified to indicate that the code was modified by PySparkler, explaining
+  why.
 
-2. **Code Hints** - Python is a dynamically-typed language, so there are situations wherein PySparkler cannot, with
-100% accuracy, determine if the code is eligible for a transformation. In such situations, PySparkler adds code hints to
-guide the end-user to make an appropriate change if needed. Code hints are comments that are added to the end of a 
-statement line to suggest changes that may be needed it to make it compatible with the latest Spark version. 
-For example, if you are upgrading from Spark 2.4 to 3.0 and PySparkler detects `spark.sql.execution.arrow.enabled` is
-set to `True` in your code, it will add a code hint to the end of the line to suggest setting 
-`spark.sql.execution.pandas.convertToArrowArraySafely` to `True` in case you want to raise errors in case of Integer 
-overflow or Floating point truncation, instead of silent allows. As you can see the suggestion is pretty contextual and 
-may not be applicable in all cases. In cases where not applicable, the end-user can choose to ignore the code hint.
+- **Code Hints** - Python is a dynamically-typed language, so there are situations wherein PySparkler cannot, with
+  100% accuracy, determine if the code is eligible for a transformation. In such situations, PySparkler adds code hints to
+  guide the end-user to make an appropriate change if needed. Code hints are comments that are added to the end of a
+  statement line to suggest changes that may be needed it to make it compatible with the latest Spark version.
+  For example, if you are upgrading from Spark 2.4 to 3.0 and PySparkler detects `spark.sql.execution.arrow.enabled` is
+  set to `True` in your code, it will add a code hint to the end of the line to suggest setting
+  `spark.sql.execution.pandas.convertToArrowArraySafely` to `True` in case you want to raise errors in case of Integer
+  overflow or Floating point truncation, instead of silent allows. As you can see the suggestion is pretty contextual and
+  may not be applicable in all cases. In cases where not applicable, the end-user can choose to ignore the code hint.
 
 **NOTE**: PySparkler tries to keep the code formatting intact as much as possible. However, it is possible that the
-statement lines it takes actions on may fail the linting checks post changes. In such situations, the end-user will have 
+statement lines it takes actions on may fail the linting checks post changes. In such situations, the end-user will have
 to fix the linting errors manually.
-
 
 ## PySpark Upgrades Supported
 
