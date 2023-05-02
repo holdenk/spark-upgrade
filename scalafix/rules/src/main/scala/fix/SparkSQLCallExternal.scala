@@ -20,6 +20,8 @@ class SparkSQLCallExternal extends SemanticRule("SparkSQLCallExternal") {
                 case Lit.String(_) =>
                   Patch.replaceTree(param, "\"magic\"")
                 case _ =>
+                  // TODO: Do we want to warn here about non migrated dynamically generated SQL
+                  // or no?
                   Patch.empty
               }
             case _ =>
