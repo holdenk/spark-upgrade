@@ -1,5 +1,8 @@
 # Scalafix rules for Spark Auto Upgrade
 
+To use the scalafix rules, see the build tool specific docs https://github.com/holdenk/spark-upgrade/tree/main/docs/scala
+and the end to end demo https://github.com/holdenk/spark-upgrade/tree/main/e2e_demo/scala
+
 To develop rule:
 ```
 sbt ~tests/test
