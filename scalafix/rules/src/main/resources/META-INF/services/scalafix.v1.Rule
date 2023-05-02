@@ -15,3 +15,4 @@ fix.MigrateTrigger
 fix.GroupByKeyRenameColumnQQ
 fix.MultiLineDatasetReadWarn
 fix.ExpressionEncoder
+fix.SparkSQLCallExternal
