@@ -1,1 +1,1 @@
-include src/sparksql/plugin_default_config.cfg
+include src/sparksql_upgrade/plugin_default_config.cfg

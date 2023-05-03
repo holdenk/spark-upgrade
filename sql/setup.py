@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 
 # Change these names in your plugin, e.g. company name or plugin purpose.
 PLUGIN_LOGICAL_NAME = "sparksql-upgrade"
-PLUGIN_ROOT_MODULE = "sparksql"
+PLUGIN_ROOT_MODULE = "sparksql_upgrade"
 
 setup(
     name="sqlfluff-plugin-{plugin_logical_name}".format(
