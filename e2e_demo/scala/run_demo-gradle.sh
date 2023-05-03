@@ -21,7 +21,7 @@ cd ./sparkdemoproject && gradle clean && cd ..
 
 INITIAL_VERSION=${INITIAL_VERSION:-2.4.8}
 TARGET_VERSION=${TARGET_VERSION:-3.3.1}
-SCALAFIX_RULES_VERSION=${SCALAFIX_RULES_VERSION:-0.1.9}
+SCALAFIX_RULES_VERSION=${SCALAFIX_RULES_VERSION:-0.1.13}
 outputTable="local.newest_farttable"
 
 SPARK2_DETAILS="spark-2.4.8-bin-without-hadoop-scala-2.12"

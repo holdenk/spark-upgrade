@@ -3,6 +3,8 @@
 To use the scalafix rules, see the build tool specific docs https://github.com/holdenk/spark-upgrade/tree/main/docs/scala
 and the end to end demo https://github.com/holdenk/spark-upgrade/tree/main/e2e_demo/scala
 
+You can also watch the end to end demo at https://www.youtube.com/watch?v=bqpb84n9Dpk :)
+
 To develop rule:
 ```
 sbt ~tests/test
