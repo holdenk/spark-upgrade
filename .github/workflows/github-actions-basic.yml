@@ -44,10 +44,12 @@ jobs:
       run: cd scalafix; sbt ";clean;compile;test;publishLocal;+publishLocal"; sbt "show rules/dynver" |grep "\[info\]" |grep "[0-9].[0-9].[0-9]" | cut -f 2 -d " " > ~/rules_version
     - name: Run sbt tests on our WAP plugin
       run: cd iceberg-spark-upgrade-wap-plugin; sbt ";clean;test"
+    - name: Make pip python programs findable
+      run: export PATH=`python3 -m site --user-base`/bin:$PATH
     - name: SQL Module - Lint Checks
       run: cd sql; flake8 --max-line-length 100 --ignore=E129,W504
     - name:  SQL Module - Install and Test
-      run: cd sql; pip install -e .; pytest .
+      run: cd sql; pip install -r requirements.txt; pip install -e .; pytest .
     - name: PySparkler - Make Install
       run: |
         cd pysparkler
