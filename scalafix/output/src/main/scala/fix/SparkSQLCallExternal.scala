@@ -4,7 +4,10 @@ import org.apache.spark.sql._
 object OldQuery {
   def doQuery(s: SparkSession) {
     // We should be able to rewrite this one
-    s.sql("magic")
+    s.sql("""select
+    int(a),
+    int(b)from fart_tbl
+""")
     // We can't auto rewrite this :( easily.
     val q = "SELECT * FROM FARTS LIMIT 1"
     s.sql(q)
