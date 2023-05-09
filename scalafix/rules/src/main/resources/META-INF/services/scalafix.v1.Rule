@@ -16,3 +16,4 @@ fix.GroupByKeyRenameColumnQQ
 fix.MultiLineDatasetReadWarn
 fix.ExpressionEncoder
 fix.SparkSQLCallExternal
+fix.AllEquivalentExprs
