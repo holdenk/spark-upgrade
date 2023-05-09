@@ -15,7 +15,7 @@ if "scalafix" not in build_with_plugin:
 
 build_with_plugin_and_rules = re.sub(
     r"dependencies\s*{",
-    "dependencies {\n    scalafix group: 'com.holdenkarau', name: 'spark-scalafix-rules-2.4.8_2.12', version: '" + version +"}'\n",
+    "dependencies {\n    scalafix group: 'com.holdenkarau', name: 'spark-scalafix-rules-2.4.8_2.12', version: '" + version +"'\n",
     build_with_plugin)
 
 print(build_with_plugin_and_rules)
