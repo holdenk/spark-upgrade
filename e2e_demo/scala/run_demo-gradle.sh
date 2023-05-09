@@ -13,7 +13,17 @@ prompt () {
 }
 
 bash ./cleanup.sh
-cd ./sparkdemoproject && gradle clean && cd ..
+cd ./sparkdemoproject
+if ! [ -x "$(command -v gradle)" ]; then
+  echo 'Error: git is not installed.' >&2
+  if [ -x "$(command -v brew)" ]; then
+    brew install gradle
+  elif [ -x "$(command -v sdk)" ]; then
+    sdk install gradle
+  fi
+fi
+gradle clean
+cd ..
 
 ########################################################################
 # Define variables
