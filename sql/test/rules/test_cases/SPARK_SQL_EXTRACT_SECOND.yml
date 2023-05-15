@@ -1,0 +1,10 @@
+rule: SPARKSQL_L004
+
+extract_second:
+  configs:
+    core:
+      dialect: sparksql
+  fail_str: |
+    select extract(second from to_timestamp('2019-09-20 10:10:10.1'))
+  fix_str: |
+    select cast(extract(second from to_timestamp('2019-09-20 10:10:10.1')) as int)
