@@ -19,12 +19,23 @@ from typing import List, Optional
 import os.path
 from sqlfluff.core.config import ConfigLoader
 
+from sqlfluff.core.parser import (
+    WhitespaceSegment,
+    SymbolSegment,
+    KeywordSegment,
+)
+
 
 @hookimpl
 def get_rules() -> List[BaseRule]:
     """Get plugin rules."""
-    return [Rule_SPARKSQLCAST_L001, Rule_RESERVEDROPERTIES_L002,
-            Rule_NOCHARS_L003, Rule_FORMATSTRONEINDEX_L004]
+    return [
+        Rule_SPARKSQLCAST_L001,
+        Rule_RESERVEDROPERTIES_L002,
+        Rule_NOCHARS_L003,
+        Rule_FORMATSTRONEINDEX_L004,
+        Rule_SPARKSQL_L004,
+    ]
 
 
 @hookimpl
@@ -78,8 +89,11 @@ class Rule_SPARKSQLCAST_L001(BaseRule):
         """Check integer casts."""
         functional_context = FunctionalContext(context)
         children = functional_context.segment.children()
-        function_name_id_seg = children.first(sp.is_type("function_name")).children(
-        ).first(sp.is_type("function_name_identifier"))[0]
+        function_name_id_seg = (
+            children.first(sp.is_type("function_name"))
+            .children()
+            .first(sp.is_type("function_name_identifier"))[0]
+        )
         raw_function_name = function_name_id_seg.raw.upper().strip()
         function_name = raw_function_name.upper().strip()
         bracketed_segments = children.first(sp.is_type("bracketed"))
@@ -88,8 +102,7 @@ class Rule_SPARKSQLCAST_L001(BaseRule):
         # Is this a cast function call
         if function_name == "CAST":
             print("Found cast function!")
-            data_type_info = bracketed.get_child(
-                "data_type").raw.upper().strip()
+            data_type_info = bracketed.get_child("data_type").raw.upper().strip()
             if data_type_info == "INT":
                 # Here we know we have a possible one
                 expr = bracketed.get_child("expression")
@@ -100,11 +113,7 @@ class Rule_SPARKSQLCAST_L001(BaseRule):
                     fixes=[
                         LintFix.replace(
                             function_name_id_seg,
-                            [
-                                function_name_id_seg.edit(
-                                    f"int({expr.raw})"
-                                )
-                            ],
+                            [function_name_id_seg.edit(f"int({expr.raw})")],
                         ),
                         LintFix.delete(
                             bracketed,
@@ -133,8 +142,11 @@ class Rule_FORMATSTRONEINDEX_L004(BaseRule):
         """Check for invalid format strs"""
         functional_context = FunctionalContext(context)
         children = functional_context.segment.children()
-        function_name_id_seg = children.first(sp.is_type("function_name")).children(
-        ).first(sp.is_type("function_name_identifier"))[0]
+        function_name_id_seg = (
+            children.first(sp.is_type("function_name"))
+            .children()
+            .first(sp.is_type("function_name_identifier"))[0]
+        )
         raw_function_name = function_name_id_seg.raw.upper().strip()
         function_name = raw_function_name.upper().strip()
         bracketed_segments = children.first(sp.is_type("bracketed"))
@@ -143,7 +155,9 @@ class Rule_FORMATSTRONEINDEX_L004(BaseRule):
         # Is this a cast function call
         if function_name == "FORMAT_STRING":
             print("Found format string function!")
-            format_str_seg = bracketed.get_child("expression").get_child("quoted_literal")
+            format_str_seg = bracketed.get_child("expression").get_child(
+                "quoted_literal"
+            )
             format_str = format_str_seg.raw
             # If we don't use the bad sequence just return right away.
             if "%0$" not in format_str:
@@ -155,11 +169,7 @@ class Rule_FORMATSTRONEINDEX_L004(BaseRule):
                     fixes=[
                         LintFix.replace(
                             format_str_seg,
-                            [
-                                format_str_seg.edit(
-                                    format_str.replace("%0$", "%1$")
-                                )
-                            ],
+                            [format_str_seg.edit(format_str.replace("%0$", "%1$"))],
                         ),
                     ],
                 )
@@ -190,12 +200,8 @@ class Rule_NOCHARS_L003(BaseRule):
                 "https://spark.apache.org/docs/3.0.0/sql-migration-guide.html for migration"
                 "advice. In Spark 2.4 on non-Hive tables these were treated as strings so "
                 "rewritting to string.",
-                fixes=[
-                    LintFix.replace(
-                        context.segment,
-                        [
-                            CodeSegment(raw="string")
-                        ])])
+                fixes=[LintFix.replace(context.segment, [CodeSegment(raw="string")])],
+            )
         else:
             return None
 
@@ -221,10 +227,16 @@ class Rule_RESERVEDROPERTIES_L002(BaseRule):
         """Check for reserved properties being configured."""
         functional_context = FunctionalContext(context)
         property_name_segment = context.segment
-        property_name = property_name_segment.raw.lower().strip().lstrip(
-            '\"').rstrip('\"').lstrip('\'').rstrip('\'')
-        print(f"Called with context {context} with \"{property_name}\"")
-        if (property_name not in self.reserved):
+        property_name = (
+            property_name_segment.raw.lower()
+            .strip()
+            .lstrip('"')
+            .rstrip('"')
+            .lstrip("'")
+            .rstrip("'")
+        )
+        print(f'Called with context {context} with "{property_name}"')
+        if property_name not in self.reserved:
             print(f"Property: {property_name} is *ok*")
             return None
         else:
@@ -232,25 +244,29 @@ class Rule_RESERVEDROPERTIES_L002(BaseRule):
             # or if we are in an "ALTER" which we can not automatically fix.
             create_or_alter_segment = context.parent_stack[-2]
             print(f"{dir(create_or_alter_segment)}")
-            if (create_or_alter_segment.is_type("alter_database_statement") or
-                create_or_alter_segment.is_type("alter_table_statement")):
+            if create_or_alter_segment.is_type(
+                "alter_database_statement"
+            ) or create_or_alter_segment.is_type("alter_table_statement"):
                 return LintResult(
                     anchor=context.segment,
                     description=f"Reserved table/db property {property_name} found in alter "
-                    " statement see " +
-                    "https://spark.apache.org/docs/3.0.0/sql-migration-guide.html for migration " +
-                    " advice." +
-                    "In Spark 2.4 these alter statements were (effectively) ignored so you can " +
-                    " likely delete it, automatically " +
-                    f"rewritten to \"legacy_{property_name}\".",
+                    " statement see "
+                    + "https://spark.apache.org/docs/3.0.0/sql-migration-guide.html for migration "
+                    + " advice."
+                    + "In Spark 2.4 these alter statements were (effectively) ignored so you can "
+                    + " likely delete it, automatically "
+                    + f'rewritten to "legacy_{property_name}".',
                     fixes=[
                         LintFix.replace(
                             property_name_segment,
                             [
-                                property_name_segment.get_child("quoted_identifier").edit(
-                                    f"\"legacy_{property_name}\""
-                                )
-                            ])])
+                                property_name_segment.get_child(
+                                    "quoted_identifier"
+                                ).edit(f'"legacy_{property_name}"')
+                            ],
+                        )
+                    ],
+                )
             # Ok we know it's a create statement since it is not an alter :)
             parent_segment = context.parent_stack[-1]
             # Now we want to get the segments that are "bad" (e.g. we want to delete) and that is
@@ -266,7 +282,7 @@ class Rule_RESERVEDROPERTIES_L002(BaseRule):
                     break
                 segments_to_remove.append(segment)
                 if segment.is_type("quoted_literal"):
-                    property_value = segment.raw.strip().lstrip('\"').rstrip('\"')
+                    property_value = segment.raw.strip().lstrip('"').rstrip('"')
                 print(f"{segment} - {segment.get_type()}")
                 # We want to drop the comma so we do the check _after_ the ops
                 if segment.is_type("comma"):
@@ -281,9 +297,11 @@ class Rule_RESERVEDROPERTIES_L002(BaseRule):
                         property_name_segment,
                         [
                             property_name_segment.get_child("quoted_identifier").edit(
-                                f"\"legacy_{property_name}\""
+                                f'"legacy_{property_name}"'
                             )
-                        ])]
+                        ],
+                    )
+                ]
             deletes = map(lambda t: LintFix.delete(t), segments_to_remove)
             new_statement = None
             if property_name == "provider":
@@ -293,10 +311,12 @@ class Rule_RESERVEDROPERTIES_L002(BaseRule):
                 # We want to insert after the first bracketed segment containing column_definition
                 # but if there are no column definitions we instead insert after the table
                 # identifier.
-                first_bracketed_segment = create_table_segment.get_child(
-                    "bracketed")
+                first_bracketed_segment = create_table_segment.get_child("bracketed")
                 print(dir(first_bracketed_segment))
-                if "column_definition" in first_bracketed_segment.direct_descendant_type_set:
+                if (
+                    "column_definition"
+                    in first_bracketed_segment.direct_descendant_type_set
+                ):
                     new_statement = LintFix.create_after(
                         first_bracketed_segment,
                         [new_segment],
@@ -313,28 +333,93 @@ class Rule_RESERVEDROPERTIES_L002(BaseRule):
                 if "database_reference" in create_segment.direct_descendant_type_set:
                     new_statement = LintFix.create_after(
                         create_segment.get_child("database_reference"),
-                        [CodeSegment(raw=f" LOCATION \"{property_value}\"")],
+                        [CodeSegment(raw=f' LOCATION "{property_value}"')],
                     )
                 else:
                     keywords = create_segment.get_children("keyword")
                     tbl_properties_ref = next(
-                        iter(filter(lambda s: s.raw_upper == "TBLPROPERTIES", keywords)))
+                        iter(filter(lambda s: s.raw_upper == "TBLPROPERTIES", keywords))
+                    )
                     new_statement = LintFix.create_before(
                         tbl_properties_ref,
-                        [CodeSegment(raw=f"LOCATION \"{property_value}\" ")],
+                        [CodeSegment(raw=f'LOCATION "{property_value}" ')],
                     )
             else:
                 # For "owner" property we don't have an easy work around so instead just raise
                 # a lint error.
                 return LintResult(
                     anchor=context.segment,
-                    description=f"Reserved table/db property {property_name} found see " +
-                    "https://spark.apache.org/docs/3.0.0/sql-migration-guide.html for " +
-                    "migration advice.",
-                    fixes=None)
+                    description=f"Reserved table/db property {property_name} found see "
+                    + "https://spark.apache.org/docs/3.0.0/sql-migration-guide.html for "
+                    + "migration advice.",
+                    fixes=None,
+                )
             fixes = list(edits) + list(deletes) + [new_statement]
             return LintResult(
                 anchor=context.segment,
                 description="Reserved table property {property_name} found.",
-                fixes=fixes)
+                fixes=fixes,
+            )
             # TODO - Make a rewrite rule.
+
+
+class Rule_SPARKSQL_L004(BaseRule):
+    """Spark 3.0 extract second field returns DecimalType
+
+    Since Spark 3.0, when using EXTRACT expression to extract the
+    second field from date/timestamp values, the result will be a
+    DecimalType(8, 6) value with 2 digits for second part, and 6 digits
+    for the fractional part with microsecond precision. e.g.
+    extract(second from to_timestamp('2019-09-20 10:10:10.1')) results
+    10.100000. In Spark version 2.4 and earlier, it returns an IntegerType
+    value and the result for the former example is 10.
+    """
+
+    groups = ("all",)
+    crawl_behaviour = SegmentSeekerCrawler({"function"})
+
+    def _eval(self, context: RuleContext) -> Optional[LintResult]:
+        functional_context = FunctionalContext(context)
+        children = functional_context.segment.children()
+        function_name_id_seg = (
+            children.first(sp.is_type("function_name"))
+            .children()
+            .first(sp.is_type("function_name_identifier"))[0]
+        )
+        raw_function_name = function_name_id_seg.raw.upper().strip()
+        function_name = raw_function_name.upper().strip()
+        bracketed_segments = children.first(sp.is_type("bracketed"))
+        bracketed = bracketed_segments[0]
+
+        if function_name == "EXTRACT":
+            print("Found extract function!")
+
+            parent_stack_reversed = functional_context.parent_stack.reversed()
+            if (
+                parent_stack_reversed[0].get_type() == "expression"
+                and parent_stack_reversed[1].get_type() == "bracketed"
+                and parent_stack_reversed[2].get_type() == "function"
+            ):
+                if parent_stack_reversed[2].segments[0].raw.upper().strip() == "CAST":
+                    return None
+
+            date_part_into = bracketed.get_child("date_part").raw.upper().strip()
+            if date_part_into == "SECOND":
+                edits = [
+                    KeywordSegment("cast"),
+                    SymbolSegment("(", type="start_bracket"),
+                    context.segment,
+                    WhitespaceSegment(),
+                    KeywordSegment("as"),
+                    WhitespaceSegment(),
+                    KeywordSegment("int"),
+                    SymbolSegment(")", type="end_bracket"),
+                ]
+                return LintResult(
+                    anchor=context.segment,
+                    fixes=[
+                        LintFix.replace(context.segment, edits),
+                    ],
+                )
+
+        return None
