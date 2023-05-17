@@ -1,0 +1,19 @@
+rule: SPARKSQL_L005
+
+approx_percent:
+  configs:
+    core:
+      dialect: sparksql
+  fail_str: |
+    SELECT approx_percentile(col, array(0.5, 0.4, 0.1), temp);
+  fix_str: |
+    SELECT approx_percentile(col, array(0.5, 0.4, 0.1), cast(temp as int));
+
+percent_approx:
+  configs:
+    core:
+      dialect: sparksql
+  fail_str: |
+    SELECT percentile_approx(col, 0.2, temp);
+  fix_str: |
+    SELECT percentile_approx(col, 0.2, cast(temp as int));
