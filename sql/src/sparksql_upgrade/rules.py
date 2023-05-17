@@ -35,6 +35,7 @@ def get_rules() -> List[BaseRule]:
         Rule_NOCHARS_L003,
         Rule_FORMATSTRONEINDEX_L004,
         Rule_SPARKSQL_L004,
+        Rule_SPARKSQL_L005,
     ]
 
 
@@ -419,6 +420,83 @@ class Rule_SPARKSQL_L004(BaseRule):
                     anchor=context.segment,
                     fixes=[
                         LintFix.replace(context.segment, edits),
+                    ],
+                )
+
+        return None
+
+
+class Rule_SPARKSQL_L005(BaseRule):
+    """Spark 3.0 approx_percentile only accepts int type
+
+    In Spark 3.0, the function percentile_approx and its
+    alias approx_percentile only accept integral value with
+    range in [1, 2147483647] as its 3rd argument accuracy,
+    fractional and string types are disallowed, for example,
+    percentile_approx(10.0, 0.2, 1.8D) causes AnalysisException.
+    In Spark version 2.4 and below, if accuracy is fractional or
+    string value, it is coerced to an int value, percentile_approx(10.0, 0.2, 1.8D)
+    is operated as percentile_approx(10.0, 0.2, 1) which results in 10.0.
+    """
+
+    groups = ("all",)
+    crawl_behaviour = SegmentSeekerCrawler({"function"})
+    # is_fix_compatible = True
+
+    def _eval(self, context: RuleContext) -> Optional[LintResult]:
+        functional_context = FunctionalContext(context)
+        children = functional_context.segment.children()
+        function_name_id_seg = (
+            children.first(sp.is_type("function_name"))
+            .children()
+            .first(sp.is_type("function_name_identifier"))[0]
+        )
+        raw_function_name = function_name_id_seg.raw.upper().strip()
+        function_name = raw_function_name.upper().strip()
+        bracketed_segments = children.first(sp.is_type("bracketed"))
+
+        if function_name == "APPROX_PERCENTILE" or function_name == "PERCENTILE_APPROX":
+            print("Found approx function!")
+
+            expression_count = 0
+            expression_segment = None
+            for segment in bracketed_segments.children().iterate_segments(
+                sp.is_type("expression")
+            ):
+                expression_count += 1
+                if expression_count == 3:
+                    expression_segment = segment
+
+            if expression_segment is not None:
+                expression_child = expression_segment.children().first()
+                if expression_child[0].type == "function":
+                    function_name_id_seg = (
+                        expression_child.children()
+                        .first(sp.is_type("function_name"))
+                        .children()
+                        .first(sp.is_type("function_name_identifier"))[0]
+                    )
+                    raw_function_name = function_name_id_seg.raw.upper().strip()
+                    function_name = raw_function_name.upper().strip()
+                    print(function_name)
+                    # If we see a cast then we know this was already fixed.
+                    if function_name == "CAST":
+                        return None
+                expression_child = expression_child[0]
+                edits = [
+                    KeywordSegment("cast"),
+                    SymbolSegment("(", type="start_bracket"),
+                    expression_child,
+                    WhitespaceSegment(),
+                    KeywordSegment("as"),
+                    WhitespaceSegment(),
+                    KeywordSegment("int"),
+                    SymbolSegment(")", type="end_bracket"),
+                ]
+                return LintResult(
+                    anchor=context.segment,
+                    fixes=[
+                        LintFix.replace(expression_child, edits),
                     ],
                 )
 
