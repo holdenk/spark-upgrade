@@ -3,14 +3,15 @@ name: Build and test
 on:
   push:
     branches:
+    - 'main'
     - '**'
     - '!branch-*.*'
+  pull_request:
+    types: [opened, reopened, edited]
 
 jobs:
   # Build: build and run the tests for specified modules.
   build:
-    # Ubuntu 22.04 is the latest LTS.
-    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
     env:
