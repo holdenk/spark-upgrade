@@ -12,6 +12,7 @@ on:
 jobs:
   # Build: build and run the tests for specified modules.
   build:
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
     env:
