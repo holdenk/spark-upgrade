@@ -1,10 +1,21 @@
-"""An example of a custom rule implemented through the plugin system."""
+"""Custom Spark SQL upgrade rules."""
 
+import os.path
+from typing import List, Optional
+
+
+from sqlfluff.core.config import ConfigLoader
+from sqlfluff.core.parser import (
+    KeywordSegment,
+    SymbolSegment,
+    WhitespaceSegment,
+)
+from sqlfluff.core.parser.segments.raw import CodeSegment
 from sqlfluff.core.plugin import hookimpl
 from sqlfluff.core.rules import (
     BaseRule,
-    LintResult,
     LintFix,
+    LintResult,
     RuleContext,
 )
 from sqlfluff.core.rules.crawlers import SegmentSeekerCrawler
@@ -13,17 +24,7 @@ from sqlfluff.core.rules.doc_decorators import (
     document_fix_compatible,
     document_groups,
 )
-from sqlfluff.core.parser.segments.raw import CodeSegment
-from sqlfluff.utils.functional import sp, FunctionalContext
-from typing import List, Optional
-import os.path
-from sqlfluff.core.config import ConfigLoader
-
-from sqlfluff.core.parser import (
-    WhitespaceSegment,
-    SymbolSegment,
-    KeywordSegment,
-)
+from sqlfluff.utils.functional import FunctionalContext, sp
 
 
 @hookimpl
@@ -252,11 +253,11 @@ class Rule_RESERVEDROPERTIES_L002(BaseRule):
                     anchor=context.segment,
                     description=f"Reserved table/db property {property_name} found in alter "
                     " statement see "
-                    + "https://spark.apache.org/docs/3.0.0/sql-migration-guide.html for migration "
-                    + " advice."
-                    + "In Spark 2.4 these alter statements were (effectively) ignored so you can "
-                    + " likely delete it, automatically "
-                    + f'rewritten to "legacy_{property_name}".',
+                    "https://spark.apache.org/docs/3.0.0/sql-migration-guide.html for migration "
+                    " advice."
+                    "In Spark 2.4 these alter statements were (effectively) ignored so you can "
+                    " likely delete it, automatically "
+                    f'rewritten to "legacy_{property_name}".',
                     fixes=[
                         LintFix.replace(
                             property_name_segment,
@@ -351,8 +352,8 @@ class Rule_RESERVEDROPERTIES_L002(BaseRule):
                 return LintResult(
                     anchor=context.segment,
                     description=f"Reserved table/db property {property_name} found see "
-                    + "https://spark.apache.org/docs/3.0.0/sql-migration-guide.html for "
-                    + "migration advice.",
+                    "https://spark.apache.org/docs/3.0.0/sql-migration-guide.html for "
+                    "migration advice.",
                     fixes=None,
                 )
             fixes = list(edits) + list(deletes) + [new_statement]
@@ -397,9 +398,9 @@ class Rule_SPARKSQL_L004(BaseRule):
 
             parent_stack_reversed = functional_context.parent_stack.reversed()
             if (
-                parent_stack_reversed[0].get_type() == "expression"
-                and parent_stack_reversed[1].get_type() == "bracketed"
-                and parent_stack_reversed[2].get_type() == "function"
+                parent_stack_reversed[0].get_type() == "expression" and
+                parent_stack_reversed[1].get_type() == "bracketed" and
+                parent_stack_reversed[2].get_type() == "function"
             ):
                 if parent_stack_reversed[2].segments[0].raw.upper().strip() == "CAST":
                     return None
