@@ -20,6 +20,9 @@ pysparkDF = spark.createDataFrame(data=data, schema=columns, verifySchema=True)
 pandasDF = pysparkDF.toPandas()
 print(pandasDF)
 
+pysparkDF.write.partitionBy('gender').saveAsTable("persons")
+pysparkDF.write.insertInto("persons", overwrite=True)
+
 data = [Row(name="James,,Smith", lang=["Java", "Scala", "C++"], state="CA"),
         Row(name="Robert,,Williams", lang=["CSharp", "VB"], state="NV")]
 
