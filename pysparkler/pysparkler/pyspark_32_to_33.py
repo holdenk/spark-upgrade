@@ -35,15 +35,14 @@ class DataframeDropAxisIndexByDefault(StatementLineCommentWriter):
     ):
         super().__init__(
             transformer_id="PY32-33-001",
-            comment=f"Explicitly setting axis to 1 to drop by column, since as of PySpark {pyspark_version} the drop \
-method of pandas API on Spark DataFrame sets drop by index as default, instead of drop by column.",
+            comment=f"As of PySpark {pyspark_version} the drop method of pandas API on Spark DataFrame sets drop by \
+index as default, instead of drop by column. Please explicitly set axis argument to 1 to drop by column.",
         )
-        self.inside_drop_call = False
 
-    def leave_Call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.Call:
-        """Specify the axis argument to 1 if it is not specified to maintain the behavior of dropping columns"""
+    def visit_Call(self, node: cst.Call) -> None:
+        """Check if drop method does not specify the axis argument and drops by labels"""
         if m.matches(
-            original_node,
+            node,
             m.Call(
                 func=m.Attribute(
                     attr=m.Name("drop"),
@@ -57,21 +56,6 @@ method of pandas API on Spark DataFrame sets drop by index as default, instead o
             ),
         ):
             self.match_found = True
-            return updated_node.with_changes(
-                args=[
-                    *updated_node.args,
-                    cst.Arg(
-                        keyword=cst.Name("axis"),
-                        value=cst.Integer("1"),
-                        equal=cst.AssignEqual(
-                            whitespace_before=cst.SimpleWhitespace(""),
-                            whitespace_after=cst.SimpleWhitespace(""),
-                        ),
-                    ),
-                ]
-            )
-        else:
-            return updated_node
 
 
 class RequiredPandasVersionCommentWriter(RequiredDependencyVersionCommentWriter):
