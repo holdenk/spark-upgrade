@@ -27,7 +27,7 @@ rdd = spark.sparkContext.parallelize(data)
 print(rdd.collect())
 
 ps_df = ps.DataFrame(np.arange(12).reshape(3, 4), columns=['A', 'B', 'C', 'D'])
-ps_df.drop(['B', 'C'], axis=1)  # PY32-33-001: Explicitly setting axis to 1 to drop by column, since as of PySpark 3.3 the drop method of pandas API on Spark DataFrame sets drop by index as default, instead of drop by column.  # noqa: E501
+ps_df.drop(['B', 'C'])  # PY32-33-001: As of PySpark 3.3 the drop method of pandas API on Spark DataFrame sets drop by index as default, instead of drop by column. Please explicitly set axis argument to 1 to drop by column.  # noqa: E501
 
 a_column_values = list(ps_df['A'].unique())
 repr_a_column_values = [repr(value) for value in a_column_values]  # PY32-33-003: As of PySpark 3.3, the repr return values of SQL DataTypes have been changed to yield an object with the same value when passed to eval.  # noqa: E501

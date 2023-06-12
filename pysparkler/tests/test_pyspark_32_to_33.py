@@ -24,7 +24,7 @@ from pysparkler.pyspark_32_to_33 import (
 from tests.conftest import rewrite
 
 
-def test_preserves_drop_by_column_behavior_when_axis_not_specified_without_labels_keyword():
+def test_adds_code_hint_to_drop_by_column_behavior_when_axis_not_specified_without_labels_keyword():
     given_code = """
 import pyspark.pandas as ps
 
@@ -37,13 +37,13 @@ display(df)
 import pyspark.pandas as ps
 
 df = ps.DataFrame(np.arange(12).reshape(3, 4), columns=['A', 'B', 'C', 'D'])
-df.drop(['B', 'C'], axis=1)  # PY32-33-001: Explicitly setting axis to 1 to drop by column, since as of PySpark 3.3 the drop method of pandas API on Spark DataFrame sets drop by index as default, instead of drop by column.  # noqa: E501
+df.drop(['B', 'C'])  # PY32-33-001: As of PySpark 3.3 the drop method of pandas API on Spark DataFrame sets drop by index as default, instead of drop by column. Please explicitly set axis argument to 1 to drop by column.  # noqa: E501
 display(df)
 """
     assert modified_code == expected_code
 
 
-def test_preserves_drop_by_column_behavior_when_axis_not_specified_with_labels_keyword():
+def test_adds_code_hint_to_drop_by_column_behavior_when_axis_not_specified_with_labels_keyword():
     given_code = """
 import pyspark.pandas as ps
 
@@ -55,7 +55,7 @@ df.drop(labels=['B', 'C']).withColumnRenamed('A', 'B')
 import pyspark.pandas as ps
 
 df = ps.DataFrame(np.arange(12).reshape(3, 4), columns=['A', 'B', 'C', 'D'])
-df.drop(labels=['B', 'C'], axis=1).withColumnRenamed('A', 'B')  # PY32-33-001: Explicitly setting axis to 1 to drop by column, since as of PySpark 3.3 the drop method of pandas API on Spark DataFrame sets drop by index as default, instead of drop by column.  # noqa: E501
+df.drop(labels=['B', 'C']).withColumnRenamed('A', 'B')  # PY32-33-001: As of PySpark 3.3 the drop method of pandas API on Spark DataFrame sets drop by index as default, instead of drop by column. Please explicitly set axis argument to 1 to drop by column.  # noqa: E501
 """
     assert modified_code == expected_code
 
