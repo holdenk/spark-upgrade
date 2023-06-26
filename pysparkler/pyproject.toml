@@ -18,6 +18,8 @@ libcst = "^1.0.1"
 click = "^8.1.3"
 rich = "^13.3.3"
 nbformat = "^5.8.0"
+sqlfluff = "^2.1.1"
+sqlfluff-plugin-sparksql-upgrade = {path = "../sql"}
 
 
 [tool.poetry.group.test.dependencies]
@@ -56,4 +58,8 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "nbformat.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "sqlfluff.*"
 ignore_missing_imports = true
