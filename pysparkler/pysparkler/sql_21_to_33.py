@@ -42,44 +42,103 @@ class SqlStatementUpgradeAndCommentWriter(StatementLineCommentWriter):
         super().__init__(
             transformer_id="PY21-33-001",
             comment="Please note, PySparkler makes a best effort to upcast SQL statements directly being executed. \
-However, the upgrade won't be possible for certain templated SQLs, and in those scenarios please de-template the SQL \
-and use the Sqlfluff tooling to upcast the SQL yourself.",
+However, the upcast won't be possible for certain formatted string SQL having complex expressions within, and in those \
+cases please de-template the SQL and use the Sqlfluff tooling to upcast the SQL yourself.",
         )
+        self.sql_upgraded = False
 
     def leave_Call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.Call:
         """Check if the call is a SQL statement and try to upcast it"""
-        print(f"******** Call node\n{original_node}")
         if m.matches(
-            updated_node,
+            original_node,
             m.Call(
                 func=m.Attribute(
                     attr=m.Name("sql"),
                 ),
                 args=[
                     m.Arg(
-                        value=m.SimpleString(),
+                        value=m.OneOf(
+                            m.SimpleString(),
+                            m.FormattedString(),
+                            m.ConcatenatedString(),
+                        )
                     )
                 ],
             ),
         ):
-            print(f"******** Match found\n{original_node}")
             self.match_found = True
-            sql_node: cst.SimpleString = updated_node.args[0].value
-            sql = sql_node.evaluated_value
+            sql_node: cst.BaseExpression = updated_node.args[0].value
             try:
-                updated_sql = self.do_fix(sql)
-                if updated_sql != sql:
-                    updated_sql_value = (
-                        sql_node.prefix + sql_node.quote + updated_sql + sql_node.quote
+                if isinstance(sql_node, cst.SimpleString):
+                    updated_sql_node = self.update_simple_string_sql(sql_node)
+                elif isinstance(sql_node, cst.FormattedString):
+                    updated_sql_node = self.update_formatted_string_sql(sql_node)
+                else:
+                    raise NotImplementedError(
+                        f"Unsupported SQL expression encountered : {sql_node}"
                     )
-                    changes = updated_node.with_changes(
-                        args=[cst.Arg(value=cst.SimpleString(value=updated_sql_value))]
+
+                if self.sql_upgraded:
+                    self.comment = "Spark SQL statement has been upgraded to Spark 3.3 compatible syntax."
+                    self.sql_upgraded = False
+                else:
+                    self.comment = (
+                        "Spark SQL statement has Spark 3.3 compatible syntax."
                     )
-                    return changes
+
+                return updated_node.with_changes(args=[cst.Arg(value=updated_sql_node)])
             except Exception as e:  # pylint: disable=broad-except
-                print(f"Failed to parse SQL: {sql} with error: {e}")
+                print(f"Failed to parse SQL: {sql_node} with error: {e}")
+                self.comment = "Unable to inspect the Spark SQL statement since the formatted string SQL has complex \
+expressions within. Please de-template the SQL and use the Sqlfluff tooling to upcast the SQL yourself."
+                self.sql_upgraded = False
 
         return updated_node
+
+    def update_simple_string_sql(self, sql_node: cst.SimpleString) -> cst.SimpleString:
+        sql = sql_node.evaluated_value
+        updated_sql = self.do_fix(sql)
+        if updated_sql != sql:
+            self.sql_upgraded = True
+            updated_sql_value = (
+                sql_node.prefix + sql_node.quote + updated_sql + sql_node.quote
+            )
+            return cst.SimpleString(value=updated_sql_value)
+        else:
+            return sql_node
+
+    def update_formatted_string_sql(
+        self, sql_node: cst.FormattedString
+    ) -> cst.FormattedString:
+        # Form the raw SQL string by concatenating all the parts
+        sql = ""
+        for part in sql_node.parts:
+            if isinstance(part, cst.FormattedStringText):
+                sql += part.value
+            elif isinstance(part, cst.FormattedStringExpression) and isinstance(
+                part.expression, cst.Name
+            ):
+                sql += (
+                    part.whitespace_before_expression.value
+                    + "{"
+                    + part.expression.value
+                    + "}"
+                    + part.whitespace_after_expression.value
+                )
+            else:
+                raise NotImplementedError(
+                    f"Unsupported formatted string expression encountered : {part}"
+                )
+
+        updated_sql = self.do_fix(sql)
+        if updated_sql != sql:
+            self.sql_upgraded = True
+            updated_sql_value = (
+                sql_node.prefix + sql_node.quote + updated_sql + sql_node.quote
+            )
+            return cst.parse_expression(updated_sql_value)
+        else:
+            return sql_node
 
     @staticmethod
     def do_fix(sql: str) -> str:
