@@ -22,6 +22,8 @@ pipelinecompare/metastore_db/
 **/dist/*
 **/__pycache__/*
 .DS_Store
+**/build/*
+**/*.egg-info/*
 
 # Annoying macOS Ignores
 **.DS_Store

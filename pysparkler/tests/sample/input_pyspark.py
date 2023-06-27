@@ -11,6 +11,9 @@ from pyspark.ml.param.shared import *
 spark = SparkSession.builder.appName('example').getOrCreate()
 spark.conf.set("spark.sql.execution.arrow.enabled", "true")
 
+table_name = "my_table"
+result = spark.sql(f"select cast(dateint as int) val from {table_name} limit 10")
+
 data = [("James", "", "Smith", "36636", "M", 60000),
         ("Jen", "Mary", "Brown", "", "F", 0)]
 
