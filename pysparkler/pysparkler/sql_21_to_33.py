@@ -15,6 +15,7 @@
 #  specific language governing permissions and limitations
 #  under the License.
 #
+from typing import Any
 
 import libcst as cst
 import libcst.matchers as m
@@ -147,6 +148,13 @@ yourself."
             dialect=SPARK_SQL_DIALECT,
             rules=[SPARK_SQL_CAST_RULE],
             fix_even_unparsable=True,
+        )
+
+    @staticmethod
+    def do_parse(sql: str) -> dict[str, Any]:
+        return sqlfluff.parse(
+            sql,
+            dialect=SPARK_SQL_DIALECT,
         )
 
 

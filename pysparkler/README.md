@@ -67,6 +67,7 @@ to upgrade your PySpark scripts. In the latest stable version it supports the fo
 | Upgrading from PySpark 2.3 to 2.4               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-3-to-2-4)               |
 | Upgrading from PySpark 2.3.0 to 2.3.1 and above | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-3-0-to-2-3-1-and-above) |
 | Upgrading from PySpark 2.2 to 2.3               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-2-to-2-3)               |
+| Upgrading from PySpark 2.1 to 2.2               | ✅         | NA                                                                                                                                           |
 | Upgrading from PySpark 1.4 to 1.5               | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-1-4-to-1-5)               |
 | Upgrading from PySpark 1.0-1.2 to 1.3           | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-1-0-1-2-to-1-3)           |
 
@@ -78,6 +79,7 @@ The tool supports the following features:
 |-----------------------------------------------|-----------|
 | Upgrade PySpark Python script                 | ✅         |
 | Upgrade PySpark Jupyter Notebook              | ✅         |
+| Upgrade SQL                                   | ✅         |
 | Dry-run Mode                                  | ✅         |
 | Verbose Mode                                  | ✅         |
 | Customize code transformers using YAML config | ✅         |
@@ -116,6 +118,31 @@ To change the output kernel name in the output Jupyter notebook, you can use the
 
 ```bash
 pysparkler upgrade --input-file /path/to/notebook.ipynb --output-kernel spark33-python3
+```
+
+### Upgrade SQL
+
+PySparkler when encounters a SQL statement in the input script makes an attempt to upgrade them. However, it is not
+always possible to upgrade certain formatted string SQL statements that have complex expressions within. In such
+cases the tool does leave code hints to let users know that they need to upgrade the SQL themselves.
+
+To facilitate this, it exposes a command `upgrade-sql` for users to perform this DIY. The steps for that include:
+
+1. De-template the SQL.
+1. Upgrade the de-templated SQL using `pysparkler upgrade-sql`. See below for details.
+1. Re-template the upgraded SQL.
+1. Replace the old SQL with the upgraded SQL in the input script.
+
+In order to perform step #2 i.e. you can either echo the SQL statement and pipe it to the tool:
+
+```bash
+echo "SELECT * FROM table" | pysparkler upgrade-sql
+```
+
+or you can use the `cat` command to pipe the SQL statement to the tool:
+
+```bash
+cat /path/to/sql.sql | pysparkler upgrade-sql
 ```
 
 ### Dry-Run Mode

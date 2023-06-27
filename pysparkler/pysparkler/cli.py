@@ -203,14 +203,23 @@ def upgrade_sql(ctx: Context) -> None:
     input_sql = click.get_text_stream("stdin").read()
     if ctx.obj["verbose"]:
         stdout.rule("Input SQL")
-        stdout.print(Syntax(input_sql, "sql"))
+        stdout.print(Syntax(input_sql, "sql", line_numbers=True))
 
-    # Upcast the SQL to be compatible with the latest Spark version
+    # Ensure SQL is parsable and upcast the SQL to be compatible with the latest Spark version
+    SqlStatementUpgradeAndCommentWriter.do_parse(input_sql)
     output_sql = SqlStatementUpgradeAndCommentWriter.do_fix(input_sql)
 
-    # Output the upcasted SQL to stdout
-    stdout.rule("Output SQL")
-    stdout.print(Syntax(output_sql, "sql"))
+    if input_sql == output_sql:
+        stdout.print("No upgrades detected in Input SQL", style="green")
+    else:
+        # Output the upcasted SQL to stdout
+        stdout.rule("Output SQL")
+        stdout.print(Syntax(output_sql, "sql", line_numbers=True))
+        stdout.rule("Unified Diff")
+        diff = difflib.unified_diff(input_sql.splitlines(), output_sql.splitlines())
+        for line in diff:
+            stdout.print(Syntax(line, "sql"))
+        stdout.rule("End of Diff")
 
 
 def print_command_params(ctx):
