@@ -27,6 +27,7 @@ from pysparkler.pyspark_23_to_24 import pyspark_23_to_24_transformers
 from pysparkler.pyspark_24_to_30 import pyspark_24_to_30_transformers
 from pysparkler.pyspark_31_to_32 import pyspark_31_to_32_transformers
 from pysparkler.pyspark_32_to_33 import pyspark_32_to_33_transformers
+from pysparkler.sql_21_to_33 import sql_21_to_33_transformers
 
 
 class PySparkler:
@@ -53,6 +54,7 @@ class PySparkler:
             *pyspark_24_to_30_transformers(),
             *pyspark_31_to_32_transformers(),
             *pyspark_32_to_33_transformers(),
+            *sql_21_to_33_transformers(),
         ]
         # Override the default values of the transformers with the user provided values
         for transformer in all_transformers:

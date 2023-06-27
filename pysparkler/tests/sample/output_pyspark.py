@@ -11,6 +11,9 @@ from pyspark.ml.param.shared import *  # PY24-30-008: In Spark 3.0, pyspark.ml.p
 spark = SparkSession.builder.appName('example').getOrCreate()
 spark.conf.set("spark.sql.execution.arrow.enabled", "true")  # PY24-30-004: PySpark 3.0 requires PyArrow version 0.12.1 or higher when spark.sql.execution.arrow.enabled is set to true  # PY24-30-005: Consider setting spark.sql.execution.pandas.convertToArrowArraySafely to true to raise errors in case of Integer overflow or Floating point truncation, instead of silent allows.  # noqa: E501
 
+table_name = "my_table"
+result = spark.sql(f"select int(dateint) val from {table_name} limit 10")  # PY21-33-001: Spark SQL statement has been upgraded to Spark 3.3 compatible syntax.  # noqa: E501
+
 data = [("James", "", "Smith", "36636", "M", 60000),
         ("Jen", "Mary", "Brown", "", "F", 0)]
 

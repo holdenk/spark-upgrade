@@ -148,3 +148,10 @@ yourself."
             rules=[SPARK_SQL_CAST_RULE],
             fix_even_unparsable=True,
         )
+
+
+def sql_21_to_33_transformers() -> list[cst.CSTTransformer]:
+    """Return a list of transformers for SQL 2.1 to 3.3 migration guide"""
+    return [
+        SqlStatementUpgradeAndCommentWriter(),
+    ]
