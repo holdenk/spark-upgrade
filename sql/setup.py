@@ -9,11 +9,12 @@ setup(
     name="sqlfluff-plugin-{plugin_logical_name}".format(
         plugin_logical_name=PLUGIN_LOGICAL_NAME
     ),
-    version="",
+    version="0.1.0",
     author="Holden Karau",
     author_email="holden@pigscanfly.ca",
     url="https://github.com/holdenk/spark-upgrade",
     description="SQLFluff rules to help migrate your Spark SQL from 2.X to 3.X",
+    long_description="SQLFluff rules to help migrate your Spark SQL from 2.X to 3.X",
     test_requires=["nose", "coverage", "unittest2"],
     license="../LICENSE",
     include_package_data=True,

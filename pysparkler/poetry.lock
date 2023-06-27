@@ -829,20 +829,18 @@ typing-extensions = "*"
 
 [[package]]
 name = "sqlfluff-plugin-sparksql-upgrade"
-version = "0.0.0"
+version = "0.1.0"
 description = "SQLFluff rules to help migrate your Spark SQL from 2.X to 3.X"
 category = "main"
 optional = false
 python-versions = "*"
-files = []
-develop = false
+files = [
+    {file = "sqlfluff-plugin-sparksql-upgrade-0.1.0.tar.gz", hash = "sha256:3204604b15aeef9ff9ca0b3287d6f22129ef571c2a666a0a513392880204d028"},
+    {file = "sqlfluff_plugin_sparksql_upgrade-0.1.0-py3-none-any.whl", hash = "sha256:7c85c21af9b418021cad53427de05ef1df570b3cb74435e4a9b6fc53f46d8160"},
+]
 
 [package.dependencies]
 sqlfluff = ">=1.0.0"
-
-[package.source]
-type = "directory"
-url = "../sql"
 
 [[package]]
 name = "tblib"
@@ -969,4 +967,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "3099d2a7d65e0caadd21d1d3bfc65f214437c08154cba79076a994aff27cdc10"
+content-hash = "0c7b9e2e2b2be7f575a95fdef123403217e8b54c2aa74c36a0b2c5ebe740942d"
