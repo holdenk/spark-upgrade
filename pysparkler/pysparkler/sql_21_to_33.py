@@ -87,10 +87,10 @@ cases please de-template the SQL and use the Sqlfluff tooling to upcast the SQL 
                     )
 
                 return updated_node.with_changes(args=[cst.Arg(value=updated_sql_node)])
-            except Exception as e:  # pylint: disable=broad-except
-                print(f"Failed to parse SQL: {sql_node} with error: {e}")
+            except Exception:  # pylint: disable=broad-except
                 self.comment = "Unable to inspect the Spark SQL statement since the formatted string SQL has complex \
-expressions within. Please de-template the SQL and use the Sqlfluff tooling to upcast the SQL yourself."
+expressions within. Please de-template the SQL and use the 'pysparkler upgrade-sql' CLI command to upcast the SQL \
+yourself."
                 self.sql_upgraded = False
 
         return updated_node

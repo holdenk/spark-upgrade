@@ -30,6 +30,7 @@ from rich.syntax import Syntax
 from rich.table import Table
 
 from pysparkler.api import PySparkler
+from pysparkler.sql_21_to_33 import SqlStatementUpgradeAndCommentWriter
 
 stdout = Console()
 stderr = Console(stderr=True)
@@ -185,6 +186,31 @@ def version(ctx: Context) -> None:
             table.add_row(key, str(value))
 
         stdout.print(table)
+
+
+@run.command()
+@click.pass_context
+@catch_exception()
+def upgrade_sql(ctx: Context) -> None:
+    """Upgrades a non-templated Spark SQL statement read from stdin to be compatible with the latest Spark version.
+
+    Examples: \n
+        echo "SELECT * FROM table" | pysparkler upgrade-sql \n
+        cat /path/to/input.sql | pysparkler upgrade-sql
+    """
+
+    # Read SQL from stdin
+    input_sql = click.get_text_stream("stdin").read()
+    if ctx.obj["verbose"]:
+        stdout.rule("Input SQL")
+        stdout.print(Syntax(input_sql, "sql"))
+
+    # Upcast the SQL to be compatible with the latest Spark version
+    output_sql = SqlStatementUpgradeAndCommentWriter.do_fix(input_sql)
+
+    # Output the upcasted SQL to stdout
+    stdout.rule("Output SQL")
+    stdout.print(Syntax(output_sql, "sql"))
 
 
 def print_command_params(ctx):

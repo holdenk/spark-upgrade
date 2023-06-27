@@ -77,7 +77,7 @@ from pyspark.sql import SparkSession
 spark = SparkSession.builder.appName("SQL Example").getOrCreate()
 table_name = "my_table"
 num = 10
-result = spark.sql(f"select cast(dateint as int) val from {table_name} where x < {num * 100} limit 10")  # PY21-33-001: Unable to inspect the Spark SQL statement since the formatted string SQL has complex expressions within. Please de-template the SQL and use the Sqlfluff tooling to upcast the SQL yourself.  # noqa: E501
+result = spark.sql(f"select cast(dateint as int) val from {table_name} where x < {num * 100} limit 10")  # PY21-33-001: Unable to inspect the Spark SQL statement since the formatted string SQL has complex expressions within. Please de-template the SQL and use the 'pysparkler upgrade-sql' CLI command to upcast the SQL yourself.  # noqa: E501
 spark.stop()
 """
     assert modified_code == expected_code
