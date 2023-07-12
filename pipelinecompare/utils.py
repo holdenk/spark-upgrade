@@ -2,9 +2,9 @@ import sys
 from colorama import init as colorama_init
 from colorama import Fore
 from colorama import Style
+from pyspark.sql import DataFrame, Row, SparkSession
 
 colorama_init()
-
 
 def eprint(*args, **kwargs):
     print(Fore.RED, file=sys.stderr)
@@ -17,7 +17,7 @@ def error(*args, **kwargs):
     raise Exception(*args)
 
 
-def extract_catalog(table_name):
+def extract_catalog(table_name: str) -> str:
     """Extract the catalog."""
     if "." in table_name:
         return table_name.split(".")[0]
@@ -25,7 +25,7 @@ def extract_catalog(table_name):
         return "spark_catalog"
 
 
-def get_ancestors(table_name, snapshot):
+def get_ancestors(spark: SparkSession, table_name: str, snapshot: str) -> list[Row]:
     """Get the ancestors of a given table at a given snapshot."""
     catalog_name = extract_catalog(table_name)
     return spark.sql(
@@ -33,7 +33,7 @@ def get_ancestors(table_name, snapshot):
         snapshot_id => {snapshot}, table => '{table_name}')""").collect()
 
 
-def create_changelog_view(table_name, start_snapshot, end_snapshot, view_name):
+def create_changelog_view(spark: SparkSession, table_name: str, start_snapshot: str, end_snapshot: str, view_name: str) -> DataFrame:
     """Create a changelog view for the provided table."""
     catalog_name = extract_catalog(table_name)
     return spark.sql(
@@ -44,7 +44,7 @@ def create_changelog_view(table_name, start_snapshot, end_snapshot, view_name):
         )""")
 
 
-def drop_iceberg_internal_columns(df):
+def drop_iceberg_internal_columns(df: DataFrame) -> DataFrame:
     """Drop the iceberg internal columns from a changelog view that would make comparisons tricky."""
     new_df = df
     # We don't drop "_change_type" because if one version inserts and the other deletes that's a diff we want to catch.
@@ -57,15 +57,15 @@ def drop_iceberg_internal_columns(df):
     return new_df
 
 
-def get_cdc_views(ctrl_name, target_name):
+def get_cdc_views(spark: SparkSession, ctrl_name: str, target_name: str) -> tuple[DataFrame, DataFrame]:
     """Get the changelog/CDC views of two tables with a common ancestor."""
     (ctrl_name, c_snapshot) = ctrl_name.split("@")
     (target_name, t_snapshot) = target_name.split("@")
     if ctrl_name != target_name:
         error(f"{ctrl_name} and {target_name} are not the same table.")
     # Now we need to get the table history and make sure that the table history intersects.
-    ancestors_c = get_ancestors(ctrl_name, c_snapshot)
-    ancestors_t = get_ancestors(target_name, t_snapshot)
+    ancestors_c = get_ancestors(spark, ctrl_name, c_snapshot)
+    ancestors_t = get_ancestors(spark, target_name, t_snapshot)
     control_ancestor_set = set(ancestors_c)
     shared_ancestor = None
     for t in reversed(ancestors_t):
@@ -75,8 +75,8 @@ def get_cdc_views(ctrl_name, target_name):
     if shared_ancestor is None:
         error(f"No shared ancestor between tables c:{ancestors_c} t:{ancestors_t}")
     try:
-        c_diff_view_name = create_changelog_view(ctrl_name, t.snapshot_id, c_snapshot, "c")
-        t_diff_view_name = create_changelog_view(ctrl_name, t.snapshot_id, t_snapshot, "t")
+        c_diff_view_name = create_changelog_view(spark, ctrl_name, t.snapshot_id, c_snapshot, "c")
+        t_diff_view_name = create_changelog_view(spark, ctrl_name, t.snapshot_id, t_snapshot, "t")
         c_diff_view = drop_iceberg_internal_columns(spark.sql("SELECT * FROM c"))
         t_diff_view = drop_iceberg_internal_columns(spark.sql("SELECT * FROM t"))
     except Exception as e:

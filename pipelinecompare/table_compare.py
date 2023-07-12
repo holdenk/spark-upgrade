@@ -114,11 +114,13 @@ def run_comparisions(tables):
             c_diff_view = None
             t_diff_view = None
             try:
-                (c_diff_view, t_diff_view) = get_cdc_views(ctrl_name, target_name)
+                (c_diff_view, t_diff_view) = get_cdc_views(spark, ctrl_name, target_name)
             except Exception as e:
                 # Otherwise fall through. Technically we could make CDC view from t0
                 # But we are using the CDC view as just a hack for speed so not worth it.
                 eprint("Falling through to legacy compare")
+                (ctrl_name, c_snapshot) = ctrl_name.split("@")
+                (target_name, t_snapshot) = target_name.split("@")
                 return compare_tables(
                     spark.read.option("snapshot-id", c_snapshot).table(ctrl_name),
                     spark.read.option("snapshot-id", t_snapshot).table(target_name))
