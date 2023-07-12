@@ -128,7 +128,7 @@ def run_comparisions(tables):
             print(f"Using CDC view to compare {c_diff_view} and {t_diff_view}")
             return compare_tables(
                 c_diff_view,
-                t_diff_view) # This should fail today.
+                t_diff_view)
         else:
             compare_tables(
                 spark.read.table(ctrl_name),
