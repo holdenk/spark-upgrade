@@ -412,6 +412,8 @@ elif args.iceberg:
         if args.warehouse_config is not None:
             warehouse_config = re.split("\\s+", args.warehouse_config)
             cmd.extend(warehouse_config)
+        # Add Iceberg extensions
+        cmd.extend(["--conf", "spark.sql.extensions=org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions"])
         cmd.extend([
             "table_compare.py",
             "--control-tables"])
@@ -425,6 +427,8 @@ elif args.iceberg:
             cmd.extend(["--compare-precision",
                         f"{args.compare_precision}"])
         cmd = list(filter(lambda x: x != "", cmd))
+        cmd_str = " ".join(cmd)
+        print(f"Running comparision with: {cmd_str}")
         r = subprocess.run(cmd, check=True)
         print(f"Running {cmd} was a success! All signs point towards prod.")
     except subprocess.CalledProcessError:

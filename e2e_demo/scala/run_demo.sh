@@ -103,7 +103,7 @@ ${spark_sql3}     --conf spark.sql.catalog.spark_catalog=org.apache.iceberg.spar
     --conf spark.sql.catalog.local=org.apache.iceberg.spark.SparkCatalog \
     --conf spark.sql.catalog.local.type=hadoop \
     --conf spark.sql.catalog.local.warehouse=$PWD/warehouse \
-   -e "CREATE TABLE IF NOT EXISTS ${outputTable} (word string, count long) USING iceberg TBLPROPERTIES('write.wap.enabled' = 'true')"
+   -e "CREATE TABLE IF NOT EXISTS ${outputTable} (word string, count long) USING iceberg TBLPROPERTIES('write.wap.enabled' = 'true'); INSERT INTO ${outputTable} VALUES ('baked potato', 42)"
 python domagic.py --iceberg --spark-control-command ${spark_submit2} --spark-new-command ${spark_submit3} \
        --spark-command ${spark_submit3} \
        --new-jar-suffix "-3" \
