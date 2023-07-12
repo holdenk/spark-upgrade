@@ -330,6 +330,8 @@ elif args.iceberg_legacy:
         if args.compare_precision is not None:
             cmd.extend(["--compare-precision",
                         f"{args.compare_precision}"])
+        # Lets try this library.
+        cmd.extend(["--use-data-compy", "true"])
         subprocess.run(cmd, check=True)
     except subprocess.CalledProcessError:
         error("DANGER DANGER: Error during table compare!")

@@ -23,6 +23,15 @@ parser.add_argument('--compare-precision', type=int,
                     help='Precision for fractional comparisons.')
 parser.add_argument('--row-diff-tolerance', type=float, default=0.0,
                     help='Tolerance for % of different rows')
+parser.add_argument('--use-data-compy', type=bool, default=False,
+                    help='Use data compy instead of our internal magic.')
+
+
+def normalize_column_name(column):
+    """Normalize the column name so word#89 and words#96 are the same (since really they are)."""
+    if "#" in column:
+        return column.split("#")[0]
+    return column
 
 
 def compare_tables(control, target):
@@ -43,6 +52,11 @@ def compare_tables(control, target):
     target.persist()
     control_count = control.count()
     target_count = target.count()
+    if args.use_data_compy:
+        import datacompy
+        comparison = datacompy.SparkCompare(spark, control, target, join_columns=map(normalize_column_name, control.columns))
+        comparison.report()
+        print(dir(comparison))
     # Do diffs on the data, but subtract doesn't support all data types so fall back to strings.
     try:
         missing_rows = control.subtract(target)
@@ -132,7 +146,6 @@ def create_changelog_view(table_name, start_snapshot, end_snapshot, view_name):
         changelog_view => '{view_name}'
         )""")
 
-
 def drop_iceberg_internal_columns(df):
     """Drop the iceberg internal columns from a changelog view that would make comparisons tricky."""
     new_df = df
@@ -140,7 +153,7 @@ def drop_iceberg_internal_columns(df):
     # However change_orgidinal and _commit_snapshot_id are expected to differ even with identical end table states.
     internal = set("_change_ordinal", "_commit_snapshot_id")
     for c in df.columns:
-        name = c.split("#")
+        name = normalize_column_name(c)
         if name in iternal:
             new_df = new_df.drop(c)
     return new_df
