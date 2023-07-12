@@ -1,3 +1,4 @@
 iceberg
 lakefs_client
 colorama
+datacompy
