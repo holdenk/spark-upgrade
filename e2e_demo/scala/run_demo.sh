@@ -97,7 +97,8 @@ cd ..
 cd pipelinecompare
 echo "There is some trickery in our spark-submit2 v.s. spark-submit3 including the right iceberg version"
 echo "Provided you have iceberg in your environment pre-insalled this should be equivelent to prod but... yeah."
-# Exepected to pass
+# Exepected to pass.
+# Note: here we insert some data into our test table so that we have a common ancestor and use CDC view.
 ${spark_sql3}     --conf spark.sql.catalog.spark_catalog=org.apache.iceberg.spark.SparkSessionCatalog \
     --conf spark.sql.catalog.spark_catalog.type=hive \
     --conf spark.sql.catalog.local=org.apache.iceberg.spark.SparkCatalog \

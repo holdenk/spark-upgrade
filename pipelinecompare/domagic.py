@@ -412,7 +412,7 @@ elif args.iceberg:
         if args.warehouse_config is not None:
             warehouse_config = re.split("\\s+", args.warehouse_config)
             cmd.extend(warehouse_config)
-        # Add Iceberg extensions
+        # Add Iceberg extensions, these are needed for using CDC view.
         cmd.extend(["--conf", "spark.sql.extensions=org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions"])
         cmd.extend([
             "table_compare.py",

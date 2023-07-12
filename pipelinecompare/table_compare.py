@@ -113,11 +113,14 @@ def extract_catalog(table_name):
     else:
         return "spark_catalog"
 
+
 def get_ancestors(table_name, snapshot):
+    """Get the ancestors of a given table at a given snapshot."""
     catalog_name = extract_catalog(table_name)
     return spark.sql(
         f"""CALL {catalog_name}.system.ancestors_of(
         snapshot_id => {snapshot}, table => '{table_name}')""").collect()
+
 
 def create_changelog_view(table_name, start_snapshot, end_snapshot, view_name):
     """Create a changelog view for the provided table."""
@@ -129,9 +132,13 @@ def create_changelog_view(table_name, start_snapshot, end_snapshot, view_name):
         changelog_view => '{view_name}'
         )""")
 
+
 def drop_iceberg_internal_columns(df):
+    """Drop the iceberg internal columns from a changelog view that would make comparisons tricky."""
     new_df = df
-    internal = set("_change_type", "_change_ordinal", "_commit_snapshot_id")
+    # We don't drop "_change_type" because if one version inserts and the other deletes that's a diff we want to catch.
+    # However change_orgidinal and _commit_snapshot_id are expected to differ even with identical end table states.
+    internal = set("_change_ordinal", "_commit_snapshot_id")
     for c in df.columns:
         name = c.split("#")
         if name in iternal:
@@ -176,7 +183,6 @@ def run_comparisions(tables):
                     return compare_tables(
                         c_diff_view,
                         t_diff_view) # This should fail today.
-            
             # Otherwise fall through. Technically we could make CDC view from t0
             # But we are using the CDC view as just a hack for speed so not worth it.
             print("Falling through to legacy compare")
