@@ -2,6 +2,7 @@ import argparse
 from pyspark.sql import SparkSession
 from pyspark.sql.types import FractionalType
 from utils import *
+from spark_utils import *
 
 spark = SparkSession.builder.getOrCreate()
 
