@@ -23,7 +23,6 @@ parser.add_argument('--compare-precision', type=int,
                     help='Precision for fractional comparisons.')
 parser.add_argument('--row-diff-tolerance', type=float, default=0.0,
                     help='Tolerance for % of different rows')
-args = parser.parse_args()
 
 
 def compare_tables(control, target):
@@ -107,21 +106,87 @@ def compare_tables(control, target):
                 f"Data counts differ! And we ran into: {e}")
 
 
-if args.control_root is not None:
-    for table in args.tables:
-        control = spark.read.format(args.format).load(
-            f"{args.control_root}/{table}")
-        target = spark.read.format(args.format).load(
-            f"{args.target_root}/{table}")
-        compare_tables(control, target)
-else:
-    tables = zip(args.control_tables, args.target_tables)
+def extract_catalog(table_name):
+    """Extract the catalog."""
+    if "." in table_name:
+        return table_name.split(".")[0]
+    else:
+        return "spark_catalog"
+
+
+def get_ancestors(table_name, snapshot):
+    """Get the ancestors of a given table at a given snapshot."""
+    catalog_name = extract_catalog(table_name)
+    return spark.sql(
+        f"""CALL {catalog_name}.system.ancestors_of(
+        snapshot_id => {snapshot}, table => '{table_name}')""").collect()
+
+
+def create_changelog_view(table_name, start_snapshot, end_snapshot, view_name):
+    """Create a changelog view for the provided table."""
+    catalog_name = extract_catalog(table_name)
+    return spark.sql(
+        f"""CALL {catalog_name}.system.create_changelog_view(
+        table => '{table_name}',
+        options => map('start-snapshot-id','{start_snapshot}','end-snapshot-id', '{end_snapshot}'),
+        changelog_view => '{view_name}'
+        )""")
+
+
+def drop_iceberg_internal_columns(df):
+    """Drop the iceberg internal columns from a changelog view that would make comparisons tricky."""
+    new_df = df
+    # We don't drop "_change_type" because if one version inserts and the other deletes that's a diff we want to catch.
+    # However change_orgidinal and _commit_snapshot_id are expected to differ even with identical end table states.
+    internal = set("_change_ordinal", "_commit_snapshot_id")
+    for c in df.columns:
+        name = c.split("#")
+        if name in iternal:
+            new_df = new_df.drop(c)
+    return new_df
+
+
+def run_comparisions(tables):
     for (ctrl_name, target_name) in tables:
         # Handle snapshots
         if "@" in ctrl_name:
             (ctrl_name, c_snapshot) = ctrl_name.split("@")
             (target_name, t_snapshot) = target_name.split("@")
-            compare_tables(
+            # Lets use iceberg CDC views (if we can) since then we have less data to compare and that always makes me happy
+            if ctrl_name == target_name:
+                # Now we need to get the table history and make sure that the table history intersects.
+                ancestors_c = get_ancestors(ctrl_name, c_snapshot)
+                ancestors_t = get_ancestors(target_name, t_snapshot)
+                print(f"ctrls ancestors {ancestors_c}")
+                print(f"target ancestors {ancestors_t}")
+                control_ancestor_set = set(ancestors_c)
+                shared_ancestor = None
+                for t in reversed(ancestors_t):
+                    if t in control_ancestor_set:
+                        shared_ancestor = t
+                        break
+                # Create the changelog views if we can
+                c_diff_view = None
+                t_diff_view = None
+                if shared_ancestor is not None:
+                    try:
+                        c_diff_view_name = create_changelog_view(ctrl_name, t.snapshot_id, c_snapshot, "c")
+                        t_diff_view_name = create_changelog_view(ctrl_name, t.snapshot_id, t_snapshot, "t")
+                        c_diff_view = drop_iceberg_internal_columns(spark.sql("SELECT * FROM c"))
+                        t_diff_view = drop_iceberg_internal_columns(spark.sql("SELECT * FROM t"))
+                    except Exception as e:
+                        print(f"Iceberg may not support change log view, doing legacy compare {e}")
+                if c_diff_view is not None:
+                    print(f"Using CDC view to compare {c_diff_view} and {t_diff_view}")
+                    c_diff_view.show()
+                    t_diff_view.show()
+                    return compare_tables(
+                        c_diff_view,
+                        t_diff_view) # This should fail today.
+            # Otherwise fall through. Technically we could make CDC view from t0
+            # But we are using the CDC view as just a hack for speed so not worth it.
+            print("Falling through to legacy compare")
+            return compare_tables(
                 spark.read.option("snapshot-id", c_snapshot).table(ctrl_name),
                 spark.read.option("snapshot-id", t_snapshot).table(target_name))
         else:
@@ -129,4 +194,18 @@ else:
                 spark.read.table(ctrl_name),
                 spark.read.table(target_name))
 
-print("Table compare status: ok")
+
+if __name__ == "__main__":
+    args = parser.parse_args()
+    if args.control_root is not None:
+        for table in args.tables:
+            control = spark.read.format(args.format).load(
+                f"{args.control_root}/{table}")
+            target = spark.read.format(args.format).load(
+                f"{args.target_root}/{table}")
+            compare_tables(control, target)
+    else:
+        tables = zip(args.control_tables, args.target_tables)
+        run_comparisions(tables)
+
+    print("Table compare status: ok")

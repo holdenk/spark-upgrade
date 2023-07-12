@@ -40,14 +40,16 @@ fi
 # DLing iceberg dependencies
 ########################################################################
 echo "Fetching iceberg dependencies"
-if [ ! -f iceberg-spark-runtime-3.3_2.12-1.1.0.jar ]; then
-  wget https://search.maven.org/remotecontent?filepath=org/apache/iceberg/iceberg-spark-runtime-3.3_2.12/1.1.0/iceberg-spark-runtime-3.3_2.12-1.1.0.jar -O iceberg-spark-runtime-3.3_2.12-1.1.0.jar &
+# We use Iceberg 1.3.0 for Spark 3.3 since we want to able to use changelog view
+if [ ! -f iceberg-spark-runtime-3.3_2.12-1.3.0.jar ]; then
+  wget https://search.maven.org/remotecontent?filepath=org/apache/iceberg/iceberg-spark-runtime-3.3_2.12/1.3.0/iceberg-spark-runtime-3.3_2.12-1.3.0.jar -O iceberg-spark-runtime-3.3_2.12-1.3.0.jar &
 fi
+# For 2.4 we use Iceberg 1.1 since newer versions are not published for Spark 2.4
 if [ ! -f iceberg-spark-runtime-2.4-1.1.0.jar ]; then
   wget https://search.maven.org/remotecontent?filepath=org/apache/iceberg/iceberg-spark-runtime-2.4/1.1.0/iceberg-spark-runtime-2.4-1.1.0.jar -O iceberg-spark-runtime-2.4-1.1.0.jar &
 fi
 wait
-cp iceberg-spark-runtime-3.3_2.12-1.1.0.jar ${SPARK3_DETAILS}/jars/
+cp iceberg-spark-runtime-3.3_2.12-1.3.0.jar ${SPARK3_DETAILS}/jars/
 cp iceberg-spark-runtime-2.4-1.1.0.jar ${SPARK2_DETAILS}/jars/
 
 ########################################################################

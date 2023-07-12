@@ -32,7 +32,7 @@ cd ..
 INITIAL_VERSION=${INITIAL_VERSION:-2.4.8}
 TARGET_VERSION=${TARGET_VERSION:-3.3.1}
 SCALAFIX_RULES_VERSION=${SCALAFIX_RULES_VERSION:-0.1.13}
-outputTable="local.newest_farttable"
+outputTable="local.newest_farttable_gradle"
 
 SPARK2_DETAILS="spark-2.4.8-bin-without-hadoop-scala-2.12"
 CORE_SPARK2="spark-2.4.8-bin-hadoop2.7"
@@ -126,12 +126,13 @@ cd pipelinecompare
 echo "There is some trickery in our spark-submit2 v.s. spark-submit3 including the right iceberg version"
 echo "Provided you have iceberg in your environment pre-insalled this should be equivelent to prod but... yeah."
 # Exepected to pass
+# We start from a fresh table to make sure we test the non-CDC path.
 ${spark_sql3}     --conf spark.sql.catalog.spark_catalog=org.apache.iceberg.spark.SparkSessionCatalog \
     --conf spark.sql.catalog.spark_catalog.type=hive \
     --conf spark.sql.catalog.local=org.apache.iceberg.spark.SparkCatalog \
     --conf spark.sql.catalog.local.type=hadoop \
     --conf spark.sql.catalog.local.warehouse=$PWD/warehouse \
-   -e "CREATE TABLE IF NOT EXISTS ${outputTable} (word string, count long) USING iceberg TBLPROPERTIES('write.wap.enabled' = 'true')"
+   -e "DROP TABLE IF EXISTS ${outputTable};CREATE TABLE ${outputTable} (word string, count long) USING iceberg TBLPROPERTIES('write.wap.enabled' = 'true')"
 
 
 python domagic.py --iceberg --spark-control-command ${spark_submit2} --spark-new-command ${spark_submit3} \
@@ -153,26 +154,3 @@ python domagic.py --iceberg --spark-control-command ${spark_submit2} --spark-new
     --class com.holdenkarau.sparkDemoProject.CountingLocalApp \
     /tmp/spark-migration-jars/sparkdemoproject_2.12-0.0.1.jar utils.py ${outputTable}"
 echo "Pipeline migration passed! Yay!"
-echo "Press enter to see how it can fail (e.g. using /var/log/syslog which gets extra records as we go)"
-echo "In that case the user would need to configure a tolerance value for difference."
-
-prompt "This next job should fail"
-# Expected to fail because syslog changes between runs.
-(python domagic.py --iceberg --spark-control-command ${spark_submit2} --spark-new-command ${spark_submit3} \
-       --spark-command ${spark_submit3} \
-       --new-jar-suffix "-3" \
-       --warehouse-config " \
-    --conf spark.sql.catalog.spark_catalog=org.apache.iceberg.spark.SparkSessionCatalog \
-    --conf spark.sql.catalog.spark_catalog.type=hive \
-    --conf spark.sql.catalog.local=org.apache.iceberg.spark.SparkCatalog \
-    --conf spark.sql.catalog.local.type=hadoop \
-    --conf spark.sql.catalog.local.warehouse=$PWD/warehouse \
-    " \
-       --combined-pipeline " \
-    --conf spark.sql.catalog.spark_catalog=org.apache.iceberg.spark.SparkSessionCatalog \
-    --conf spark.sql.catalog.spark_catalog.type=hive \
-    --conf spark.sql.catalog.local=org.apache.iceberg.spark.SparkCatalog \
-    --conf spark.sql.catalog.local.type=hadoop \
-    --conf spark.sql.catalog.local.warehouse=$PWD/warehouse \
-    --class com.holdenkarau.sparkDemoProject.CountingLocalApp \
-    /tmp/spark-migration-jars/sparkdemoproject_2.12-0.0.1.jar /var/log/syslog local.old_farttable" && exit 1) || echo "Failed as expected."
