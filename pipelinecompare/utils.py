@@ -5,7 +5,6 @@ from colorama import Style
 
 colorama_init()
 
-
 def eprint(*args, **kwargs):
     print(Fore.RED, file=sys.stderr)
     print(*args, file=sys.stderr, **kwargs)
