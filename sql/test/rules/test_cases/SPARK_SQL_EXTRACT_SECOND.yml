@@ -7,4 +7,13 @@ extract_second:
   fail_str: |
     select extract(second from to_timestamp('2019-09-20 10:10:10.1'))
   fix_str: |
-    select cast(extract(second from to_timestamp('2019-09-20 10:10:10.1')) as int)
+    select int(extract(second from to_timestamp('2019-09-20 10:10:10.1')))
+
+extract_second_existing_cast:
+  configs:
+    core:
+      dialect: sparksql
+  fail_str: |
+    INSERT OVERWRITE foo.bar SELECT CAST(extract(second from to_timestamp('2019-09-20 10:10:11.1')) AS STRING) AS a
+  fix_str: |
+    INSERT OVERWRITE foo.bar SELECT CAST(int(extract(second from to_timestamp('2019-09-20 10:10:11.1'))) AS STRING) AS a

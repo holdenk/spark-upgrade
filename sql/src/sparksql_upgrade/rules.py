@@ -402,19 +402,15 @@ class Rule_SPARKSQL_L004(BaseRule):
                 parent_stack_reversed[1].get_type() == "bracketed" and
                 parent_stack_reversed[2].get_type() == "function"
             ):
-                if parent_stack_reversed[2].segments[0].raw.upper().strip() == "CAST":
+                if parent_stack_reversed[2].segments[0].raw.upper().strip() == "INT":
                     return None
 
             date_part_into = bracketed.get_child("date_part").raw.upper().strip()
             if date_part_into == "SECOND":
                 edits = [
-                    KeywordSegment("cast"),
+                    KeywordSegment("int"),
                     SymbolSegment("(", type="start_bracket"),
                     context.segment,
-                    WhitespaceSegment(),
-                    KeywordSegment("as"),
-                    WhitespaceSegment(),
-                    KeywordSegment("int"),
                     SymbolSegment(")", type="end_bracket"),
                 ]
                 return LintResult(
