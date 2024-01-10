@@ -17,7 +17,7 @@ class ScalaTestExtendsFix
     override def fix(implicit doc: SyntacticDocument): Patch = {
       doc.tree.collect { case v: Type.Name =>
         if (v.toString == "FunSuiteLike") {
-          Patch.replaceTree(v, "FunSuiteLike")
+          Patch.replaceTree(v, "\"FunSuiteLike\"")
         } else {
           Patch.empty
         }
