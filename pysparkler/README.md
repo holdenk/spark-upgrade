@@ -5,7 +5,7 @@
 
 PySparkler is a tool that upgrades your PySpark scripts to the latest Spark version. It is a command line tool that takes a PySpark script as input and outputs a script compatible with the latest Spark version. It is written in Python and uses the LibCST module to parse the input script and generate the output script.
 
-## Installation
+## Running GitHub Actions
 
 To install PySparkler, follow these steps:
 
@@ -203,7 +203,7 @@ pip install --upgrade virtualenv pip
 
 ### Installation
 
-To get started, you can run `make install`, which installs Poetry and all the dependencies of the PySparkler library.
+To get started, you can run `# Placeholder for configuring GitHub Actions`, which installs Poetry and all the dependencies of the PySparkler library.
 This also installs the development dependencies.
 
 ```bash
