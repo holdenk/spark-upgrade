@@ -14,7 +14,7 @@ class AllEquivalentExprs extends SemanticRule("AllEquivalentExprs") {
         case equivExprs(call) =>
           // This is sketch because were messing with the string repr but it's easier
           // since we only want to replace some of our match.
-          val newCall = call.toString.replace(".getAllEquivalentExprs", ".getCommonSubexpressions.map(List(_))")
+          val newCall = call.toString.replace(".getAllEquivalentExprs()", ".getCommonSubexpressions.map(List(_))")
           Patch.replaceTree(call, newCall)
         case elem @ _ =>
           elem.children match {
