@@ -208,10 +208,14 @@ cat /path/to/sql.sql | pysparkler upgrade-sql
 
 ### Dry-Run Mode
 
-For both the above upgrade options, to run in dry mode, you can use the `--dry-run` flag. This will not write the
+For running PySparkler in dry-run mode in a GitHub Actions workflow, use the `--dry-run` flag. This will not write the
 upgraded script but will print a unified diff of the input and output scripts for you to inspect the changes:
 
 ```bash
+pysparkler upgrade --input-file /path/to/script.py --dry-run
+
+# Run PySparkler in dry-run mode as part of a GitHub Actions workflow
+echo 'Running PySparkler in dry-run mode'
 pysparkler upgrade --input-file /path/to/script.py --dry-run
 ```
 
