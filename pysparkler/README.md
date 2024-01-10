@@ -31,8 +31,10 @@ pipx install pysparkler
 
 That's it! You are now ready to use PySparkler.
 
+Provide the path to the script you want to upgrade:
+
 ```bash
-pysparkler --help
+pysparkler upgrade --input-file /path/to/script.py
 ```
 
 ## Getting Started
@@ -61,7 +63,11 @@ PySparkler parses the code and can perform either of the following actions:
   overflow or Floating point truncation, instead of silent allows. As you can see the suggestion is pretty contextual and
   may not be applicable in all cases. In cases where not applicable, the end-user can choose to ignore the code hint.
 
-**NOTE**: PySparkler tries to keep the code formatting intact as much as possible. However, it is possible that the
+3. Run the GitHub Actions workflow to trigger the PySparkler upgrade process.
+
+4. Review the GitHub Actions logs and address any issues that may arise.
+
+5. When handling errors related to PySpark upgrade or GitHub Actions failures, as much as possible. However, it is possible that the
 statement lines it takes actions on may fail the linting checks post changes. In such situations, the end-user will have
 to fix the linting errors manually.
 
@@ -230,7 +236,7 @@ To set up IDEA with Poetry:
 - Open up the Python project in IntelliJ
 - Make sure that you're on latest master (that includes Poetry)
 - Go to File -> Project Structure (⌘;)
-- Go to Platform Settings -> SDKs
+In the Settings/Preferences dialog, select Plugins and search for 'Poetry'. Once found, click the Install button to enable the Poetry integration.
 - Click the + sign -> Add Python SDK
 - Select Poetry Environment from the left hand side bar and hit OK
 - It can take some time to download all the dependencies based on your internet
@@ -290,7 +296,13 @@ write small, reusable transformers and chain them together to perform a sequence
 
 The main advantage of using a Transformer is that it allows for more fine-grained control over the transformation
 process. Transformer classes can be defined to apply specific transformations to specific parts of the codebase, and
-The next step is to thoroughly test the upgraded scripts, notebooks, and GitHub Actions to ensure their compatibility with the latest Spark version, as well as validate GitHub Actions configuration, check for errors in workflow files, and review the GitHub Actions logs. This includes checking for errors, performance issues, and unexpected behavior. It's recommended to run comprehensive test suites, identify, and address any issues that may arise.
+## Integrating PySparkler with GitHub Actions
+
+To integrate PySparkler with GitHub Actions, follow these best practices:
+- Validate GitHub Actions configuration, check for errors in workflow files, and review the GitHub Actions logs to identify and address any issues.
+- Implement try-catch blocks to handle exceptions and errors gracefully.
+- Use descriptive error messages and logging statements to provide insights into the root cause of issues.
+- Document known issues and maintain up-to-date project documentation to facilitate troubleshooting and resolution.
 
 When handling errors related to PySpark upgrade or GitHub Actions failures, consider the following best practices:
 - [Validate GitHub Actions configuration](https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions), [check for errors in workflow files](https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#about-yaml-syntax-for-workflows), and [review the GitHub Actions logs](https://docs.github.com/en/actions/monitoring-and-troubleshooting-workflows) to identify and address any issues.
