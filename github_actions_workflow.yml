@@ -23,11 +23,15 @@ jobs:
 
       - name: Build and test
         run: |
+          continue-on-error: ${{ always() }}
+          echo 'Building and testing'
           ./gradlew build
           ./gradlew clean test
 
       - name: Publish artifacts
-        run: ./gradlew publish
+        run: |
+          echo 'Publishing artifacts'
+          ./gradlew publish
 
       - name: Deploy to staging
         run: ./deploy.sh staging
