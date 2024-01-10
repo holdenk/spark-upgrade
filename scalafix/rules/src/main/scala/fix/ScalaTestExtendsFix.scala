@@ -17,7 +17,7 @@ class ScalaTestExtendsFix
       println(v)
       println(v)
       if (v.toString == "FunSuite") {
-        Patch.replaceTree(v, "AnyFunSuite")
+        Patch.replaceTree(v, "FunSuiteLike")
       } else {
         println(s"No change to $v")
         Patch.empty
