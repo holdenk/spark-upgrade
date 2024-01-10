@@ -112,6 +112,31 @@ The tool can upgrade a PySpark Python script. It takes the path to the script as
 
 ```bash
 pysparkler upgrade --input-file /path/to/script.py
+
+# Run PySparkler as part of a GitHub Actions workflow
+git fetch
+git checkout $GITHUB_SHA
+echo 'Running PySparkler'
+pysparkler upgrade --input-file /path/to/script.py
+status=$?
+if [ $status -ne 0 ]
+then
+echo 'PySparkler upgrade process failed'
+exit 1
+else
+echo 'PySparkler upgrade process succeeded'
+fi
+
+# Run PySparkler as part of a GitHub Actions workflow
+git fetch
+git checkout $GITHUB_SHA
+echo 'Running PySparkler'
+pysparkler upgrade --input-file /path/to/script.py
+if [ $? -ne 0 ]
+then
+echo 'PySparkler upgrade process failed'
+exit 1
+fi
 ```
 
 If you want to output the upgraded script to a different directory, you can use the `--output-file` flag:
@@ -301,6 +326,7 @@ write small, reusable transformers and chain them together to perform a sequence
 ### Why Transformer Codemod? Why not Visitor?
 
 ## Use Cases of PySparkler in GitHub Actions Workflows
+## Integrating PySparkler with GitHub Actions and Limitations
 ## Integrating PySparkler with GitHub Actions and Limitations
 
 To integrate PySparkler with GitHub Actions, follow these best practices:
