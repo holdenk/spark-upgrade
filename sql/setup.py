@@ -9,7 +9,7 @@ setup(
     name="sqlfluff-plugin-{plugin_logical_name}".format(
         plugin_logical_name=PLUGIN_LOGICAL_NAME
     ),
-    version="0.1.3",
+    version="0.1.4",
     author="Holden Karau",
     author_email="holden@pigscanfly.ca",
     url="https://github.com/holdenk/spark-upgrade",
