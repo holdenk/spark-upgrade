@@ -25,7 +25,7 @@ pysparkler --help
 
 ## Getting Started
 
-Provide the path to the script you want to upgrade:
+Upgrade a PySpark Python script by specifying the path to the script using the following command:
 
 ```bash
 pysparkler upgrade --input-file /path/to/script.py
@@ -60,7 +60,7 @@ to upgrade your PySpark scripts. In the latest stable version it supports the fo
 
 | Migration                                       | Supported | Details                                                                                                                                      |
 |-------------------------------------------------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------|
-| Upgrading from PySpark 3.3 to 3.4               | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-3-to-3-4)               |
+| Feature                                       | Supported 
 | Upgrading from PySpark 3.2 to 3.3               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-2-to-3-3)               |
 | Upgrading from PySpark 3.1 to 3.2               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-1-to-3-2)               |
 | Upgrading from PySpark 2.4 to 3.0               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-4-to-3-0)               |
@@ -77,11 +77,16 @@ The tool supports the following features:
 
 | Feature                                       | Supported |
 |-----------------------------------------------|-----------|
-| Upgrade PySpark Python script                 | ✅         |
+| Feature                                       | Supported |
 | Upgrade PySpark Jupyter Notebook              | ✅         |
 | Upgrade SQL                                   | ✅         |
 | Dry-run Mode                                  | ✅         |
 | Verbose Mode                                  | ✅         |
+| Running the upgrade in verbose mode will print the tool's input variables, the input file content, the output content, and a unified diff of the input and output content. Example command for running the upgrade in verbose mode:
+
+```bash
+pysparkler --verbose upgrade --input-file /path/to/script.py
+```
 | Customize code transformers using YAML config | ✅         |
 
 ### Upgrade PySpark Python script
@@ -89,7 +94,14 @@ The tool supports the following features:
 The tool can upgrade a PySpark Python script. It takes the path to the script as input and upgrades it in place:
 
 ```bash
-pysparkler upgrade --input-file /path/to/script.py
+To run the upgrade in verbose mode, use the following command:
+
+```bash
+pysparkler --verbose upgrade --input-file /path/to/script.py
+```
+
+```bash
+To specify the input file and upgrade a PySpark Python script, use the following command:
 ```
 
 If you want to output the upgraded script to a different directory, you can use the `--output-file` flag:
@@ -100,18 +112,16 @@ pysparkler upgrade --input-file /path/to/script.py --output-file /path/to/output
 
 ### Upgrade PySpark Jupyter Notebook
 
-The tool can upgrade a PySpark Jupyter Notebook to latest Spark version. It takes the path to the notebook as input and
-upgrades it in place:
+Upgrade PySpark Jupyter Notebook              | ✅         
 
 ```bash
-pysparkler upgrade --input-file /path/to/notebook.ipynb
+To specify the input file and upgrade a PySpark Jupyter Notebook, use the following command:
 ```
 
-Similar to upgrading python scripts, if you want to output the upgraded notebook to a different directory, you can use
-the `--output-file` flag:
+To specify the output file for the upgraded notebook and upgrade a PySpark Jupyter Notebook, use the `--output-file` flag as shown below:
 
 ```bash
-pysparkler upgrade --input-file /path/to/notebook.ipynb --output-file /path/to/output.ipynb
+To specify the input file for upgrading a PySpark Jupyter Notebook, use the following command: --output-file /path/to/output.ipynb
 ```
 
 To change the output kernel name in the output Jupyter notebook, you can use the `--output-kernel` flag:
@@ -128,7 +138,7 @@ cases the tool does leave code hints to let users know that they need to upgrade
 
 To facilitate this, it exposes a command `upgrade-sql` for users to perform this DIY. The steps for that include:
 
-1. De-template the SQL.
+1. Use the `pysparkler upgrade-sql -i /path/to/sql_file.sql` command to de-template the SQL.
 1. Upgrade the de-templated SQL using `pysparkler upgrade-sql`. See below for details.
 1. Re-template the upgraded SQL.
 1. Replace the old SQL with the upgraded SQL in the input script.
@@ -136,19 +146,24 @@ To facilitate this, it exposes a command `upgrade-sql` for users to perform this
 In order to perform step #2 i.e. you can either echo the SQL statement and pipe it to the tool:
 
 ```bash
-echo "SELECT * FROM table" | pysparkler upgrade-sql
+pysparkler upgrade-sql --input-file /path/to/sql_file.sql
 ```
 
 or you can use the `cat` command to pipe the SQL statement to the tool:
 
 ```bash
-cat /path/to/sql.sql | pysparkler upgrade-sql
+pysparkler upgrade-sql --input-file /path/to/sql_file.sql
 ```
 
 ### Dry-Run Mode
 
-For both the above upgrade options, to run in dry mode, you can use the `--dry-run` flag. This will not write the
-upgraded script but will print a unified diff of the input and output scripts for you to inspect the changes:
+For both the above upgrade options, to run in dry mode, you can use the `--dry-run` flag. This will not generate the
+upgraded script but will display a unified diff of the input and output scripts for you to inspect the changes:
+
+```bash
+pysparkler### Dry-Run Mode Example
+
+To run the upgrade in dry-run mode, use the following command:
 
 ```bash
 pysparkler upgrade --input-file /path/to/script.py --dry-run
@@ -165,14 +180,13 @@ pysparkler --verbose upgrade --input-file /path/to/script.py
 
 ### Customize code transformers using YAML config
 
-The tool uses a YAML config file to customize the code transformers. The config file can be passed using the
-`--config-yaml` flag:
+The `--config-yaml` flag is used to specify a YAML config file that customizes the code transformers. When using this flag, the config file should be passed as shown below:
 
 ```bash
 pysparkler --config-yaml /path/to/config.yaml upgrade --input-file /path/to/script.py
 ```
 
-The config file is a YAML file with the following structure:
+The config file is a YAML file with the following structure. This is an example of how the YAML config file can be structured:
 
 ```yaml
 pysparkler:
@@ -267,6 +281,10 @@ make test PYTEST_ARGS="-v"
 ### Why LibCST?
 
 LibCST is a Python library that provides a concrete syntax tree (CST) for Python code. CST preserves even the
+
+```bash
+To run the upgrade in verbose mode, use the following command:
+```
 whitespaces of the source code which is very important since we only want to modify the code and not the formatting.
 
 ### How does it work?
@@ -276,7 +294,7 @@ write small, reusable transformers and chain them together to perform a sequence
 
 ### Why Transformer Codemod? Why not Visitor?
 
-The main advantage of using a Transformer is that it allows for more fine-grained control over the transformation
+`The main advantage of using a Transformer is that it allows for more fine-grained control over the transformation`
 process. Transformer classes can be defined to apply specific transformations to specific parts of the codebase, and
 multiple Transformer classes can be combined to form a chain of transformations. This can be useful when dealing with
 complex codebases where different parts of the code require different transformations.
