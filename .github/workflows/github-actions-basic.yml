@@ -40,7 +40,7 @@ jobs:
     - name: Make pip python programs findable
       run: export PATH=`python3 -m site --user-base`/bin:$PATH
     - name: SQL Module - Lint Checks
-      run: cd sql; flake8 --max-line-length 100 --ignore=E129,W504
+      run: flake8 --max-line-length 100 --ignore=E129,W504 sql/ --ignore=E129,W504 sql/ --ignore=E129,W504
     - name:  SQL Module - Install and Test
       run: cd sql; pip install -e .; pytest .
     # Run the scala tests.
