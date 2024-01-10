@@ -57,7 +57,7 @@ jobs:
     - name: PySparkler - Make Install
       run: |
         cd pysparkler
-        make install
+        pip install .
     - name: PySparkler - Make Lint
       run: |
         cd pysparkler
