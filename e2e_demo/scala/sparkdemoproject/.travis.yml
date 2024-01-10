@@ -1,4 +1,4 @@
-language: scala
+language: java
 
 # These directories are cached to S3 at the end of the build
 cache:
@@ -14,4 +14,4 @@ scala:
   - 2.12.13
 after_success:
   - bash <(curl -s https://codecov.io/bash)
-sudo: false
+sudo: true
