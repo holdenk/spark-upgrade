@@ -225,7 +225,7 @@ To set up IDEA with Poetry:
 - Go to Project Settings -> Project
 - Select the Poetry SDK from the SDK dropdown, and click OK
 
-For IDEA ≤2021 you need to install the
+For IDEA <2021 you need to install the
 [Poetry integration as a plugin](https://plugins.jetbrains.com/plugin/14307-poetry/).
 
 Now you're set using Poetry, and all the tests will run in Poetry, and you'll have syntax highlighting in the
@@ -250,7 +250,7 @@ version of `{black,mypy,isort,...}` and update the yaml.
 
 ### Testing
 
-For Python, `pytest` is used a testing framework in combination with `coverage` to enforce 90%+ code coverage.
+For running pytest with code coverage enforcement, use the following command:
 
 ```bash
 make test
