@@ -5,7 +5,7 @@ import scala.meta._
 
 // Fix the with with since the QQ matcher doesn't like it and I'm lazy.
 class fix.fix.ScalaTestExtendsFix
-    extends SyntacticRule("ScalaTestExtendsFix") {
+    extends SyntacticRule("ScalaTestExtendsFix") with Rule {
   override val description =
     """Handle the change with ScalaTest ( see https://www.scalatest.org/release_notes/3.1.0 ) """
 
