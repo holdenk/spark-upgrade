@@ -10,6 +10,7 @@ class SparkAutoUpgrade extends SemanticRule("SparkAutoUpgrade") {
     // println("Tree.structure: " + doc.tree.structure)
     // println("Tree.structureLabeled: " + doc.tree.structureLabeled)
 
-    Patch.empty
+    Patch.logger.error("An error occurred during the Spark upgrade process: " + e.getMessage)
+Patch.empty
   }
 }
