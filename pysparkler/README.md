@@ -67,7 +67,7 @@ PySparkler parses the code and can perform either of the following actions:
 
 4. Review the GitHub Actions logs and address any issues that may arise.
 
-5. When handling errors related to PySpark upgrade or GitHub Actions failures, as much as possible. However, it is possible that the
+5. GitHub Actions compatibility of PySparkler is being officially supported for the following PySpark versions::
 statement lines it takes actions on may fail the linting checks post changes. In such situations, the end-user will have
 to fix the linting errors manually.
 
@@ -87,7 +87,11 @@ to upgrade your PySpark scripts. In the latest stable version it supports the fo
 | Upgrading from PySpark 2.2 to 2.3               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-2-to-2-3)               |
 | Upgrading from PySpark 2.1 to 2.2               | ✅         | NA                                                                                                                                           |
 | Upgrading from PySpark 1.4 to 1.5               | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-1-4-to-1-5)               |
-| Upgrading from PySpark 1.0-1.2 to 1.3           | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-1-0-1-2-to-1-3)           |
+| Migration                                       | Supported | Details                                                                                                                                      |
+|-------------------------------------------------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| Upgrading from PySpark 1.0-1.2 to 1.3           | Limited compatibility with GitHub Actions |
+|-------------------------------------------------|-----------|
+| Upgrading from PySpark 1.0-1.2 to 1.3           | Limited compatibility with GitHub Actions |           | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-1-0-1-2-to-1-3)           |
 
 ## Features Supported
 
@@ -296,10 +300,10 @@ write small, reusable transformers and chain them together to perform a sequence
 
 The main advantage of using a Transformer is that it allows for more fine-grained control over the transformation
 process. Transformer classes can be defined to apply specific transformations to specific parts of the codebase, and
-## Integrating PySparkler with GitHub Actions
+## Integrating PySparkler with GitHub Actions and Limitations
 
 To integrate PySparkler with GitHub Actions, follow these best practices:
-- Validate GitHub Actions configuration, check for errors in workflow files, and review the GitHub Actions logs to identify and address any issues.
+- Validate GitHub Actions configuration, check for errors in workflow files, and review the GitHub Actions logs and address any issues that may arise. Implement try-catch blocks to handle exceptions and errors gracefully. Use descriptive error messages and logging statements to provide insights into the root cause of issues. Document known issues and maintain up-to-date project documentation to facilitate troubleshooting and resolution.
 - Implement try-catch blocks to handle exceptions and errors gracefully.
 - Use descriptive error messages and logging statements to provide insights into the root cause of issues.
 - Document known issues and maintain up-to-date project documentation to facilitate troubleshooting and resolution.
