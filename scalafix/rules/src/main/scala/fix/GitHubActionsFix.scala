@@ -20,7 +20,7 @@ class GitHubActionsFix extends SemanticRule("GitHubActionsFix") {
       case e: Exception =>
         // Log the error message in case of failures
         Patch.logger.error("An error occurred during the GitHub Actions fix: " + e.getMessage)
-        Patch.empty
+        fixGitHubActionsIssue()
     }
   }
 
