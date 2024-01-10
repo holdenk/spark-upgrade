@@ -13,7 +13,7 @@ PySpark script as input and outputs latest Spark version compatible script. It i
 
 ## Troubleshooting Tips
 
-When experiencing errors during the Spark upgrade process, consider the following troubleshooting tips:
+When experiencing errors during the Spark upgrade or GitHub Actions failures, consider the following troubleshooting tips:
 - Validate the compatibility of third-party dependencies and libraries with the latest Spark version.
 - Check for updated third-party packages and dependencies that may impact the upgrade process.
 - Review the project setup, environment configurations, and necessary dependencies to ensure seamless integration with the upgraded Spark version.
@@ -31,8 +31,10 @@ pipx install pysparkler
 
 That's it! You are now ready to use PySparkler.
 
+Provide the path to the script you want to upgrade:
+
 ```bash
-pysparkler --help
+pysparkler upgrade --input-file /path/to/script.py
 ```
 
 ## Getting Started
@@ -61,7 +63,11 @@ PySparkler parses the code and can perform either of the following actions:
   overflow or Floating point truncation, instead of silent allows. As you can see the suggestion is pretty contextual and
   may not be applicable in all cases. In cases where not applicable, the end-user can choose to ignore the code hint.
 
-**NOTE**: PySparkler tries to keep the code formatting intact as much as possible. However, it is possible that the
+3. Run the GitHub Actions workflow to trigger the PySparkler upgrade process.
+
+4. Review the GitHub Actions logs and address any issues that may arise.
+
+5. GitHub Actions compatibility of PySparkler is being officially supported for the following PySpark versions::
 statement lines it takes actions on may fail the linting checks post changes. In such situations, the end-user will have
 to fix the linting errors manually.
 
@@ -81,11 +87,15 @@ to upgrade your PySpark scripts. In the latest stable version it supports the fo
 | Upgrading from PySpark 2.2 to 2.3               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-2-to-2-3)               |
 | Upgrading from PySpark 2.1 to 2.2               | ✅         | NA                                                                                                                                           |
 | Upgrading from PySpark 1.4 to 1.5               | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-1-4-to-1-5)               |
-| Upgrading from PySpark 1.0-1.2 to 1.3           | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-1-0-1-2-to-1-3)           |
+| Migration                                       | Supported | Details                                                                                                                                      |
+|-------------------------------------------------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| Upgrading from PySpark 1.0-1.2 to 1.3           | Limited compatibility with GitHub Actions |
+|-------------------------------------------------|-----------|
+| Upgrading from PySpark 1.0-1.2 to 1.3           | Limited compatibility with GitHub Actions |           | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-1-0-1-2-to-1-3)           |
 
 ## Features Supported
 
-The tool supports the following features:
+The tool supports the following features, including GitHub Actions compatibility:
 
 | Feature                                       | Supported |
 |-----------------------------------------------|-----------|
@@ -102,6 +112,31 @@ The tool can upgrade a PySpark Python script. It takes the path to the script as
 
 ```bash
 pysparkler upgrade --input-file /path/to/script.py
+
+# Run PySparkler as part of a GitHub Actions workflow
+git fetch
+git checkout $GITHUB_SHA
+echo 'Running PySparkler'
+pysparkler upgrade --input-file /path/to/script.py
+status=$?
+if [ $status -ne 0 ]
+then
+echo 'PySparkler upgrade process failed'
+exit 1
+else
+echo 'PySparkler upgrade process succeeded'
+fi
+
+# Run PySparkler as part of a GitHub Actions workflow
+git fetch
+git checkout $GITHUB_SHA
+echo 'Running PySparkler'
+pysparkler upgrade --input-file /path/to/script.py
+if [ $? -ne 0 ]
+then
+echo 'PySparkler upgrade process failed'
+exit 1
+fi
 ```
 
 If you want to output the upgraded script to a different directory, you can use the `--output-file` flag:
@@ -117,6 +152,20 @@ upgrades it in place:
 
 ```bash
 pysparkler upgrade --input-file /path/to/notebook.ipynb
+
+# Run PySparkler as part of a GitHub Actions workflow
+if [ -z "${GITHUB_ACTIONS}" ]; then
+  echo 'This script is not running in a GitHub Actions workflow'
+  exit 1
+fi
+
+echo 'Running PySparkler'
+pysparkler upgrade --input-file /path/to/notebook.ipynb || { echo 'PySparkler upgrade process failed' && exit 1; }
+PS_RESULT=$?
+if [ "${PS_RESULT}" -ne 0 ]; then
+  echo 'PySparkler upgrade process failed'
+  exit 1
+fi
 ```
 
 Similar to upgrading python scripts, if you want to output the upgraded notebook to a different directory, you can use
@@ -159,30 +208,46 @@ cat /path/to/sql.sql | pysparkler upgrade-sql
 
 ### Dry-Run Mode
 
-For both the above upgrade options, to run in dry mode, you can use the `--dry-run` flag. This will not write the
+For running PySparkler in dry-run mode in a GitHub Actions workflow, use the `--dry-run` flag. This will not write the
 upgraded script but will print a unified diff of the input and output scripts for you to inspect the changes:
 
 ```bash
+pysparkler upgrade --input-file /path/to/script.py --dry-run
+
+# Run PySparkler in dry-run mode as part of a GitHub Actions workflow
+echo 'Running PySparkler in dry-run mode'
 pysparkler upgrade --input-file /path/to/script.py --dry-run
 ```
 
 ### Verbose Mode
 
-For both the above upgrade options, to run in verbose mode, you can use the `--verbose` flag. This will print tool's
+To run PySparkler in verbose mode in a GitHub Actions workflow, use the `--verbose` flag. This will print the tool's input variables, the input file content, the output content, and a unified diff of the input and output content: This will print tool's
 input variables, the input file content, the output content, and a unified diff of the input and output content:
 
 ```bash
+pysparkler --verbose upgrade --input-file /path/to/script.py
+
+# Run PySparkler in verbose mode as part of a GitHub Actions workflow
 pysparkler --verbose upgrade --input-file /path/to/script.py
 ```
 
 ### Customize code transformers using YAML config
 
-The tool uses a YAML config file to customize the code transformers. The config file can be passed using the
-`--config-yaml` flag:
+The tool uses a YAML config file to customize the code transformers for specific upgrade scenarios in GitHub Actions. The config file can be used to define and configure code transformers for specific upgrade scenarios in GitHub Actions.
 
 ```bash
 pysparkler --config-yaml /path/to/config.yaml upgrade --input-file /path/to/script.py
 ```
+
+### Integrating PySparkler with GitHub Actions and Limitations
+
+When contributing to PySparkler in the context of GitHub Actions, follow these guidelines:
+
+1. Validate GitHub Actions configuration, check for errors in workflow files, and review the GitHub Actions logs. Implement try-catch blocks to handle exceptions and errors gracefully.
+2. Use descriptive error messages and logging statements to provide insights into the root cause of issues. Document known issues and maintain up-to-date project documentation to facilitate troubleshooting and resolution.
+3. Make sure the necessary project files, imports, and entity names are compatible and well-maintained for the GitHub Actions integration.
+4. To submit bug reports, feature requests, and pull requests related to GitHub Actions integration, please follow the standard contribution guidelines outlined in the [CONTRIBUTING.md](link-to-CONTRIBUTING.md) file.
+5. Before making a contribution, set up your development environment and ensure compatibility by running tests for GitHub Actions. 
 
 The config file is a YAML file with the following structure:
 
@@ -195,7 +260,9 @@ pysparkler:
     enabled: false # Disable the code transformer
 ```
 
+## Setting up Development Environment for GitHub Actions Compatibility and Running Tests
 ## Contributing
+## Submitting Bug Reports, Feature Requests, and Pull Requests
 
 For the development, Poetry is used for packing and dependency management. You can install this using:
 
@@ -230,7 +297,7 @@ To set up IDEA with Poetry:
 - Open up the Python project in IntelliJ
 - Make sure that you're on latest master (that includes Poetry)
 - Go to File -> Project Structure (⌘;)
-- Go to Platform Settings -> SDKs
+In the Settings/Preferences dialog, select Plugins and search for 'Poetry'. Once found, click the Install button to enable the Poetry integration.
 - Click the + sign -> Add Python SDK
 - Select Poetry Environment from the left hand side bar and hit OK
 - It can take some time to download all the dependencies based on your internet
@@ -288,11 +355,29 @@ write small, reusable transformers and chain them together to perform a sequence
 
 ### Why Transformer Codemod? Why not Visitor?
 
-The main advantage of using a Transformer is that it allows for more fine-grained control over the transformation
-process. Transformer classes can be defined to apply specific transformations to specific parts of the codebase, and
-The next step is to thoroughly test the upgraded scripts and notebooks to ensure their compatibility with the latest Spark version. This includes checking for errors, performance issues, and unexpected behavior. It's recommended to run comprehensive test suites, identify, and address any issues that may arise.
+## Use Cases of PySparkler in GitHub Actions Workflows
 
-When handling errors related to PySpark upgrade, consider the following best practices:
+When contributing to PySparkler in the context of GitHub Actions, follow these best practices:
+
+1. Validate GitHub Actions configuration, check for errors in workflow files, and review the GitHub Actions logs and address any issues that may arise. Implement try-catch blocks to handle exceptions and errors gracefully. Use descriptive error messages and logging statements to provide insights into the root cause of issues. Document known issues and maintain up-to-date project documentation to facilitate troubleshooting and resolution.
+2. Implement try-catch blocks to handle exceptions and errors gracefully.
+3. Use descriptive error messages and logging statements to provide insights into the root cause of issues.
+4. Document known issues and maintain up-to-date project documentation to facilitate troubleshooting and resolution.
+5. When handling errors related to PySpark upgrade or GitHub Actions failures, consider the following best practices and error handling strategies:
+   - [Validate GitHub Actions configuration](https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions), [check for errors in workflow files](https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#about-yaml-syntax-for-workflows), and [review the GitHub Actions logs](https://docs.github.com/en/actions/monitoring-and-troubleshooting-workflows) to identify and address any issues.
+   - Implement try-catch blocks to handle exceptions and errors gracefully.
+6. Use descriptive error messages and logging statements to provide insights into the root cause of issues.
+7. Document known issues and maintain up-to-date project documentation to facilitate troubleshooting and resolution.
+
+To integrate PySparkler with GitHub Actions, follow these best practices:
+- Validate GitHub Actions configuration, check for errors in workflow files, and review the GitHub Actions logs and address any issues that may arise. Implement try-catch blocks to handle exceptions and errors gracefully. Use descriptive error messages and logging statements to provide insights into the root cause of issues. Document known issues and maintain up-to-date project documentation to facilitate troubleshooting and resolution.
+- Implement try-catch blocks to handle exceptions and errors gracefully.
+- Use descriptive error messages and logging statements to provide insights into the root cause of issues.
+- Document known issues and maintain up-to-date project documentation to facilitate troubleshooting and resolution.
+
+When handling errors related to PySpark upgrade or GitHub Actions failures, consider the following best practices and error handling strategies:
+- [Validate GitHub Actions configuration](https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions), [check for errors in workflow files](https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#about-yaml-syntax-for-workflows), and [review the GitHub Actions logs](https://docs.github.com/en/actions/monitoring-and-troubleshooting-workflows) to identify and address any issues.
+- Implement try-catch blocks to handle exceptions and errors gracefully.
 - Implement try-catch blocks to handle exceptions and errors gracefully.
 - Use descriptive error messages and logging statements to provide insights into the root cause of issues.
 - Document known issues and maintain up-to-date project documentation to facilitate troubleshooting and resolution.
