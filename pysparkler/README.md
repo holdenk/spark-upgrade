@@ -3,9 +3,9 @@
 [![PyPI version](https://badge.fury.io/py/pysparkler.svg)](https://badge.fury.io/py/pysparkler)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-PySparkler is a tool that upgrades your PySpark scripts to latest Spark version. It is a command line tool that takes a
+PySparkler is a tool that upgrades your PySpark scripts to latest version of Spark. It is a command line tool that takes a
 PySpark script as input and outputs latest Spark version compatible script. It is written in Python and uses the
-[LibCST](https://github.com/Instagram/LibCST) module to parse the input script and generate the output script.
+[LibCST module](https://github.com/Instagram/LibCST) module to parse the input script and generate the output script.
 
 ## Installation
 
@@ -39,10 +39,7 @@ PySparkler parses the code and can perform either of the following actions:
   comment to the end of statement line being modified to indicate that the code was modified by PySparkler, explaining
   why.
 
-- **Code Hints** - Python is a dynamically-typed language, so there are situations wherein PySparkler cannot, with
-  100% accuracy, determine if the code is eligible for a transformation. In such situations, PySparkler adds code hints to
-  guide the end-user to make an appropriate change if needed. Code hints are comments that are added to the end of a
-  statement line to suggest changes that may be needed it to make it compatible with the latest Spark version.
+
   For example, if you are upgrading from Spark 2.4 to 3.0 and PySparkler detects `spark.sql.execution.arrow.enabled` is
   set to `True` in your code, it will add a code hint to the end of the line to suggest setting
   `spark.sql.execution.pandas.convertToArrowArraySafely` to `True` in case you want to raise errors in case of Integer
@@ -60,12 +57,12 @@ to upgrade your PySpark scripts. In the latest stable version it supports the fo
 
 | Migration                                       | Supported | Details                                                                                                                                      |
 |-------------------------------------------------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------|
-| Upgrading from PySpark 3.3 to 3.4               | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-3-to-3-4)               |
-| Upgrading from PySpark 3.2 to 3.3               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-2-to-3-3)               |
-| Upgrading from PySpark 3.1 to 3.2               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-1-to-3-2)               |
+| Upgrading from PySpark 3.3 to 3.4 (Coming soon)               | ❌         | Coming soon               |
+| Upgrading from PySpark 3.2 to 3.3               | ✅         | Coming Soon               |
+| Upgrading from PySpark 3.1 to 3.2               | ✅         | Coming Soon               |
 | Upgrading from PySpark 2.4 to 3.0               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-4-to-3-0)               |
 | Upgrading from PySpark 2.3 to 2.4               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-3-to-2-4)               |
-| Upgrading from PySpark 2.3.0 to 2.3.1 and above | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-3-0-to-2-3-1-and-above) |
+| Upgrading from PySpark 2.3.0 to 2.3.1 and above (Coming soon) (Coming soon) | ✅         | Link               |
 | Upgrading from PySpark 2.2 to 2.3               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-2-to-2-3)               |
 | Upgrading from PySpark 2.1 to 2.2               | ✅         | NA                                                                                                                                           |
 | Upgrading from PySpark 1.4 to 1.5               | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-1-4-to-1-5)               |
@@ -89,7 +86,7 @@ The tool supports the following features:
 The tool can upgrade a PySpark Python script. It takes the path to the script as input and upgrades it in place:
 
 ```bash
-pysparkler upgrade --input-file /path/to/script.py
+pysparkler upgrade --input-file /path/to/updated_script.py
 ```
 
 If you want to output the upgraded script to a different directory, you can use the `--output-file` flag:
@@ -111,7 +108,7 @@ Similar to upgrading python scripts, if you want to output the upgraded notebook
 the `--output-file` flag:
 
 ```bash
-pysparkler upgrade --input-file /path/to/notebook.ipynb --output-file /path/to/output.ipynb
+pysparkler upgrade --input-file /path/to/notebook.ipynb --output-file /path/to/updated_notebook.ipynb
 ```
 
 To change the output kernel name in the output Jupyter notebook, you can use the `--output-kernel` flag:
@@ -133,7 +130,7 @@ To facilitate this, it exposes a command `upgrade-sql` for users to perform this
 1. Re-template the upgraded SQL.
 1. Replace the old SQL with the upgraded SQL in the input script.
 
-In order to perform step #2 i.e. you can either echo the SQL statement and pipe it to the tool:
+In order to perform step #2 i.e. you can either echo /path/to/updated_sql.sql | pysparkler upgrade-sql
 
 ```bash
 echo "SELECT * FROM table" | pysparkler upgrade-sql
@@ -154,7 +151,7 @@ For both the above upgrade options, to run in dry mode, you can use the `--dry-r
 pysparkler upgrade --input-file /path/to/script.py --dry-run
 ```
 
-### Verbose Mode
+### Verbose mode
 
 For both the above upgrade options, to run in verbose mode, you can use the `--verbose` flag. This will print tool's
 input variables, the input file content, the output content, and a unified diff of the input and output content:
@@ -169,7 +166,7 @@ The tool uses a YAML config file to customize the code transformers. The config 
 `--config-yaml` flag:
 
 ```bash
-pysparkler --config-yaml /path/to/config.yaml upgrade --input-file /path/to/script.py
+pysparkler upgrade --input-file /path/to/script.py
 ```
 
 The config file is a YAML file with the following structure:
@@ -213,7 +210,7 @@ environment, you can run `poetry shell`. Poetry will open up a virtual environme
 
 ### IDE Setup
 
-To set up IDEA with Poetry:
+To set up IDE with Poetry:
 
 - Open up the Python project in IntelliJ
 - Make sure that you're on latest master (that includes Poetry)
@@ -271,10 +268,10 @@ whitespaces of the source code which is very important since we only want to mod
 
 ### How does it work?
 
-Using the codemod module of LibCST can simplify the process of writing a PySpark migration script, as it allows us to
+Using the LibCST module of LibCST can simplify the process of writing a PySpark migration script, as it allows us to
 write small, reusable transformers and chain them together to perform a sequence of transformations.
 
-### Why Transformer Codemod? Why not Visitor?
+### Why Transformer module? Why not Visitor?
 
 The main advantage of using a Transformer is that it allows for more fine-grained control over the transformation
 process. Transformer classes can be defined to apply specific transformations to specific parts of the codebase, and
