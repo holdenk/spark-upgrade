@@ -23,14 +23,14 @@ jobs:
 
       - name: Build and test
         run: |
-          gradle build --info
-          ./gradlew test --info
+          ./gradlew build
+          ./gradlew test
 
-      - name: Publish artifacts
-        run: ./gradlew publish
+      - name: Publish artifacts and deploy
+        run: ./gradlew publishArtifacts
 
       - name: Deploy to staging
-        run: ./deploy.sh staging
+        run: ./deploy.sh {{ environment }}
 
       - name: Deploy to production
         run: ./deploy.sh production
