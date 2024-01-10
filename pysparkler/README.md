@@ -82,11 +82,23 @@ The tool supports the following features:
 | Upgrade SQL                                   | ✅         |
 | Dry-run Mode                                  | ✅         |
 | Verbose Mode                                  | ✅         |
+| Running the upgrade in verbose mode will print the tool's input variables, the input file content, the output content, and a unified diff of the input and output content. Example command for running the upgrade in verbose mode:
+
+```bash
+pysparkler --verbose upgrade --input-file /path/to/script.py
+```
 | Customize code transformers using YAML config | ✅         |
 
 ### Upgrade PySpark Python script
 
 The tool can upgrade a PySpark Python script. It takes the path to the script as input and upgrades it in place:
+
+```bash
+To run the upgrade in verbose mode, use the following command:
+
+```bash
+pysparkler --verbose upgrade --input-file /path/to/script.py
+```
 
 ```bash
 To specify the input file and upgrade a PySpark Python script, use the following command:
@@ -270,6 +282,10 @@ make test PYTEST_ARGS="-v"
 ### Why LibCST?
 
 LibCST is a Python library that provides a concrete syntax tree (CST) for Python code. CST preserves even the
+
+```bash
+To run the upgrade in verbose mode, use the following command:
+```
 whitespaces of the source code which is very important since we only want to modify the code and not the formatting.
 
 ### How does it work?
@@ -279,7 +295,7 @@ write small, reusable transformers and chain them together to perform a sequence
 
 ### Why Transformer Codemod? Why not Visitor?
 
-The main advantage of using a Transformer is that it allows for more fine-grained-grained control over the transformation
+`The main advantage of using a Transformer is that it allows for more fine-grained control over the transformation`
 process. Transformer classes can be defined to apply specific transformations to specific parts of the codebase, and
 multiple Transformer classes can be combined to form a chain of transformations. This can be useful when dealing with
 complex codebases where different parts of the code require different transformations.
