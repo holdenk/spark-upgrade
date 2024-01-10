@@ -1,0 +1,36 @@
+name: GitHub Actions Workflow
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up JDK
+        uses: actions/setup-java@v2
+        with:
+          java-version: '11'
+
+      - name: Build and test
+        run: |
+          ./gradlew build
+          ./gradlew test
+
+      - name: Publish artifacts
+        run: ./gradlew publish
+
+      - name: Deploy to staging
+        run: ./deploy.sh staging
+
+      - name: Deploy to production
+        run: ./deploy.sh production
