@@ -3,15 +3,19 @@
 [![PyPI version](https://badge.fury.io/py/pysparkler.svg)](https://badge.fury.io/py/pysparkler)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-PySparkler is a tool that upgrades your PySpark scripts to latest Spark version. It is a command line tool that takes a
-PySpark script as input and outputs latest Spark version compatible script. It is written in Python and uses the
-[LibCST](https://github.com/Instagram/LibCST) module to parse the input script and generate the output script.
+PySparkler is a tool that upgrades your PySpark scripts to the latest Spark version. It is a command line tool that takes a PySpark script as input and outputs a script compatible with the latest Spark version. It is written in Python and uses the LibCST module to parse the input script and generate the output script.
 
 ## Installation
 
-We recommend installing PySparkler from PyPI using [pipx](https://pypa.github.io/pipx) which allows us to install and
-run Python Applications in Isolated Environments. To install pipx on your system, follow the instructions
-[here](https://pypa.github.io/pipx/installation/#install-pipx). Once pipx is installed, you can install PySparkler using:
+To install PySparkler, follow these steps:
+
+1. Ensure you have Python 3.x installed on your system.
+2. Install PySparkler using pip:
+```bash
+pip install pysparkler
+```
+
+That's it! You are now ready to use PySparkler.
 
 ```bash
 pipx install pysparkler
@@ -71,7 +75,7 @@ to upgrade your PySpark scripts. In the latest stable version it supports the fo
 | Upgrading from PySpark 1.4 to 1.5               | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-1-4-to-1-5)               |
 | Upgrading from PySpark 1.0-1.2 to 1.3           | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-1-0-1-2-to-1-3)           |
 
-## Features Supported
+The tool supports the following features:
 
 The tool supports the following features:
 
@@ -264,7 +268,19 @@ make test PYTEST_ARGS="-v"
 
 ## Architecture
 
-### Why LibCST?
+### How does it work?
+
+Using the codemod module of LibCST can simplify the process of writing a PySpark migration script, as it allows us to
+write small, reusable transformers and chain them together to perform a sequence of transformations.
+
+### Why Transformer Codemod? Why not Visitor?
+
+The main advantage of using a Transformer is that it allows for more fine-grained control over the transformation
+process. Transformer classes can be defined to apply specific transformations to specific parts of the codebase, and
+multiple Transformer classes can be combined to form a chain of transformations. This can be useful when dealing with
+complex codebases where different parts of the code require different transformations.
+
+More on this can be found [here](https://libcst.readthedocs.io/en/latest/tutorial.html#Build-Visitor-or-Transformer).
 
 LibCST is a Python library that provides a concrete syntax tree (CST) for Python code. CST preserves even the
 whitespaces of the source code which is very important since we only want to modify the code and not the formatting.
