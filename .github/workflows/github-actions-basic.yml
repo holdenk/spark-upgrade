@@ -61,7 +61,7 @@ jobs:
     - name: PySparkler - Make Lint
       run: |
         cd pysparkler
-        make lint
+        flake8 .
     - name: PySparkler - Make Test
       run: |
         cd pysparkler
