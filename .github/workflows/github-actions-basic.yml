@@ -41,7 +41,8 @@ jobs:
       run: export PATH=`python3 -m site --user-base`/bin:$PATH
     - name: SQL Module - Lint Checks
       run: flake8 --max-line-length 100 --ignore=E129,W504 sql/ --ignore=E129,W504 sql/ --ignore=E129,W504
-    - name:  SQL Module - Install and Test
+    - name:  cd sql; pip install -e sql/
+    pytest sql/
       run: cd sql; pip install -e .; pytest .
     # Run the scala tests.
     # We are exctracting the dynamic version from something like [info] 0.1.9+18-ddfaf3e6-SNAPSHOT (non-snapshots will not have +...)
