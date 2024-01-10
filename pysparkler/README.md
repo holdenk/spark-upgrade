@@ -60,7 +60,7 @@ to upgrade your PySpark scripts. In the latest stable version it supports the fo
 
 | Migration                                       | Supported | Details                                                                                                                                      |
 |-------------------------------------------------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------|
-| Upgrading from PySpark 3.3 to 3.4               | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-3-to-3-4)               |
+| Feature                                       | Supported 
 | Upgrading from PySpark 3.2 to 3.3               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-2-to-3-3)               |
 | Upgrading from PySpark 3.1 to 3.2               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-1-to-3-2)               |
 | Upgrading from PySpark 2.4 to 3.0               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-4-to-3-0)               |
@@ -77,7 +77,7 @@ The tool supports the following features:
 
 | Feature                                       | Supported |
 |-----------------------------------------------|-----------|
-| Upgrade PySpark Python script                 | ✅         |
+| Feature                                       | Supported |
 | Upgrade PySpark Jupyter Notebook              | ✅         |
 | Upgrade SQL                                   | ✅         |
 | Dry-run Mode                                  | ✅         |
@@ -100,15 +100,13 @@ pysparkler upgrade --input-file /path/to/script.py --output-file /path/to/output
 
 ### Upgrade PySpark Jupyter Notebook
 
-The tool can upgrade a PySpark Jupyter Notebook to latest Spark version. It takes the path to the notebook as input and
-upgrades it in place:
+Upgrade PySpark Jupyter Notebook              | ✅         
 
 ```bash
 pysparkler upgrade --input-file /path/to/notebook.ipynb
 ```
 
-Similar to upgrading python scripts, if you want to output the upgraded notebook to a different directory, you can use
-the `--output-file` flag:
+If you want to output the upgraded notebook to a different directory, you can use the `--output-file` flag:
 
 ```bash
 pysparkler upgrade --input-file /path/to/notebook.ipynb --output-file /path/to/output.ipynb
