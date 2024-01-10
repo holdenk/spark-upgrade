@@ -12,16 +12,13 @@ class ScalaTestExtendsFix
   override val isRewrite = true
 
   override def fix(implicit doc: SyntacticDocument): Patch = {
-    println("Magicz!")
-    doc.tree.collect { case v: Type.Name =>
-      println(v)
-      println(v)
-      if (v.toString == "FunSuiteLike") {
-        Patch.replaceTree(v, "FunSuiteLike")
-      } else {
-        println(s"No change to $v")
-        Patch.empty
-      }
-    }.asPatch
-  }
+    override def fix(implicit doc: SyntacticDocument): Patch = {
+      doc.tree.collect { case v: Type.Name =>
+        if (v.toString == "FunSuiteLike") {
+          Patch.replaceTree(v, "FunSuiteLike")
+        } else {
+          Patch.empty
+        }
+      }.asPatch
+    }
 }
