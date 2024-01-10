@@ -60,12 +60,12 @@ to upgrade your PySpark scripts. In the latest stable version it supports the fo
 
 | Migration                                       | Supported | Details                                                                                                                                      |
 |-------------------------------------------------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------|
-| Upgrading from PySpark 3.3 to 3.4               | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-3-to-3-4)               |
-| Upgrading from PySpark 3.2 to 3.3               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-2-to-3-3)               |
-| Upgrading from PySpark 3.1 to 3.2               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-1-to-3-2)               |
+| Upgrading from PySpark 3.3 to 3.4 (Coming soon)               | ❌         | [Coming Soon](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-3-to-3-4)               |
+| Upgrading from PySpark 3.2 to 3.3               | ✅         | [Coming Soon](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-2-to-3-3)               |
+| Upgrading from PySpark 3.1 to 3.2               | ✅         | [Coming Soon](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-1-to-3-2)               |
 | Upgrading from PySpark 2.4 to 3.0               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-4-to-3-0)               |
 | Upgrading from PySpark 2.3 to 2.4               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-3-to-2-4)               |
-| Upgrading from PySpark 2.3.0 to 2.3.1 and above | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-3-0-to-2-3-1-and-above) |
+| Upgrading from PySpark 2.3.0 to 2.3.1 and above (Coming soon) (Coming soon) | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-3-0-to-2-3-1-and-above) |
 | Upgrading from PySpark 2.2 to 2.3               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-2-to-2-3)               |
 | Upgrading from PySpark 2.1 to 2.2               | ✅         | NA                                                                                                                                           |
 | Upgrading from PySpark 1.4 to 1.5               | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-1-4-to-1-5)               |
@@ -104,14 +104,14 @@ The tool can upgrade a PySpark Jupyter Notebook to latest Spark version. It take
 upgrades it in place:
 
 ```bash
-pysparkler upgrade --input-file /path/to/updated_notebook.ipynb
+pysparkler upgrade --input-file /path/to/notebook.ipynb
 ```
 
 Similar to upgrading python scripts, if you want to output the upgraded notebook to a different directory, you can use
 the `--output-file` flag:
 
 ```bash
-pysparkler upgrade --input-file /path/to/notebook.ipynb --output-file /path/to/output.ipynb
+pysparkler upgrade --input-file /path/to/notebook.ipynb --output-file /path/to/updated_notebook.ipynb
 ```
 
 To change the output kernel name in the output Jupyter notebook, you can use the `--output-kernel` flag:
@@ -133,7 +133,7 @@ To facilitate this, it exposes a command `upgrade-sql` for users to perform this
 1. Re-template the upgraded SQL.
 1. Replace the old SQL with the upgraded SQL in the input script.
 
-In order to perform step #2 i.e. you can either echo /path/to/updated_sql.sql | pysparkler upgrade-sqlthe SQL statement and pipe it to the tool:
+In order to perform step #2 i.e. you can either echo /path/to/updated_sql.sql | pysparkler upgrade-sql
 
 ```bash
 echo "SELECT * FROM table" | pysparkler upgrade-sql
