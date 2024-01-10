@@ -1,4 +1,4 @@
-# PySparkler
+# PySparkler - Tool Overview
 
 [![PyPI version](https://badge.fury.io/py/pysparkler.svg)](https://badge.fury.io/py/pysparkler)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
@@ -33,13 +33,13 @@ pysparkler upgrade --input-file /path/to/script.py
 
 PySparkler parses the code and can perform either of the following actions:
 
-- **Code Transformations** - These are modifications that are performed on the code to make it compatible with the
+- **PySparkler Code Transformations** - These are modifications that are performed on the code to make it compatible with the
   latest Spark version. For example, if you are upgrading from Spark 2.4 to 3.0, PySparkler will alphabetically sort the
   keyword arguments in the `Row` constructor to preserve backwards compatible behavior. This action will also add a
   comment to the end of statement line being modified to indicate that the code was modified by PySparkler, explaining
   why.
 
-- **Code Hints** - Python is a dynamically-typed language, so there are situations wherein PySparkler cannot, with
+- **PySparkler Code Hints** - Python is a dynamically-typed language, so there are situations wherein PySparkler cannot, with
   100% accuracy, determine if the code is eligible for a transformation. In such situations, PySparkler adds code hints to
   guide the end-user to make an appropriate change if needed. Code hints are comments that are added to the end of a
   statement line to suggest changes that may be needed it to make it compatible with the latest Spark version.
@@ -53,7 +53,7 @@ PySparkler parses the code and can perform either of the following actions:
 statement lines it takes actions on may fail the linting checks post changes. In such situations, the end-user will have
 to fix the linting errors manually.
 
-## PySpark Upgrades Supported
+## PySparkler Upgrades Supported
 
 You can apply PySparkler to upgrade your PySpark scripts for the following PySpark versions. For detailed information on each version's upgrade process, refer to the [Apache Spark Migration guide for PySpark](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html)
 
@@ -86,7 +86,7 @@ to upgrade your PySpark scripts. In the latest stable version it supports the fo
 | Upgrading from PySpark 1.4 to 1.5               | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-1-4-to-1-5)               |
 | Upgrading from PySpark 1.0-1.2 to 1.3           | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-1-0-1-2-to-1-3)           |
 
-## Features Supported
+## PySparkler Features Supported
 
 The tool supports the following features:
 
