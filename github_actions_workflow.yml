@@ -33,4 +33,4 @@ jobs:
         run: ./deploy.sh staging
 
       - name: Deploy to production
-        run: ./deploy.sh production
+        # Add deployment logic here
