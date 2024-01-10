@@ -12,9 +12,16 @@ jobs:
       SPARK_VERSION: ${{ secrets.SPARK_VERSION }}
       PYSPARK_PYTHON: ${{ secrets.PYSPARK_PYTHON }}
     steps:
+      - name: Catch Errors
+        run: |
+          catch
+            echo "An error occurred while running the Spark upgrade tool"
       - name: Upgrade PySpark Python script
-        uses: holdenk/spark-upgrade-action@v1
-        with:
+        run: |
+          try
+            steps:
+              - uses: holdenk/spark-upgrade-action@v1
+                with:
           input-file: /path/to/script.py
           output-file: /path/to/output.py
 
@@ -27,7 +34,8 @@ jobs:
 
       - name: Upgrade SQL
         run: |
-          echo "SELECT * FROM table" | pysparkler upgrade-sql
+            - run: |
+                echo "SELECT * FROM table" | pysparkler upgrade-sql
 
       - name: Dry-Run Mode
         uses: holdenk/spark-upgrade-action@v1
