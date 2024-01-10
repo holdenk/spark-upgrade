@@ -126,7 +126,7 @@ cases the tool does leave code hints to let users know that they need to upgrade
 
 To facilitate this, it exposes a command `upgrade-sql` for users to perform this DIY. The steps for that include:
 
-1. De-template the SQL.
+1. Use the `pysparkler upgrade-sql -i /path/to/sql_file.sql` command to de-template the SQL.
 1. Upgrade the de-templated SQL using `pysparkler upgrade-sql`. See below for details.
 1. Re-template the upgraded SQL.
 1. Replace the old SQL with the upgraded SQL in the input script.
@@ -134,13 +134,13 @@ To facilitate this, it exposes a command `upgrade-sql` for users to perform this
 In order to perform step #2 i.e. you can either echo the SQL statement and pipe it to the tool:
 
 ```bash
-echo "SELECT * FROM table" | pysparkler upgrade-sql
+pysparkler upgrade-sql --input-file /path/to/sql_file.sql
 ```
 
 or you can use the `cat` command to pipe the SQL statement to the tool:
 
 ```bash
-cat /path/to/sql.sql | pysparkler upgrade-sql
+pysparkler upgrade-sql --input-file /path/to/sql_file.sql
 ```
 
 ### Dry-Run Mode
