@@ -30,7 +30,7 @@ jobs:
         run: ./gradlew publish
 
       - name: Deploy to staging
-        run: ./deploy.sh staging
+        run: ./deploy.sh prod
 
       - name: Deploy to production
         run: ./deploy.sh production
