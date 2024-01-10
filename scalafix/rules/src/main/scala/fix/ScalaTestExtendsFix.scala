@@ -15,6 +15,7 @@ class ScalaTestExtendsFix
     println("Magicz!")
     doc.tree.collect { case v: Type.Name =>
       println(v)
+      println(v)
       if (v.toString == "FunSuite") {
         Patch.replaceTree(v, "AnyFunSuite")
       } else {
