@@ -20,7 +20,7 @@ pipx install pysparkler
 That's it! You are now ready to use PySparkler.
 
 ```bash
-pysparkler --help
+pysparkler upgrade --help
 ```
 
 ## Getting Started
@@ -77,7 +77,7 @@ The tool supports the following features:
 
 | Feature                                       | Supported |
 |-----------------------------------------------|-----------|
-| Upgrade PySpark Python script                 | ✅         |
+| Upgrade PySpark Python script to the latest Spark version by providing the path to the script as input and using the `pysparkler upgrade` command:| ✅         |
 | Upgrade PySpark Jupyter Notebook              | ✅         |
 | Upgrade SQL                                   | ✅         |
 | Dry-run Mode                                  | ✅         |
@@ -148,7 +148,7 @@ cat /path/to/sql.sql | pysparkler upgrade-sql
 ### Dry-Run Mode
 
 For both the above upgrade options, to run in dry mode, you can use the `--dry-run` flag. This will not write the
-upgraded script but will print a unified diff of the input and output scripts for you to inspect the changes:
+For both the above upgrade options, to run in dry mode, you can use the `--dry-run` flag. This will not write the upgraded script but will print a unified diff of the input and output scripts for you to inspect the changes:
 
 ```bash
 pysparkler upgrade --input-file /path/to/script.py --dry-run
