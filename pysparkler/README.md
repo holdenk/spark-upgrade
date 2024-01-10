@@ -13,7 +13,7 @@ PySpark script as input and outputs latest Spark version compatible script. It i
 
 ## Troubleshooting Tips
 
-When experiencing errors during the Spark upgrade process, consider the following troubleshooting tips:
+When experiencing errors during the Spark upgrade or GitHub Actions failures, consider the following troubleshooting tips:
 - Validate the compatibility of third-party dependencies and libraries with the latest Spark version.
 - Check for updated third-party packages and dependencies that may impact the upgrade process.
 - Review the project setup, environment configurations, and necessary dependencies to ensure seamless integration with the upgraded Spark version.
@@ -290,9 +290,11 @@ write small, reusable transformers and chain them together to perform a sequence
 
 The main advantage of using a Transformer is that it allows for more fine-grained control over the transformation
 process. Transformer classes can be defined to apply specific transformations to specific parts of the codebase, and
-The next step is to thoroughly test the upgraded scripts and notebooks to ensure their compatibility with the latest Spark version. This includes checking for errors, performance issues, and unexpected behavior. It's recommended to run comprehensive test suites, identify, and address any issues that may arise.
+The next step is to thoroughly test the upgraded scripts, notebooks, and GitHub Actions to ensure their compatibility with the latest Spark version, as well as validate GitHub Actions configuration, check for errors in workflow files, and review the GitHub Actions logs. This includes checking for errors, performance issues, and unexpected behavior. It's recommended to run comprehensive test suites, identify, and address any issues that may arise.
 
-When handling errors related to PySpark upgrade, consider the following best practices:
+When handling errors related to PySpark upgrade or GitHub Actions failures, consider the following best practices:
+- [Validate GitHub Actions configuration](https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions), [check for errors in workflow files](https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#about-yaml-syntax-for-workflows), and [review the GitHub Actions logs](https://docs.github.com/en/actions/monitoring-and-troubleshooting-workflows) to identify and address any issues.
+- Implement try-catch blocks to handle exceptions and errors gracefully.
 - Implement try-catch blocks to handle exceptions and errors gracefully.
 - Use descriptive error messages and logging statements to provide insights into the root cause of issues.
 - Document known issues and maintain up-to-date project documentation to facilitate troubleshooting and resolution.
