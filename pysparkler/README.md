@@ -233,8 +233,7 @@ pysparkler --verbose upgrade --input-file /path/to/script.py
 
 ### Customize code transformers using YAML config
 
-The tool uses a YAML config file to customize the code transformers. The config file can be passed using the
-`--config-yaml` flag:
+The tool uses a YAML config file to customize the code transformers for specific upgrade scenarios in GitHub Actions. The config file can be used to define and configure code transformers for specific upgrade scenarios in GitHub Actions.
 
 ```bash
 pysparkler --config-yaml /path/to/config.yaml upgrade --input-file /path/to/script.py
