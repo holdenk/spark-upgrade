@@ -65,7 +65,10 @@ jobs:
     - name: PySparkler - Make Test
       run: |
         cd pysparkler
-        make test
+        pytest .
+      run: |
+        cd pysparkler
+        pytest .
     - name: Cache tgzs
       id: cache-tgz
       uses: actions/cache@v3
