@@ -1,0 +1,48 @@
+name: Spark Upgrade
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  spark-upgrade:
+    runs-on: ubuntu-latest
+    env:
+      SPARK_VERSION: ${{ secrets.SPARK_VERSION }}
+      PYSPARK_PYTHON: ${{ secrets.PYSPARK_PYTHON }}
+    steps:
+      - name: Upgrade PySpark Python script
+        uses: holdenk/spark-upgrade-action@v1
+        with:
+          input-file: /path/to/script.py
+          output-file: /path/to/output.py
+
+      - name: Upgrade PySpark Jupyter Notebook
+        uses: holdenk/spark-upgrade-action@v1
+        with:
+          input-file: /path/to/notebook.ipynb
+          output-file: /path/to/output.ipynb
+          output-kernel: spark33-python3
+
+      - name: Upgrade SQL
+        run: |
+          echo "SELECT * FROM table" | pysparkler upgrade-sql
+
+      - name: Dry-Run Mode
+        uses: holdenk/spark-upgrade-action@v1
+        with:
+          input-file: /path/to/script.py
+          dry-run: true
+
+      - name: Verbose Mode
+        uses: holdenk/spark-upgrade-action@v1
+        with:
+          input-file: /path/to/script.py
+          verbose: true
+
+      - name: Customize code transformers using YAML config
+        uses: holdenk/spark-upgrade-action@v1
+        with:
+          input-file: /path/to/script.py
+          config-yaml: /path/to/config.yaml
