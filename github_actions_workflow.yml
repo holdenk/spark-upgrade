@@ -33,4 +33,7 @@ jobs:
         run: ./deploy.sh staging
 
       - name: Deploy to production
-        run: ./deploy.sh production
+        uses: actions/deploy@v2
+        with:
+          script: |
+            ./deploy.sh production
