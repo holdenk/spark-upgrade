@@ -1,0 +1,16 @@
+# Import the necessary module
+import os
+
+# Create a new file named "error_logs.txt"
+file_name = "error_logs.txt"
+
+# Open the file in write mode
+with open(file_name, "w") as file:
+    # Copy and paste the error logs into the file
+    error_logs = """
+    <paste the error logs here>
+    """
+    file.write(error_logs)
+
+# Close the file
+file.close()
