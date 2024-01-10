@@ -3,10 +3,10 @@ name: GitHub Actions Workflow
 on:
   push:
     branches:
-      - main
+      - branch-name
   pull_request:
     branches:
-      - main
+      - branch-name
 
 jobs:
   build:
