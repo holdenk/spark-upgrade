@@ -1,0 +1,18 @@
+# Import necessary modules or libraries for file handling
+
+# Create a new file named github_actions_error_logs.txt
+file_path = "github_actions_error_logs.txt"
+file = open(file_path, "w")
+
+# Write the error logs to the file
+error_logs = """
+<error_log>
+Error log 1
+Error log 2
+Error log 3
+</error_log>
+"""
+file.write(error_logs)
+
+# Close the file
+file.close()
