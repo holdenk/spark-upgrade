@@ -23,14 +23,19 @@ jobs:
 
       - name: Build and test
         run: |
-          gradle build --info
-          gradle test --info
+          gradle build --info --stacktrace
+          gradle test --info --stacktrace
 
-      - name: Publish artifacts
-        run: ./gradlew publish
+      - name: Save error logs
+        run: |
+          echo "Error logs:"
+          cat build/reports/tests/test/index.html >> github_actions_error_logs.txt
 
-      - name: Deploy to staging
-        run: ./deploy.sh staging
+      # - name: Publish artifacts
+  #         run: ./gradlew publish
 
-      - name: Deploy to production
-        # Add deployment logic here
+      # - name: Deploy to staging
+  #         run: ./deploy.sh staging
+
+      # - name: Deploy to production
+  #   # Add deployment logic here
