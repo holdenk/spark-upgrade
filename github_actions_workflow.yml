@@ -23,8 +23,9 @@ jobs:
 
       - name: Build and test
         run: |
-          ./gradlew build
-          ./gradlew clean test
+          npm install
+          npm run build
+          npm test
 
       - name: Publish artifacts
         run: ./gradlew publish
