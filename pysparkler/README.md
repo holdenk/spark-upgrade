@@ -29,7 +29,23 @@ pysparkler --help
 
 ## Getting Started
 
-Provide the path to the script you want to upgrade:
+### Detailed Instructions for PySparkler Upgrade Command
+
+To upgrade a PySpark script using the `pysparkler upgrade` command, follow these detailed steps:
+
+1. Provide the path to the script you want to upgrade:
+
+   ```bash
+   pysparkler upgrade --input-file /path/to/script.py
+   ```
+
+2. Review the upgraded code for any linting errors or code hints provided by PySparkler. You may need to manually fix any identified issues.
+
+3. Use the `--output-file` flag to specify an output directory and file name if you want to save the upgraded script to a different location:
+
+   ```bash
+   pysparkler upgrade --input-file /path/to/script.py --output-file /path/to/output.py
+   ```
 
 ```bash
 pysparkler upgrade --input-file /path/to/script.py
@@ -72,7 +88,16 @@ to upgrade your PySpark scripts. In the latest stable version it supports the fo
 | Upgrading from PySpark 2.3.0 to 2.3.1 and above | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-3-0-to-2-3-1-and-above) |
 | Upgrading from PySpark 2.2 to 2.3               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-2-to-2-3)               |
 | Upgrading from PySpark 2.1 to 2.2               | ✅         | NA                                                                                                                                           |
-| Upgrading from PySpark 1.4 to 1.5               | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-1-4-to-1-5)               |
+| Upgrading from PySpark 3.3 to 3.4               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-3-to-3-4)               |
+| Upgrading from PySpark 3.2 to 3.3               | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-2-to-3-3)               |
+| Upgrading from PySpark 3.1 to 3.2               | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-1-to-3-2)               |
+| Upgrading from PySpark 3.0 to 3.1               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-0-to-3-1)               |
+| Upgrading from PySpark 2.4 to 3.0               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-4-to-3-0)               |
+| Upgrading from PySpark 2.3 to 2.4               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-3-to-2-4)               |
+| Upgrading from PySpark 2.3.0 to 2.3.1 and above | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-3-0-to-2-3-1-and-above) |
+| Upgrading from PySpark 2.2 to 2.3               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-2-to-2-3)               |
+| Upgrading from PySpark 2.1 to 2.2               | ❌         | NA                                                                                                                                        |
+| Upgrading from PySpark 1.4 to 1.5               | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-1-4-to-1-5)               |               | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-1-4-to-1-5)               |
 | Upgrading from PySpark 1.0-1.2 to 1.3           | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-1-0-1-2-to-1-3)           |
 
 The tool supports the following features:
@@ -90,7 +115,19 @@ The tool supports the following features:
 
 ### Upgrade PySpark Python script
 
-The tool can upgrade a PySpark Python script. It takes the path to the script as input and upgrades it in place:
+### Handling GitHub Actions Failures
+
+In the event of GitHub Actions failure, follow these steps to troubleshoot and resolve common issues:
+
+1. Review the error logs in GitHub Actions to identify the cause of the failure.
+
+2. Check for changes in the workflow files, dependencies, or environment configuration that may have contributed to the failure.
+
+3. Verify the GitHub Actions environment setup, including versions of PySpark and other required dependencies.
+
+4. Search for relevant error messages in GitHub's official documentation or community forums to find potential solutions.
+
+5. Consider reaching out to the PySparkler community or submitting an issue in the GitHub repository for further assistance if the issue persists.. It takes the path to the script as input and upgrades it in place:
 
 ```bash
 pysparkler upgrade --input-file /path/to/script.py
@@ -237,7 +274,7 @@ pyproject.toml to indicate stale dependencies.
 
 ### Linting
 
-`pre-commit` is used for autoformatting and linting:
+`pre-commit` is used for autoformatting, linting, and pre-commit checks:
 
 ```bash
 make lint
@@ -246,7 +283,10 @@ make lint
 Pre-commit will automatically fix the violations such as import orders, formatting etc. Pylint errors you need to fix
 yourself.
 
-In contrast to the name suggest, it doesn't run the checks on the commit. If this is something that you like, you can
+The `pre-commit` tool does not run the checks on the commit, but you can
+
+- Set up pre-commit checks by running `pre-commit install`.
+- Update integrations to the latest version using `pre-commit autoupdate` to check for newer versions of tools such as black, mypy, isort, and update the yaml.
 set this up by running `pre-commit install`.
 
 You can bump the integrations to the latest version using `pre-commit autoupdate`. This will check if there is a newer
@@ -287,7 +327,7 @@ whitespaces of the source code which is very important since we only want to mod
 
 ### How does it work?
 
-Using the codemod module of LibCST can simplify the process of writing a PySpark migration script, as it allows us to
+Using the codemod module of LibCST can simplify the process of writing a PySpark migration script. It allows us to write small, reusable transformers and chain them together to perform a sequence of transformations.
 write small, reusable transformers and chain them together to perform a sequence of transformations.
 
 ### Why Transformer Codemod? Why not Visitor?
