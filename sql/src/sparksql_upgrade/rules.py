@@ -19,11 +19,6 @@ from sqlfluff.core.rules import (
     RuleContext,
 )
 from sqlfluff.core.rules.crawlers import SegmentSeekerCrawler
-from sqlfluff.core.rules.doc_decorators import (
-    document_configuration,
-    document_fix_compatible,
-    document_groups,
-)
 from sqlfluff.utils.functional import FunctionalContext, sp
 
 
@@ -57,9 +52,6 @@ def get_configs_info() -> dict:
     }
 
 
-@document_groups
-@document_fix_compatible
-@document_configuration
 class Rule_SPARKSQLCAST_L001(BaseRule):
     """Spark 3.0 cast as int on strings will fail.
 
@@ -86,6 +78,7 @@ class Rule_SPARKSQLCAST_L001(BaseRule):
 
     groups = ("all",)
     crawl_behaviour = SegmentSeekerCrawler({"function"})
+    is_fix_compatible = True
 
     def _eval(self, context: RuleContext) -> Optional[LintResult]:
         """Check integer casts."""
@@ -99,6 +92,8 @@ class Rule_SPARKSQLCAST_L001(BaseRule):
         raw_function_name = function_name_id_seg.raw.upper().strip()
         function_name = raw_function_name.upper().strip()
         bracketed_segments = children.first(sp.is_type("bracketed"))
+        if not bracketed_segments:
+            return None
         bracketed = bracketed_segments[0]
 
         # Is this a cast function call
@@ -126,19 +121,17 @@ class Rule_SPARKSQLCAST_L001(BaseRule):
         return None
 
 
-@document_groups
-@document_fix_compatible
-@document_configuration
 class Rule_FORMATSTRONEINDEX_L004(BaseRule):
     """Spark 3.3 Format strings are one indexed.
 
 
     Previously on JDK8 format strings were still one indexed, but zero was treated as one.
-    One JDK17 an exception was thrown.
+    On JDK17 an exception was thrown.
     """
 
     groups = ("all",)
     crawl_behaviour = SegmentSeekerCrawler({"function"})
+    is_fix_compatible = True
 
     def _eval(self, context: RuleContext) -> Optional[LintResult]:
         """Check for invalid format strs"""
@@ -152,6 +145,8 @@ class Rule_FORMATSTRONEINDEX_L004(BaseRule):
         raw_function_name = function_name_id_seg.raw.upper().strip()
         function_name = raw_function_name.upper().strip()
         bracketed_segments = children.first(sp.is_type("bracketed"))
+        if not bracketed_segments:
+            return None
         bracketed = bracketed_segments[0]
 
         # Is this a cast function call
@@ -179,9 +174,6 @@ class Rule_FORMATSTRONEINDEX_L004(BaseRule):
         return None
 
 
-@document_groups
-@document_fix_compatible
-@document_configuration
 class Rule_NOCHARS_L003(BaseRule):
     """Spark 3.0 No longer supports CHAR type in non-Hive tables.
 
@@ -191,6 +183,7 @@ class Rule_NOCHARS_L003(BaseRule):
 
     groups = ("all",)
     crawl_behaviour = SegmentSeekerCrawler({"primitive_type"})
+    is_fix_compatible = True
 
     def _eval(self, context: RuleContext) -> Optional[LintResult]:
         """Check for char types."""
@@ -208,9 +201,6 @@ class Rule_NOCHARS_L003(BaseRule):
             return None
 
 
-@document_groups
-@document_fix_compatible
-@document_configuration
 class Rule_RESERVEDROPERTIES_L002(BaseRule):
     """Spark 3.0 Reserves some table properties
 
@@ -224,6 +214,7 @@ class Rule_RESERVEDROPERTIES_L002(BaseRule):
     # TODO -- Also look at SET calls once we fix SET DBPROPS in SQLFLUFF grammar.
     crawl_behaviour = SegmentSeekerCrawler({"property_name_identifier"})
     reserved = {"provider", "location", "owner"}
+    is_fix_compatible = True
 
     def _eval(self, context: RuleContext) -> Optional[LintResult]:
         """Check for reserved properties being configured."""
@@ -379,6 +370,7 @@ class Rule_SPARKSQL_L004(BaseRule):
 
     groups = ("all",)
     crawl_behaviour = SegmentSeekerCrawler({"function"})
+    is_fix_compatible = True
 
     def _eval(self, context: RuleContext) -> Optional[LintResult]:
         functional_context = FunctionalContext(context)
@@ -391,6 +383,8 @@ class Rule_SPARKSQL_L004(BaseRule):
         raw_function_name = function_name_id_seg.raw.upper().strip()
         function_name = raw_function_name.upper().strip()
         bracketed_segments = children.first(sp.is_type("bracketed"))
+        if not bracketed_segments:
+            return None
         bracketed = bracketed_segments[0]
 
         if function_name == "EXTRACT":
@@ -438,7 +432,7 @@ class Rule_SPARKSQL_L005(BaseRule):
 
     groups = ("all",)
     crawl_behaviour = SegmentSeekerCrawler({"function"})
-    # is_fix_compatible = True
+    is_fix_compatible = True
 
     def _eval(self, context: RuleContext) -> Optional[LintResult]:
         functional_context = FunctionalContext(context)

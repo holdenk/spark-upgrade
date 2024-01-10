@@ -23,7 +23,7 @@ setup(
     install_requires="sqlfluff==2.3.2",
     entry_points={
         "sqlfluff": [
-            "{plugin_logical_name} = {plugin_root_module}.rules".format(
+            "{plugin_logical_name} = {plugin_root_module}.plugin".format(
                 plugin_logical_name=PLUGIN_LOGICAL_NAME,
                 plugin_root_module=PLUGIN_ROOT_MODULE,
             )
