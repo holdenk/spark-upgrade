@@ -240,7 +240,7 @@ pyproject.toml to indicate stale dependencies.
 `pre-commit` is used for autoformatting and linting:
 
 ```bash
-make lint
+pre-commit run --all-files
 ```
 
 Pre-commit will automatically fix the violations such as import orders, formatting etc. Pylint errors you need to fix
