@@ -241,6 +241,14 @@ pysparkler --config-yaml /path/to/config.yaml upgrade --input-file /path/to/scri
 
 ### Integrating PySparkler with GitHub Actions and Limitations
 
+When contributing to PySparkler in the context of GitHub Actions, follow these guidelines:
+
+1. Validate GitHub Actions configuration, check for errors in workflow files, and review the GitHub Actions logs. Implement try-catch blocks to handle exceptions and errors gracefully.
+2. Use descriptive error messages and logging statements to provide insights into the root cause of issues. Document known issues and maintain up-to-date project documentation to facilitate troubleshooting and resolution.
+3. Make sure the necessary project files, imports, and entity names are compatible and well-maintained for the GitHub Actions integration.
+4. To submit bug reports, feature requests, and pull requests related to GitHub Actions integration, please follow the standard contribution guidelines outlined in the [CONTRIBUTING.md](link-to-CONTRIBUTING.md) file.
+5. Before making a contribution, set up your development environment and ensure compatibility by running tests for GitHub Actions. 
+
 The config file is a YAML file with the following structure:
 
 ```yaml
@@ -252,7 +260,9 @@ pysparkler:
     enabled: false # Disable the code transformer
 ```
 
+## Setting up Development Environment for GitHub Actions Compatibility and Running Tests
 ## Contributing
+## Submitting Bug Reports, Feature Requests, and Pull Requests
 
 For the development, Poetry is used for packing and dependency management. You can install this using:
 
@@ -346,8 +356,18 @@ write small, reusable transformers and chain them together to perform a sequence
 ### Why Transformer Codemod? Why not Visitor?
 
 ## Use Cases of PySparkler in GitHub Actions Workflows
-## Integrating PySparkler with GitHub Actions and Limitations
-## Integrating PySparkler with GitHub Actions and Limitations
+
+When contributing to PySparkler in the context of GitHub Actions, follow these best practices:
+
+1. Validate GitHub Actions configuration, check for errors in workflow files, and review the GitHub Actions logs and address any issues that may arise. Implement try-catch blocks to handle exceptions and errors gracefully. Use descriptive error messages and logging statements to provide insights into the root cause of issues. Document known issues and maintain up-to-date project documentation to facilitate troubleshooting and resolution.
+2. Implement try-catch blocks to handle exceptions and errors gracefully.
+3. Use descriptive error messages and logging statements to provide insights into the root cause of issues.
+4. Document known issues and maintain up-to-date project documentation to facilitate troubleshooting and resolution.
+5. When handling errors related to PySpark upgrade or GitHub Actions failures, consider the following best practices and error handling strategies:
+   - [Validate GitHub Actions configuration](https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions), [check for errors in workflow files](https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#about-yaml-syntax-for-workflows), and [review the GitHub Actions logs](https://docs.github.com/en/actions/monitoring-and-troubleshooting-workflows) to identify and address any issues.
+   - Implement try-catch blocks to handle exceptions and errors gracefully.
+6. Use descriptive error messages and logging statements to provide insights into the root cause of issues.
+7. Document known issues and maintain up-to-date project documentation to facilitate troubleshooting and resolution.
 
 To integrate PySparkler with GitHub Actions, follow these best practices:
 - Validate GitHub Actions configuration, check for errors in workflow files, and review the GitHub Actions logs and address any issues that may arise. Implement try-catch blocks to handle exceptions and errors gracefully. Use descriptive error messages and logging statements to provide insights into the root cause of issues. Document known issues and maintain up-to-date project documentation to facilitate troubleshooting and resolution.
