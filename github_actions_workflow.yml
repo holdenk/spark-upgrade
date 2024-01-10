@@ -10,7 +10,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
       - name: Checkout repository
@@ -21,10 +21,17 @@ jobs:
         with:
           java-version: '11'
 
+      - name: Set up JDK
+        uses: actions/setup-java@v2
+        with:
+          java-version: '11'
+      - name: Install Gradle
+        run: sudo apt install gradle
+            - name: Install Gradle
+        run: sudo apt install gradle
       - name: Build and test
-        run: |
-          gradle build --info
-          ./gradlew test --info
+        run: gradle build --info
+$        ./gradlew test --info
 
       - name: Publish artifacts
         run: ./gradlew publish
