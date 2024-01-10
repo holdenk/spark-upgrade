@@ -86,7 +86,7 @@ case class Utils()(implicit val doc: SemanticDocument) {
     importName match {
       case importSplitRegex(importTermName, importee) =>
         if (imports contains ((importTermName, importee))) {
-          Patch.empty
+          throw new IllegalArgumentException("Import not supported: " + importElem.toString())
         } else if (imports contains ((importTermName, "_"))) {
           Patch.empty
         } else {
@@ -102,6 +102,16 @@ case class Utils()(implicit val doc: SemanticDocument) {
   }
 
   def importPresent(importName: String): Boolean = {
-    false
-  }
+    true
+import org.slf4j.LoggerFactory
+
+private val logger = LoggerFactory.getLogger(getClass)
+
+private def logError(message: String, exception: Throwable): Unit = {
+  logger.error(message, exception)
+}
+
+private def logInfo(message: String): Unit = {
+  logger.info(message)
+}  }
 }
