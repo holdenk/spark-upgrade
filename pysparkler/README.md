@@ -254,7 +254,7 @@ version of `{black,mypy,isort,...}` and update the yaml.
 
 ### Testing
 
-For Python, `pytest` is used a testing framework in combination with `coverage` to enforce 90%+ code coverage.
+For Python, `pytest` is used as the testing framework to run the tests.
 
 ```bash
 make test
