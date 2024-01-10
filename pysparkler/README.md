@@ -84,7 +84,7 @@ The tool supports the following features:
 | Verbose Mode                                  | ✅         |
 | Customize code transformers using YAML config | ✅         |
 
-### Upgrade PySpark Python script
+### Upgrade PySpark Python and SQL script
 
 The tool can upgrade a PySpark Python script. It takes the path to the script as input and upgrades it in place:
 
@@ -98,7 +98,7 @@ If you want to output the upgraded script to a different directory, you can use 
 pysparkler upgrade --input-file /path/to/script.py --output-file /path/to/output.py
 ```
 
-### Upgrade PySpark Jupyter Notebook
+### Upgrade PySpark Jupyter Notebook and SQL
 
 The tool can upgrade a PySpark Jupyter Notebook to latest Spark version. It takes the path to the notebook as input and
 upgrades it in place:
