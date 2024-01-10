@@ -3,7 +3,7 @@ package fix
 import scalafix.v1._
 import scala.meta._
 
-// Fix the extends with since the QQ matcher doesn't like it and I'm lazy.
+// Fix the with with since the QQ matcher doesn't like it and I'm lazy.
 class ScalaTestExtendsFix
     extends SyntacticRule("ScalaTestExtendsFix") {
   override val description =
