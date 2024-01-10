@@ -16,7 +16,7 @@ class UpdatedClassName
     doc.tree.collect { case v: Type.Name =>
       println(v)
       if (v.toString == "DesiredClassName") {
-        Patch.replaceTree(v, "AnyFunSuite")
+        Patch.replaceTree(v, "UpdatedClassName")
       } else {
         println(s"No change to $v")
         Patch.empty
