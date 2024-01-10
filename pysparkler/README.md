@@ -1,4 +1,6 @@
-# PySparkler
+# PySparkler: Automate PySpark Script Upgrades
+
+PySparkler is a tool that automates the process of upgrading your PySpark scripts to the latest Spark version. It is a command line tool that takes a PySpark script as input and outputs a version compatible with the latest Spark release. This README provides detailed instructions and information about the PySparkler tool, including troubleshooting, error reporting, and local workflow debugging. 
 
 [![PyPI version](https://badge.fury.io/py/pysparkler.svg)](https://badge.fury.io/py/pysparkler)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
@@ -191,7 +193,14 @@ For the development, Poetry is used for packing and dependency management. You c
 pip install poetry
 ```
 
-If you have an older version of pip and virtualenv you need to update these:
+### Running GitHub Actions Locally
+
+You can run the GitHub Actions workflow locally for debugging purposes using the following steps:
+1. Install the [act](https://github.com/nektos/act) tool, which is a GitHub Actions runner.
+2. Navigate to your project directory in the terminal.
+3. Run the GitHub Actions workflow using the command `act -s GITHUB_TOKEN=<your_token>` where `<your_token>` is a GitHub Personal Access Token with the necessary permissions.
+
+To set up IDEA with Poetry:
 
 ```bash
 pip install --upgrade virtualenv pip
@@ -212,6 +221,13 @@ If you want to install the library on the host, you can simply run `pip3 install
 environment, you can run `poetry shell`. Poetry will open up a virtual environment with all the dependencies set.
 
 ### IDE Setup
+
+### Running GitHub Actions Locally
+
+You can run the GitHub Actions workflow locally for debugging purposes using the following steps:
+1. Install the [act](https://github.com/nektos/act) tool, which is a GitHub Actions runner.
+2. Navigate to your project directory in the terminal.
+3. Run the GitHub Actions workflow using the command `act -s GITHUB_TOKEN=<your_token>` where `<your_token>` is a GitHub Personal Access Token with the necessary permissions.
 
 To set up IDEA with Poetry:
 
@@ -281,4 +297,12 @@ process. Transformer classes can be defined to apply specific transformations to
 multiple Transformer classes can be combined to form a chain of transformations. This can be useful when dealing with
 complex codebases where different parts of the code require different transformations.
 
-More on this can be found [here](https://libcst.readthedocs.io/en/latest/tutorial.html#Build-Visitor-or-Transformer).
+## Troubleshooting
+
+If you encounter issues with PySparkler, here are some common problems and their solutions:
+* **Issue #1:** Problem 1
+  - Solution 1
+* **Issue #2:** Problem 2
+  - Solution 2
+
+For more details, refer to the [troubleshooting guide](#troubleshooting).
