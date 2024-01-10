@@ -192,7 +192,7 @@ pysparkler:
 For the development, Poetry is used for packing and dependency management. You can install this using:
 
 ```bash
-pip install poetry && pip install --upgrade virtualenv pip
+poetry install && poetry install --no-root
 ```
 
 If you have an older version of pip and virtualenv you need to update these:
