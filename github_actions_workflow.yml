@@ -23,8 +23,8 @@ jobs:
 
       - name: Build and test
         run: |
-          ./gradlew build
-          ./gradlew test
+          gradle build
+          gradle test
 
       - name: Publish artifacts
         run: ./gradlew publish
