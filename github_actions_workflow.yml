@@ -26,11 +26,11 @@ jobs:
           gradle build --info --stacktrace
           gradle test --info --stacktrace
 
-      - name: Publish artifacts
-        run: ./gradlew publish
+      # - name: Publish artifacts
+  #         run: ./gradlew publish
 
-      - name: Deploy to staging
-        run: ./deploy.sh staging
+      # - name: Deploy to staging
+  #         run: ./deploy.sh staging
 
-      - name: Deploy to production
-        # Add deployment logic here
+      # - name: Deploy to production
+  #   # Add deployment logic here
