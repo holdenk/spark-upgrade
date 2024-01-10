@@ -23,6 +23,8 @@ jobs:
 
       - name: Build and test
         run: |
+          ./gradlew clean build
+          ./gradlew test
           ./gradlew build
           ./gradlew test
 

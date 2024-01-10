@@ -7,7 +7,9 @@ PySparkler is a tool that upgrades your PySpark scripts to latest Spark version.
 PySpark script as input and outputs latest Spark version compatible script. It is written in Python and uses the
 [LibCST](https://github.com/Instagram/LibCST) module to parse the input script and generate the output script.
 
-## Installation
+## Getting Started with PySparkler
+
+Before you can use PySparkler, you need to install it. You can install PySparkler from PyPI using pipx which allows running Python Applications in Isolated Environments. To install pipx on your system, follow the instructions [here](https://pypa.github.io/pipx/installation/#install-pipx). Once pipx is installed, you can install PySparkler using:
 
 We recommend installing PySparkler from PyPI using [pipx](https://pypa.github.io/pipx) which allows us to install and
 run Python Applications in Isolated Environments. To install pipx on your system, follow the instructions
@@ -176,11 +178,7 @@ The config file is a YAML file with the following structure:
 
 ```yaml
 pysparkler:
-  dry_run: false # Whether to run in dry-run mode
-  PY24-30-001: # The code transformer ID
-    comment: A new comment # The overriden code hint comment to be used by the code transformer
-  PY24-30-002:
-    enabled: false # Disable the code transformer
+  If you encounter any issues or error messages when using PySparkler, please take a look at the troubleshooting steps below:
 ```
 
 ## Contributing
