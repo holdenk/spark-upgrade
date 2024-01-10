@@ -39,10 +39,7 @@ PySparkler parses the code and can perform either of the following actions:
   comment to the end of statement line being modified to indicate that the code was modified by PySparkler, explaining
   why.
 
-- **Code Hints** - Python is a dynamically-typed language, so there are situations wherein PySparkler cannot, with
-  100% accuracy, determine if the code is eligible for a transformation. In such situations, PySparkler adds code hints to
-  guide the end-user to make an appropriate change if needed. Code hints are comments that are added to the end of a
-  statement line to suggest changes that may be needed it to make it compatible with the latest Spark version.
+
   For example, if you are upgrading from Spark 2.4 to 3.0 and PySparkler detects `spark.sql.execution.arrow.enabled` is
   set to `True` in your code, it will add a code hint to the end of the line to suggest setting
   `spark.sql.execution.pandas.convertToArrowArraySafely` to `True` in case you want to raise errors in case of Integer
@@ -60,12 +57,12 @@ to upgrade your PySpark scripts. In the latest stable version it supports the fo
 
 | Migration                                       | Supported | Details                                                                                                                                      |
 |-------------------------------------------------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------|
-| Upgrading from PySpark 3.3 to 3.4 (Coming soon)               | ❌         | [Coming Soon](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-3-to-3-4)               |
-| Upgrading from PySpark 3.2 to 3.3               | ✅         | [Coming Soon](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-2-to-3-3)               |
-| Upgrading from PySpark 3.1 to 3.2               | ✅         | [Coming Soon](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-1-to-3-2)               |
+| Upgrading from PySpark 3.3 to 3.4 (Coming soon)               | ❌         | Coming soon               |
+| Upgrading from PySpark 3.2 to 3.3               | ✅         | Coming Soon               |
+| Upgrading from PySpark 3.1 to 3.2               | ✅         | Coming Soon               |
 | Upgrading from PySpark 2.4 to 3.0               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-4-to-3-0)               |
 | Upgrading from PySpark 2.3 to 2.4               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-3-to-2-4)               |
-| Upgrading from PySpark 2.3.0 to 2.3.1 and above (Coming soon) (Coming soon) | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-3-0-to-2-3-1-and-above) |
+| Upgrading from PySpark 2.3.0 to 2.3.1 and above (Coming soon) (Coming soon) | ✅         | Link               |
 | Upgrading from PySpark 2.2 to 2.3               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-2-to-2-3)               |
 | Upgrading from PySpark 2.1 to 2.2               | ✅         | NA                                                                                                                                           |
 | Upgrading from PySpark 1.4 to 1.5               | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-1-4-to-1-5)               |
