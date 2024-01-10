@@ -109,7 +109,7 @@ To specify the input file and upgrade a PySpark Jupyter Notebook, use the follow
 To specify the output file for the upgraded notebook and upgrade a PySpark Jupyter Notebook, use the `--output-file` flag as shown below:
 
 ```bash
-pysparkler upgrade --input-file /path/to/notebook.ipynb --output-file /path/to/output.ipynb
+To specify the input file for upgrading a PySpark Jupyter Notebook, use the following command: --output-file /path/to/output.ipynb
 ```
 
 To change the output kernel name in the output Jupyter notebook, you can use the `--output-kernel` flag:
