@@ -3,9 +3,9 @@
 [![PyPI version](https://badge.fury.io/py/pysparkler.svg)](https://badge.fury.io/py/pysparkler)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-PySparkler is a tool that upgrades your PySpark scripts to latest Spark version. It is a command line tool that takes a
+PySparkler is a tool that upgrades your PySpark scripts to latest version of Spark. It is a command line tool that takes a
 PySpark script as input and outputs latest Spark version compatible script. It is written in Python and uses the
-[LibCST](https://github.com/Instagram/LibCST) module to parse the input script and generate the output script.
+[LibCST module](https://github.com/Instagram/LibCST) module to parse the input script and generate the output script.
 
 ## Installation
 
@@ -154,7 +154,7 @@ For both the above upgrade options, to run in dry mode, you can use the `--dry-r
 pysparkler upgrade --input-file /path/to/script.py --dry-run
 ```
 
-### Verbose Mode
+### Verbose mode
 
 For both the above upgrade options, to run in verbose mode, you can use the `--verbose` flag. This will print tool's
 input variables, the input file content, the output content, and a unified diff of the input and output content:
@@ -213,7 +213,7 @@ environment, you can run `poetry shell`. Poetry will open up a virtual environme
 
 ### IDE Setup
 
-To set up IDEA with Poetry:
+To set up IDE with Poetry:
 
 - Open up the Python project in IntelliJ
 - Make sure that you're on latest master (that includes Poetry)
@@ -271,10 +271,10 @@ whitespaces of the source code which is very important since we only want to mod
 
 ### How does it work?
 
-Using the codemod module of LibCST can simplify the process of writing a PySpark migration script, as it allows us to
+Using the LibCST module of LibCST can simplify the process of writing a PySpark migration script, as it allows us to
 write small, reusable transformers and chain them together to perform a sequence of transformations.
 
-### Why Transformer Codemod? Why not Visitor?
+### Why Transformer module? Why not Visitor?
 
 The main advantage of using a Transformer is that it allows for more fine-grained control over the transformation
 process. Transformer classes can be defined to apply specific transformations to specific parts of the codebase, and
