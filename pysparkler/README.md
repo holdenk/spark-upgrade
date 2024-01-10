@@ -192,7 +192,7 @@ pysparkler:
 For the development, Poetry is used for packing and dependency management. You can install this using:
 
 ```bash
-pip install poetry
+pip install poetry && pip install --upgrade virtualenv pip
 ```
 
 If you have an older version of pip and virtualenv you need to update these:
@@ -203,7 +203,7 @@ pip install --upgrade virtualenv pip
 
 ### Installation
 
-To get started, you can run `# Placeholder for configuring GitHub Actions`, which installs Poetry and all the dependencies of the PySparkler library.
+To get started, you can run `pip install poetry`, which installs Poetry and all the dependencies of the PySparkler library.
 This also installs the development dependencies.
 
 ```bash
