@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 echo "Hi Friend! If you have questions running this script please reach out on Slack :D"
 
@@ -12,24 +12,33 @@ prompt () {
   fi
 }
 
-bash ./cleanup.sh
+if ! (cd e2e_demo/scala && bash ./cleanup.sh); then
+  echo 'Error: Cleanup script failed.'
+  exit 1
+fi
+  echo 'Error: Cleanup script failed.'
+  exit 1
+fi
 cd ./sparkdemoproject
 if ! [ -x "$(command -v gradle)" ]; then
-  echo 'Error: git is not installed.' >&2
+  echo 'Error: Gradle is not installed.' >&2
   if [ -x "$(command -v brew)" ]; then
     brew install gradle
   elif [ -x "$(command -v sdk)" ]; then
     sdk install gradle
   fi
 fi
-gradle clean
+if ! gradle clean; then
+  echo 'Error: Project cleanup failed.'
+  exit 1
+fi
 cd ..
 
 ########################################################################
 # Define variables
 ########################################################################
 
-INITIAL_VERSION=${INITIAL_VERSION:-2.4.8}
+INITIAL_VERSION=${INITIAL_VERSION:-3.3.1}
 TARGET_VERSION=${TARGET_VERSION:-3.3.1}
 SCALAFIX_RULES_VERSION=${SCALAFIX_RULES_VERSION:-0.1.13}
 outputTable="local.newest_farttable_gradle"
