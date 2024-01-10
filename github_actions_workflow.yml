@@ -30,7 +30,13 @@ jobs:
         run: ./gradlew publish
 
       - name: Deploy to staging
-        run: ./deploy.sh staging
+        run: |
+          chmod +x ./deploy.sh
+          ./deploy.sh staging
+      - name: Deploy to production
+        run: |
+          chmod +x ./deploy.sh
+          ./deploy.sh production
 
       - name: Deploy to production
         # Add deployment logic here
