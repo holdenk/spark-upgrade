@@ -7,12 +7,12 @@ import scala.meta._
 class ScalaTestExtendsFix
     extends SyntacticRule("ScalaTestExtendsFix") {
   override val description =
-    """Handle the change with ScalaTest ( see https://www.scalatest.org/release_notes/3.1.0 ) """
+    """Fixes the deprecated usage of FunSuite by replacing it with FunSuiteLike. For more information, see https://www.scalatest.org/release_notes/3.1.0"""
 
   override val isRewrite = true
 
   override def fix(implicit doc: SyntacticDocument): Patch = {
-    println("Magicz!")
+    println("Magic!")
     doc.statements.collect { case v: Type.Name =>
       println(v)
       println(v)
