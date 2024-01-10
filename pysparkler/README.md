@@ -221,10 +221,13 @@ pysparkler upgrade --input-file /path/to/script.py --dry-run
 
 ### Verbose Mode
 
-For both the above upgrade options, to run in verbose mode, you can use the `--verbose` flag. This will print tool's
+To run PySparkler in verbose mode in a GitHub Actions workflow, use the `--verbose` flag. This will print the tool's input variables, the input file content, the output content, and a unified diff of the input and output content: This will print tool's
 input variables, the input file content, the output content, and a unified diff of the input and output content:
 
 ```bash
+pysparkler --verbose upgrade --input-file /path/to/script.py
+
+# Run PySparkler in verbose mode as part of a GitHub Actions workflow
 pysparkler --verbose upgrade --input-file /path/to/script.py
 ```
 
