@@ -89,7 +89,7 @@ The tool supports the following features:
 The tool can upgrade a PySpark Python script. It takes the path to the script as input and upgrades it in place:
 
 ```bash
-pysparkler upgrade --input-file /path/to/script.py
+pysparkler upgrade --input-file /path/to/updated_script.py
 ```
 
 If you want to output the upgraded script to a different directory, you can use the `--output-file` flag:
@@ -104,7 +104,7 @@ The tool can upgrade a PySpark Jupyter Notebook to latest Spark version. It take
 upgrades it in place:
 
 ```bash
-pysparkler upgrade --input-file /path/to/notebook.ipynb
+pysparkler upgrade --input-file /path/to/updated_notebook.ipynb
 ```
 
 Similar to upgrading python scripts, if you want to output the upgraded notebook to a different directory, you can use
@@ -133,7 +133,7 @@ To facilitate this, it exposes a command `upgrade-sql` for users to perform this
 1. Re-template the upgraded SQL.
 1. Replace the old SQL with the upgraded SQL in the input script.
 
-In order to perform step #2 i.e. you can either echo the SQL statement and pipe it to the tool:
+In order to perform step #2 i.e. you can either echo /path/to/updated_sql.sql | pysparkler upgrade-sqlthe SQL statement and pipe it to the tool:
 
 ```bash
 echo "SELECT * FROM table" | pysparkler upgrade-sql
@@ -169,7 +169,7 @@ The tool uses a YAML config file to customize the code transformers. The config 
 `--config-yaml` flag:
 
 ```bash
-pysparkler --config-yaml /path/to/config.yaml upgrade --input-file /path/to/script.py
+pysparkler upgrade --input-file /path/to/script.py
 ```
 
 The config file is a YAML file with the following structure:
