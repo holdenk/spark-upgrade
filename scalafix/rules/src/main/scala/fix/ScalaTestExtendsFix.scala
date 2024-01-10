@@ -11,7 +11,9 @@ class ScalaTestExtendsFix
 
   override val isRewrite = true
 
-  override def fix(implicit doc: SyntacticDocument): Patch = {
+     override val isRewrite = true
+
+    override def fix(implicit doc: SyntacticDocument): Patch = {
     override def fix(implicit doc: SyntacticDocument): Patch = {
       doc.tree.collect { case v: Type.Name =>
         if (v.toString == "FunSuiteLike") {

@@ -14,13 +14,13 @@ class ScalaTestImportChange
 
     def matchOnTree(t: Tree): Patch = {
       t match {
-        case q"""import org.scalatest.FunSuite""" =>
+        case q"""import org.scalatest.funsuite.AnyFunSuite""" =>
           Patch.replaceTree(t, q"""import org.scalatest.funsuite.AnyFunSuite""".toString())
-        case q"""class $cls extends FunSuite { $expr }""" =>
+        case q"""f"class $cls extends AnyFunSuite { $expr }"""" =>
           Patch.replaceTree(t, f"class $cls extends AnyFunSuite { $expr }")
-        case q"""import org.scalatest.FunSuiteLike""" =>
+        case q"""import org.scalatest.funsuite.AnyFunSuiteLike""" =>
           Patch.replaceTree(t, q"""import org.scalatest.funsuite.AnyFunSuiteLike""".toString())
-        case q"""class $cls extends FunSuiteLike { $expr }""" =>
+        case q"""q"class $cls extends AnyFunSuiteLike { $expr }"""" =>
           Patch.replaceTree(t, q"class $cls extends AnyFunSuiteLike { $expr }".toString)
         case q"""import org.scalatest.AsyncFunSuite""" =>
           Patch.replaceTree(t, q"""import org.scalatest.funsuite.AsyncFunSuiteLike""".toString())
