@@ -180,14 +180,13 @@ pysparkler --verbose upgrade --input-file /path/to/script.py
 
 ### Customize code transformers using YAML config
 
-The tool uses a YAML config file to customize the code transformers. The config file can be passed using the
-`--config-yaml` flag:
+The `--config-yaml` flag is used to specify a YAML config file that customizes the code transformers. When using this flag, the config file should be passed as shown below:
 
 ```bash
 pysparkler --config-yaml /path/to/config.yaml upgrade --input-file /path/to/script.py
 ```
 
-The config file is a YAML file with the following structure:
+The config file is a YAML file with the following structure. This is an example of how the YAML config file can be structured:
 
 ```yaml
 pysparkler:
