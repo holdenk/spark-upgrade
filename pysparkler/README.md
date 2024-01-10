@@ -160,7 +160,7 @@ For both the above upgrade options, to run in verbose mode, you can use the `--v
 input variables, the input file content, the output content, and a unified diff of the input and output content:
 
 ```bash
-pysparkler --verbose upgrade --input-file /path/to/script.py
+pysparkler upgrade --verbose --file /path/to/script.py
 ```
 
 ### Customize code transformers using YAML config
