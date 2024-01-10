@@ -55,6 +55,21 @@ to fix the linting errors manually.
 
 ## PySpark Upgrades Supported
 
+You can apply PySparkler to upgrade your PySpark scripts for the following PySpark versions. For detailed information on each version's upgrade process, refer to the [Apache Spark Migration guide for PySpark](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html)
+
+| Migration                                       | Supported | Details                                                                                                                                      |
+|-------------------------------------------------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| Upgrading from PySpark 3.3 to 3.4               | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-3-to-3-4)               |
+| Upgrading from PySpark 3.2 to 3.3               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-2-to-3-3)               |
+| Upgrading from PySpark 3.1 to 3.2               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-1-to-3-2)               |
+| Upgrading from PySpark 2.4 to 3.0               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-4-to-3-0)               |
+| Upgrading from PySpark 2.3 to 2.4               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-3-to-2-4)               |
+| Upgrading from PySpark 2.3.0 to 2.3.1 and above | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-3-0-to-2-3-1-and-above) |
+| Upgrading from PySpark 2.2 to 2.3               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-2-2-to-2-3)               |
+| Upgrading from PySpark 2.1 to 2.2               | ✅         | NA                                                                                                                                           |
+| Upgrading from PySpark 1.4 to 1.5               | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-1-4-to-1-5)               |
+| Upgrading from PySpark 1.0-1.2 to 1.3           | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-1-0-1-2-to-1-3)           |
+
 This tool follows the [Apache Spark Migration guide for PySpark](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html)
 to upgrade your PySpark scripts. In the latest stable version it supports the following upgrades from the migration guide:
 
