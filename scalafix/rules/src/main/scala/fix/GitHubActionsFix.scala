@@ -10,7 +10,7 @@ class GitHubActionsFix extends SemanticRule("GitHubActionsFix") {
       // Analyze the error logs and identify the root cause of the failure
       val rootCause = analyzeErrorLogs()
 
-      // Implement necessary changes in the code to address the specific issue causing the GitHub Actions failure
+      // Implement the necessary changes in the code to address the specific issue causing the GitHub Actions failure
       val fixPatch = implementFix(rootCause)
 
       // Add appropriate error handling and logging statements
