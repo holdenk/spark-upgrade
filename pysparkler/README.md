@@ -152,6 +152,20 @@ upgrades it in place:
 
 ```bash
 pysparkler upgrade --input-file /path/to/notebook.ipynb
+
+# Run PySparkler as part of a GitHub Actions workflow
+if [ -z "${GITHUB_ACTIONS}" ]; then
+  echo 'This script is not running in a GitHub Actions workflow'
+  exit 1
+fi
+
+echo 'Running PySparkler'
+pysparkler upgrade --input-file /path/to/notebook.ipynb || { echo 'PySparkler upgrade process failed' && exit 1; }
+PS_RESULT=$?
+if [ "${PS_RESULT}" -ne 0 ]; then
+  echo 'PySparkler upgrade process failed'
+  exit 1
+fi
 ```
 
 Similar to upgrading python scripts, if you want to output the upgraded notebook to a different directory, you can use
@@ -335,7 +349,7 @@ To integrate PySparkler with GitHub Actions, follow these best practices:
 - Use descriptive error messages and logging statements to provide insights into the root cause of issues.
 - Document known issues and maintain up-to-date project documentation to facilitate troubleshooting and resolution.
 
-When handling errors related to PySpark upgrade or GitHub Actions failures, consider the following best practices:
+When handling errors related to PySpark upgrade or GitHub Actions failures, consider the following best practices and error handling strategies:
 - [Validate GitHub Actions configuration](https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions), [check for errors in workflow files](https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#about-yaml-syntax-for-workflows), and [review the GitHub Actions logs](https://docs.github.com/en/actions/monitoring-and-troubleshooting-workflows) to identify and address any issues.
 - Implement try-catch blocks to handle exceptions and errors gracefully.
 - Implement try-catch blocks to handle exceptions and errors gracefully.
