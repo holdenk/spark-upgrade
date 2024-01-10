@@ -9,7 +9,7 @@ case class AccMigrationGuide(position: Position) extends Diagnostic {
   def message = s"sc.accumulator is removed see ${migrationGuide}"
 }
 
-class AccumulatorUpgrade extends SemanticRule("AccumulatorUpgrade") {
+class AccumulatorUpgrade extends SemanticRule // Fixed class declaration("AccumulatorUpgrade") {
 
   override def fix(implicit doc: SemanticDocument): Patch = {
     val accumulatorFunMatch = SymbolMatcher.normalized("org.apache.spark.SparkContext.accumulator")
