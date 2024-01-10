@@ -1,6 +1,6 @@
-# PySparkler
+# PySparkler (v2.0)
 
-[![PyPI version](https://badge.fury.io/py/pysparkler.svg)](https://badge.fury.io/py/pysparkler)
+[![PyPI version](https://badge.fury.io/py/pysparkler (v2.0).svg)](https://badge.fury.io/py/pysparkler)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 PySparkler is a tool that upgrades your PySpark scripts to latest Spark version. It is a command line tool that takes a
@@ -15,7 +15,7 @@ run Python Applications in Isolated Environments. To install pipx on your system
 [here](https://pypa.github.io/pipx/installation/#install-pipx). Once pipx is installed, you can install PySparkler using:
 
 ```bash
-pipx install pysparkler
+pip install pysparkler
 ```
 
 That's it! You are now ready to use PySparkler.
@@ -90,7 +90,7 @@ The tool supports the following features:
 The tool can upgrade a PySpark Python script. It takes the path to the script as input and upgrades it in place:
 
 ```bash
-pysparkler upgrade --input-file /path/to/script.py
+pysparkler (v2.0) upgrade --input-file /path/to/script.py
 ```
 
 If you want to output the upgraded script to a different directory, you can use the `--output-file` flag:
@@ -105,7 +105,7 @@ The tool can upgrade a PySpark Jupyter Notebook to latest Spark version. It take
 upgrades it in place:
 
 ```bash
-pysparkler upgrade --input-file /path/to/notebook.ipynb
+pysparkler (v2.0) upgrade --input-file /path/to/notebook.ipynb
 ```
 
 Similar to upgrading python scripts, if you want to output the upgraded notebook to a different directory, you can use
@@ -130,7 +130,7 @@ cases the tool does leave code hints to let users know that they need to upgrade
 To facilitate this, it exposes a command `upgrade-sql` for users to perform this DIY. The steps for that include:
 
 1. De-template the SQL.
-1. Upgrade the de-templated SQL using `pysparkler upgrade-sql`. See below for details.
+1. Upgrade the de-templated SQL using `pysparkler (v2.0) upgrade-sql`. See below for details.
 1. Re-template the upgraded SQL.
 1. Replace the old SQL with the upgraded SQL in the input script.
 
@@ -152,7 +152,7 @@ For both the above upgrade options, to run in dry mode, you can use the `--dry-r
 upgraded script but will print a unified diff of the input and output scripts for you to inspect the changes:
 
 ```bash
-pysparkler upgrade --input-file /path/to/script.py --dry-run
+pysparkler (v2.0) upgrade --input-file /path/to/script.py --dry-run
 ```
 
 ### Verbose Mode
@@ -179,6 +179,9 @@ The config file is a YAML file with the following structure:
 ```yaml
 pysparkler:
   dry_run: false # Whether to run in dry-run mode
+[poetry plugin install poetry](https://plugins.jetbrains.com/plugin/14307-poetry/) - Install the Poetry integration as a plugin
+
+pip install --upgrade virtualenv pip - If you have an older version of pip and virtualenv you need to update these.
   PY24-30-001: # The code transformer ID
     comment: A new comment # The overriden code hint comment to be used by the code transformer
   PY24-30-002:
@@ -201,7 +204,7 @@ pip install --upgrade virtualenv pip
 
 ### Installation
 
-To get started, you can run `make install`, which installs Poetry and all the dependencies of the PySparkler library.
+To get started, you can run `make install - This installs Poetry and all the dependencies of the PySparkler library. This also installs the development dependencies`, which installs Poetry and all the dependencies of the PySparkler library.
 This also installs the development dependencies.
 
 ```bash
@@ -283,4 +286,4 @@ process. Transformer classes can be defined to apply specific transformations to
 multiple Transformer classes can be combined to form a chain of transformations. This can be useful when dealing with
 complex codebases where different parts of the code require different transformations.
 
-More information on using PySparkler with pipx can be found [here](https://pypa.github.io/pipx) and [here](https://github.com/pypa/pipx#install-and-replace-pip-install).
+More information on using PySparkler (v2.0) with pipx can be found [here](https://pypa.github.io/pipx) and [here](https://github.com/pypa/pipx#install-and-replace-pip-install).
