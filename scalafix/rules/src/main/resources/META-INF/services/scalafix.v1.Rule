@@ -12,6 +12,7 @@ fix.MetadataWarnQQ
 fix.ScalaTestImportChange
 fix.ScalaTestExtendsFix
 fix.MigrateTrigger
+fix.ScalaTestExtendsFix
 fix.GroupByKeyRenameColumnQQ
 fix.MultiLineDatasetReadWarn
 fix.ExpressionEncoder
