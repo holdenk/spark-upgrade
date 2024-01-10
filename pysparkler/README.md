@@ -95,7 +95,7 @@ to upgrade your PySpark scripts. In the latest stable version it supports the fo
 
 ## Features Supported
 
-The tool supports the following features:
+The tool supports the following features, including GitHub Actions compatibility:
 
 | Feature                                       | Supported |
 |-----------------------------------------------|-----------|
@@ -193,6 +193,8 @@ The tool uses a YAML config file to customize the code transformers. The config 
 ```bash
 pysparkler --config-yaml /path/to/config.yaml upgrade --input-file /path/to/script.py
 ```
+
+### Integrating PySparkler with GitHub Actions and Limitations
 
 The config file is a YAML file with the following structure:
 
@@ -298,8 +300,7 @@ write small, reusable transformers and chain them together to perform a sequence
 
 ### Why Transformer Codemod? Why not Visitor?
 
-The main advantage of using a Transformer is that it allows for more fine-grained control over the transformation
-process. Transformer classes can be defined to apply specific transformations to specific parts of the codebase, and
+## Use Cases of PySparkler in GitHub Actions Workflows
 ## Integrating PySparkler with GitHub Actions and Limitations
 
 To integrate PySparkler with GitHub Actions, follow these best practices:
