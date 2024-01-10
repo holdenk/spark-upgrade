@@ -16,7 +16,7 @@ class ScalaTestExtendsFix
     doc.statements.collect { case v: Type.Name =>
       println(v)
       println(v)
-      if (v.toString() == "FunSuite") {
+      if (v.toString() == "FunSuiteLike") {
         Patch.replaceTree(v, "FunSuiteLike")
       } else {
         println(s"No change to $v")
