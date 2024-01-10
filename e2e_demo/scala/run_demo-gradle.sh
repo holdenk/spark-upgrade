@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 echo "Hi Friend! If you have questions running this script please reach out on Slack :D"
 
@@ -12,7 +12,13 @@ prompt () {
   fi
 }
 
-bash ./cleanup.sh
+if ! (cd e2e_demo/scala && bash ./cleanup.sh); then
+  echo 'Error: Cleanup script failed.'
+  exit 1
+fi
+  echo 'Error: Cleanup script failed.'
+  exit 1
+fi
 cd ./sparkdemoproject
 if ! [ -x "$(command -v gradle)" ]; then
   echo 'Error: git is not installed.' >&2
@@ -22,7 +28,10 @@ if ! [ -x "$(command -v gradle)" ]; then
     sdk install gradle
   fi
 fi
-gradle clean
+if ! gradle clean; then
+  echo 'Error: Project cleanup failed.'
+  exit 1
+fi
 cd ..
 
 ########################################################################
