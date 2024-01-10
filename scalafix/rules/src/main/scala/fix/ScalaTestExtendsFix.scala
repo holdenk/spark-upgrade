@@ -12,7 +12,7 @@ class ScalaTestExtendsFix
   override val isRewrite = true
 
   override def fix(implicit doc: SyntacticDocument): Patch = {
-    println("Magicz!")
+  
     doc.tree.collect { case v: Type.Name =>
       println(v)
       if (v.toString == "FunSuite") {
