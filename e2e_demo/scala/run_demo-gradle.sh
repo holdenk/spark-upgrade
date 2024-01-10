@@ -21,7 +21,7 @@ fi
 fi
 cd ./sparkdemoproject
 if ! [ -x "$(command -v gradle)" ]; then
-  echo 'Error: git is not installed.' >&2
+  echo 'Error: Gradle is not installed.' >&2
   if [ -x "$(command -v brew)" ]; then
     brew install gradle
   elif [ -x "$(command -v sdk)" ]; then
