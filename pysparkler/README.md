@@ -25,7 +25,7 @@ pysparkler --help
 
 ## Getting Started
 
-Provide the path to the script you want to upgrade:
+Upgrade a PySpark Python script by specifying the path to the script using the following command:
 
 ```bash
 pysparkler upgrade --input-file /path/to/script.py
@@ -89,7 +89,7 @@ The tool supports the following features:
 The tool can upgrade a PySpark Python script. It takes the path to the script as input and upgrades it in place:
 
 ```bash
-pysparkler upgrade --input-file /path/to/script.py
+To specify the input file and upgrade a PySpark Python script, use the following command:
 ```
 
 If you want to output the upgraded script to a different directory, you can use the `--output-file` flag:
@@ -103,10 +103,10 @@ pysparkler upgrade --input-file /path/to/script.py --output-file /path/to/output
 Upgrade PySpark Jupyter Notebook              | ✅         
 
 ```bash
-pysparkler upgrade --input-file /path/to/notebook.ipynb
+To specify the input file and upgrade a PySpark Jupyter Notebook, use the following command:
 ```
 
-If you want to output the upgraded notebook to a different directory, you can use the `--output-file` flag:
+To specify the output file for the upgraded notebook and upgrade a PySpark Jupyter Notebook, use the `--output-file` flag as shown below:
 
 ```bash
 pysparkler upgrade --input-file /path/to/notebook.ipynb --output-file /path/to/output.ipynb
@@ -274,7 +274,7 @@ write small, reusable transformers and chain them together to perform a sequence
 
 ### Why Transformer Codemod? Why not Visitor?
 
-The main advantage of using a Transformer is that it allows for more fine-grained control over the transformation
+The main advantage of using a Transformer is that it allows for more fine-grained-grained control over the transformation
 process. Transformer classes can be defined to apply specific transformations to specific parts of the codebase, and
 multiple Transformer classes can be combined to form a chain of transformations. This can be useful when dealing with
 complex codebases where different parts of the code require different transformations.
