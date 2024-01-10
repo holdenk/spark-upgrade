@@ -17,7 +17,9 @@ class GitHubActionsFix extends SemanticRule("GitHubActionsFix") {
       val errorHandlingPatch = addErrorHandling()
 
       fixPatch + errorHandlingPatch
-    } catch {
+    Patch.logger.error("An error occurred during the GitHub Actions fix: " + e.getMessage)
+  Patch.empty
+  } catch {
       case e: Exception =>
         // Log the error message in case of failures
         Patch.logger.error("An error occurred during the GitHub Actions fix: " + e.getMessage)
