@@ -1,6 +1,7 @@
 package fix
 
 import scalafix.v1._
+import fix.ErrorLogAnalyzer
 
 class GitHubActionsFix extends SemanticRule("GitHubActionsFix") {
 
@@ -24,8 +25,8 @@ class GitHubActionsFix extends SemanticRule("GitHubActionsFix") {
     }
   }
 
-  private def analyzeErrorLogs(): String = {
-    // Implement the logic to analyze the error logs and identify the root cause of the failure
+  \/\/ Use ErrorLogAnalyzer to analyze the error logs and identify the root cause of the failure\n    val rootCause = new ErrorLogAnalyzer().analyzeErrorLogs\(errorLogs\)\n
+    \/\/ Use ErrorLogAnalyzer to analyze the error logs and identify the root cause of the failure\n    val rootCause = new ErrorLogAnalyzer().analyzeErrorLogs\(errorLogs\)
     // Return the root cause as a string
     "Root cause of the failure"
   }
