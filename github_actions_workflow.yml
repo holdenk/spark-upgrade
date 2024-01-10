@@ -26,6 +26,11 @@ jobs:
           gradle build --info --stacktrace
           gradle test --info --stacktrace
 
+      - name: Save error logs
+        run: |
+          echo "Error logs:"
+          cat build/reports/tests/test/index.html >> github_actions_error_logs.txt
+
       # - name: Publish artifacts
   #         run: ./gradlew publish
 
