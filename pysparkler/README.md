@@ -9,6 +9,18 @@ PySpark script as input and outputs latest Spark version compatible script. It i
 
 ## Installation
 
+## Troubleshooting and Error Handling
+
+## Troubleshooting Tips
+
+When experiencing errors during the Spark upgrade process, consider the following troubleshooting tips:
+- Validate the compatibility of third-party dependencies and libraries with the latest Spark version.
+- Check for updated third-party packages and dependencies that may impact the upgrade process.
+- Review the project setup, environment configurations, and necessary dependencies to ensure seamless integration with the upgraded Spark version.
+- Verify the compatibility of custom functions, UDFs, and external modules with the target Spark version.
+
+In addition to troubleshooting, ensure that the necessary project files, imports, and entity names are compatible and well-maintained for the upgrade process.
+
 We recommend installing PySparkler from PyPI using [pipx](https://pypa.github.io/pipx) which allows us to install and
 run Python Applications in Isolated Environments. To install pipx on your system, follow the instructions
 [here](https://pypa.github.io/pipx/installation/#install-pipx). Once pipx is installed, you can install PySparkler using:
@@ -278,7 +290,9 @@ write small, reusable transformers and chain them together to perform a sequence
 
 The main advantage of using a Transformer is that it allows for more fine-grained control over the transformation
 process. Transformer classes can be defined to apply specific transformations to specific parts of the codebase, and
-multiple Transformer classes can be combined to form a chain of transformations. This can be useful when dealing with
-complex codebases where different parts of the code require different transformations.
+The next step is to thoroughly test the upgraded scripts and notebooks to ensure their compatibility with the latest Spark version. This includes checking for errors, performance issues, and unexpected behavior. It's recommended to run comprehensive test suites, identify, and address any issues that may arise.
 
-More on this can be found [here](https://libcst.readthedocs.io/en/latest/tutorial.html#Build-Visitor-or-Transformer).
+When handling errors related to PySpark upgrade, consider the following best practices:
+- Implement try-catch blocks to handle exceptions and errors gracefully.
+- Use descriptive error messages and logging statements to provide insights into the root cause of issues.
+- Document known issues and maintain up-to-date project documentation to facilitate troubleshooting and resolution.
