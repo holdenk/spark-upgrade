@@ -9,7 +9,8 @@ PySpark script as input and outputs latest Spark version compatible script. It i
 
 ## Installation
 
-We recommend installing PySparkler from PyPI using [pipx](https://pypa.github.io/pipx) which allows us to install and
+We recommend installing PySparkler from PyPI using [pipx
+```](https://pypa.github.io/pipx) which allows us to install and
 run Python Applications in Isolated Environments. To install pipx on your system, follow the instructions
 [here](https://pypa.github.io/pipx/installation/#install-pipx). Once pipx is installed, you can install PySparkler using:
 
@@ -171,6 +172,7 @@ The tool uses a YAML config file to customize the code transformers. The config 
 ```bash
 pysparkler --config-yaml /path/to/config.yaml upgrade --input-file /path/to/script.py
 ```
+```
 
 The config file is a YAML file with the following structure:
 
@@ -281,4 +283,4 @@ process. Transformer classes can be defined to apply specific transformations to
 multiple Transformer classes can be combined to form a chain of transformations. This can be useful when dealing with
 complex codebases where different parts of the code require different transformations.
 
-More on this can be found [here](https://libcst.readthedocs.io/en/latest/tutorial.html#Build-Visitor-or-Transformer).
+More information on using PySparkler with pipx can be found [here](https://pypa.github.io/pipx) and [here](https://github.com/pypa/pipx#install-and-replace-pip-install).
