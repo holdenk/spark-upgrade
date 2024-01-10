@@ -145,8 +145,13 @@ pysparkler upgrade-sql --input-file /path/to/sql_file.sql
 
 ### Dry-Run Mode
 
-For both the above upgrade options, to run in dry mode, you can use the `--dry-run` flag. This will not write the
-upgraded script but will print a unified diff of the input and output scripts for you to inspect the changes:
+For both the above upgrade options, to run in dry mode, you can use the `--dry-run` flag. This will not generate the
+upgraded script but will display a unified diff of the input and output scripts for you to inspect the changes:
+
+```bash
+pysparkler### Dry-Run Mode Example
+
+To run the upgrade in dry-run mode, use the following command:
 
 ```bash
 pysparkler upgrade --input-file /path/to/script.py --dry-run
