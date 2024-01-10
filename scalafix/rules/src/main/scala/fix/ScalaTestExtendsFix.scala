@@ -13,13 +13,10 @@ class ScalaTestExtendsFix
 
   override def fix(implicit doc: SyntacticDocument): Patch = {
     println("Magicz!")
-    doc.tree.collect { case v: Type.Name =>
-      println(v)
-      println(v)
+    doc.tree.collect { case v: Type.Select =>
       if (v.toString == "FunSuite") {
         Patch.replaceTree(v, "FunSuiteLike")
       } else {
-        println(s"No change to $v")
         Patch.empty
       }
     }.asPatch
