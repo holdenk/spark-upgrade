@@ -172,7 +172,22 @@ The tool uses a YAML config file to customize the code transformers. The config 
 pysparkler --config-yaml /path/to/config.yaml upgrade --input-file /path/to/script.py
 ```
 
+The tool uses a YAML config file to customize the code transformers. The config file can be passed using the `--config-yaml` flag:
+
+```bash
+pysparkler --config-yaml /path/to/config.yaml upgrade --input-file /path/to/script.py
+```
+
 The config file is a YAML file with the following structure:
+
+```yaml
+pysparkler:
+  dry_run: false # Whether to run in dry-run mode
+  PY24-30-001: # The code transformer ID
+    comment: A new comment # The overriden code hint comment to be used by the code transformer
+  PY24-30-002:
+    enabled: false # Disable the code transformer
+```
 
 ```yaml
 pysparkler:
