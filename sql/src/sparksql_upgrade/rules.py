@@ -102,7 +102,7 @@ class Rule_SPARKSQLCAST_L001(BaseRule):
             data_type_info = bracketed.get_child("data_type").raw.upper().strip()
             if data_type_info == "INT":
                 # Here we know we have a possible one
-                expr = bracketed.get_child("expression")
+                expr = bracketed.get_child("expression_child")
                 print(f"Found expr {expr} - {expr.raw}")
                 # Replace cast(X as int) with int(X) TODO
                 return LintResult(
@@ -117,7 +117,6 @@ class Rule_SPARKSQLCAST_L001(BaseRule):
                         ),
                     ],
                 )
-
         return None
 
 
