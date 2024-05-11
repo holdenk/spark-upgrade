@@ -27,6 +27,7 @@ parser.add_argument('--row-diff-tolerance', type=float, default=0.0,
                     help='Tolerance for % of different rows')
 
 
+#tag::book[]
 # Future improvement: compare only the changed partitions
 def compare_tables(control, target):
     if control.schema != target.schema:
@@ -148,5 +149,5 @@ if __name__ == "__main__":
     else:
         tables = zip(args.control_tables, args.target_tables)
         run_comparisions(tables)
-
+#end::book[]
     print("Table compare status: ok")
