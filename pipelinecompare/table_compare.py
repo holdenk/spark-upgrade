@@ -27,6 +27,7 @@ parser.add_argument('--row-diff-tolerance', type=float, default=0.0,
                     help='Tolerance for % of different rows')
 
 
+# Future improvement: compare only the changed partitions
 def compare_tables(control, target):
     if control.schema != target.schema:
         control.printSchema()
@@ -50,7 +51,7 @@ def compare_tables(control, target):
         missing_rows = control.subtract(target)
         new_rows = target.subtract(control)
     except Exception as e:
-        # TODO: only convert the columns that need to be converted.
+        # Improvement: only convert the columns that need to be converted.
         eprint(f"Warning converting all to strings.... {e}")
         columns = control.columns
         for c in columns:
