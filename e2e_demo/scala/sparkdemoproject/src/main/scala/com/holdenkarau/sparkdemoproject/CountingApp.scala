@@ -44,6 +44,7 @@ object Runner {
       counts.write.format("iceberg").mode("overwrite").save(outputTable)
     } catch {
       case e =>
+        println(s"Error $e writing to $outputTable creating fresh output table at location.")
         spark.sql(s"CREATE TABLE ${outputTable} (word string, count long) USING iceberg")
         counts.write.format("iceberg").saveAsTable(outputTable)
         spark.sql(s"ALTER TABLE ${outputTable} SET write.wap.enabled=true")

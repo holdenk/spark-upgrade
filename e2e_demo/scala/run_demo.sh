@@ -150,4 +150,4 @@ prompt
     --conf spark.sql.catalog.local.type=hadoop \
     --conf spark.sql.catalog.local.warehouse=$PWD/warehouse \
     --class com.holdenkarau.sparkDemoProject.CountingLocalApp \
-    /tmp/spark-migration-jars/sparkdemoproject_2.12-0.0.1.jar /var/log/syslog local.old_farttable" && exit 1) || echo "Failed as expected."
+    /tmp/spark-migration-jars/sparkdemoproject_2.12-0.0.1.jar /var/log/syslog ${outputTable}" && exit 1) || echo "Failed as expected."
