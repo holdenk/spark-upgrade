@@ -1,8 +1,10 @@
 #!/bin/bash
 
-echo "Hi Friend! If you have questions running this script please reach out on Slack :D"
+echo "Hi Friend! Welcome to the demo!"
 
 set -ex
+
+python python_check.py
 
 prompt () {
   if [ -z "$NO_PROMPT" ]; then
@@ -19,11 +21,13 @@ cd ./sparkdemoproject && sbt clean && cd ..
 
 INITIAL_VERSION=${INITIAL_VERSION:-2.4.8}
 TARGET_VERSION=${TARGET_VERSION:-3.3.1}
-SCALAFIX_RULES_VERSION=${SCALAFIX_RULES_VERSION:-0.1.13}
+SCALAFIX_RULES_VERSION=${SCALAFIX_RULES_VERSION:-0.1.15}
 outputTable="local.newest_farttable"
 
 SPARK2_DETAILS="spark-2.4.8-bin-without-hadoop-scala-2.12"
+# Used to download the dependencies
 CORE_SPARK2="spark-2.4.8-bin-hadoop2.7"
+export CORE_SPARK2
 SPARK3_DETAILS="spark-3.3.1-bin-hadoop2"
 
 spark_submit2="$(pwd)/${SPARK2_DETAILS}/bin/spark-submit"
@@ -83,6 +87,7 @@ prompt
 sbt clean compile test package
 echo "Lovely! Now we \"simulate\" publishing these jars to an S3 bucket (using local fs)"
 cd ..
+rm -rf /tmp/spark-migration-jars
 mkdir -p /tmp/spark-migration-jars
 cp -af sparkdemoproject*/target/scala-*/*.jar /tmp/spark-migration-jars
 echo "Excellent news! All done. Now we just need to make sure we have the same pipeline. Let's magic it!"

@@ -1,5 +1,9 @@
 from utils import *
 from pyspark.sql import DataFrame, Row, SparkSession
+import sys
+
+if sys.version_info < (3, 9):
+    sys.exit("Please use Python 3.9+")
 
 def extract_catalog(table_name: str) -> str:
     """Extract the catalog."""
