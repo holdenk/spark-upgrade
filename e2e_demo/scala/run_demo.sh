@@ -104,12 +104,14 @@ echo "There is some trickery in our spark-submit2 v.s. spark-submit3 including t
 echo "Provided you have iceberg in your environment pre-insalled this should be equivelent to prod but... yeah."
 # Exepected to pass.
 # Note: here we insert some data into our test table so that we have a common ancestor and use CDC view.
+# Start with cleaning up the table
 ${spark_sql3}     --conf spark.sql.catalog.spark_catalog=org.apache.iceberg.spark.SparkSessionCatalog \
     --conf spark.sql.catalog.spark_catalog.type=hive \
     --conf spark.sql.catalog.local=org.apache.iceberg.spark.SparkCatalog \
     --conf spark.sql.catalog.local.type=hadoop \
     --conf spark.sql.catalog.local.warehouse=$PWD/warehouse \
-   -e "CREATE TABLE IF NOT EXISTS ${outputTable} (word string, count long) USING iceberg TBLPROPERTIES('write.wap.enabled' = 'true'); INSERT INTO ${outputTable} VALUES ('baked potato', 42)"
+    -e "DROP TABLE IF EXISTS ${outputTable};CREATE TABLE IF NOT EXISTS ${outputTable} (word string, count long) USING iceberg TBLPROPERTIES('write.wap.enabled' = 'true'); INSERT INTO ${outputTable} VALUES ('baked potato', 42)"
+# Now run the demo
 python domagic.py --iceberg --spark-control-command ${spark_submit2} --spark-new-command ${spark_submit3} \
        --spark-command ${spark_submit3} \
        --new-jar-suffix "-3" \
@@ -133,6 +135,14 @@ echo "Press enter to see how it can fail (e.g. using /var/log/syslog which gets 
 echo "In that case the user would need to configure a tolerance value for difference."
 prompt
 # Expected to fail because syslog changes between runs.
+# Again clean up thte table first
+${spark_sql3}     --conf spark.sql.catalog.spark_catalog=org.apache.iceberg.spark.SparkSessionCatalog \
+    --conf spark.sql.catalog.spark_catalog.type=hive \
+    --conf spark.sql.catalog.local=org.apache.iceberg.spark.SparkCatalog \
+    --conf spark.sql.catalog.local.type=hadoop \
+    --conf spark.sql.catalog.local.warehouse=$PWD/warehouse \
+   -e "DROP TABLE IF EXISTS ${outputTable};CREATE TABLE IF NOT EXISTS ${outputTable} (word string, count long) USING iceberg TBLPROPERTIES('write.wap.enabled' = 'true'); INSERT INTO ${outputTable} VALUES ('baked potato', 42)"
+# Now run the demo
 (python domagic.py --iceberg --spark-control-command ${spark_submit2} --spark-new-command ${spark_submit3} \
        --spark-command ${spark_submit3} \
        --new-jar-suffix "-3" \
