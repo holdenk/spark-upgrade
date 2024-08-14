@@ -2,9 +2,13 @@
 
 echo "Hi Friend! Welcome to the demo!"
 
+cd "$(dirname "$0")"
+
 set -ex
 
-python python_check.py
+if [ -f python_check.py ]; then
+  python python_check.py
+fi
 
 prompt () {
   if [ -z "$NO_PROMPT" ]; then
