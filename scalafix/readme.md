@@ -3,6 +3,28 @@
 To use the scalafix rules, see the build tool specific docs https://github.com/holdenk/spark-upgrade/tree/main/docs/scala
 and the end to end demo https://github.com/holdenk/spark-upgrade/tree/main/e2e_demo/scala
 
+## Target Spark version
+
+The source and target Spark versions used when running the test suite are controlled by the `sparkVersion` and
+`targetSparkVersion` system properties (see `build.sbt`). To exercise the rules against a Spark 4.x target, run for
+example:
+
+```bash
+sbt -DsparkVersion=3.5.1 -DtargetSparkVersion=4.0.0 tests/test
+```
+
+### Spark 4.x rules
+
+The following lint rules cover the most impactful Spark 4.0 behavior changes that affect Scala pipelines:
+
+- `AnsiModeEnabledWarn` - ANSI SQL mode (`spark.sql.ansi.enabled`) is enabled by default since Spark 4.0, so casts and
+  arithmetic that used to return `null` on error may now throw.
+- `MesosRemovedWarn` - Apache Mesos support was removed in Spark 4.0; migrate to YARN, Kubernetes, or Standalone.
+
+Many other Spark 4.x changes are configuration/SQL behavior changes rather than Scala API signature changes; for those,
+prefer restoring the legacy behavior via the config map in [`conf_migrate`](../conf_migrate/migrate.py) and the in-line
+SQL rules. Note that Spark 4.2 is still a preview release.
+
 To migrate in-line SQL you will need to install sqlfluff + our extensions, which you can do with
 
 ```bash
