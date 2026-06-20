@@ -66,6 +66,7 @@ cat >> build.sbt <<- EOM
 scalafixDependencies in ThisBuild +=
   "com.holdenkarau" %% "spark-scalafix-rules-2.4.8" % "${SCALAFIX_RULES_VERSION}"
 semanticdbEnabled in ThisBuild := true
+semanticdbVersion in ThisBuild := scalafixSemanticdb.revision
 EOM
 mkdir -p project
 cat >> project/plugins.sbt <<- EOM
