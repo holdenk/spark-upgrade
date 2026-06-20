@@ -100,6 +100,36 @@ def test_blocking_operation_takes_precedence_when_innermost():
     assert modified_code.count("PYRDD-DS-001") == 1
 
 
+def test_simple_operation_not_flagged_as_migratable_when_script_has_a_blocking_op():
+    # Even though map() on its own is migratable, the script also uses reduceByKey()
+    # which is not, so the whole script must not be advertised as migratable.
+    given_code = """\
+mapped = rdd.map(f)
+reduced = rdd.reduceByKey(g)
+"""
+    modified_code = rewrite(given_code, RddToDatasetMigrationCommentWriter())
+    assert "simple enough to migrate" not in modified_code
+    assert (
+        "Spark RDD operation 'reduceByKey' has no direct DataFrame/Dataset equivalent"
+        in modified_code
+    )
+    assert modified_code.count("PYRDD-DS-001") == 1
+    mapped_line = next(
+        line for line in modified_code.splitlines() if line.startswith("mapped")
+    )
+    assert "PYRDD-DS-001" not in mapped_line
+
+
+def test_simple_operations_flagged_as_migratable_when_script_only_uses_supported_ops():
+    given_code = """\
+mapped = rdd.map(f)
+flattened = rdd.flatMap(g)
+"""
+    modified_code = rewrite(given_code, RddToDatasetMigrationCommentWriter())
+    assert modified_code.count("PYRDD-DS-001") == 2
+    assert modified_code.count("simple enough to migrate") == 2
+
+
 def test_does_not_flag_dataframe_operations():
     given_code = """\
 df2 = df.select("a").filter(df.a > 1).distinct()
