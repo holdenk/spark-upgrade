@@ -42,13 +42,20 @@ fi
 echo "Fetching iceberg dependencies"
 # We use Iceberg 1.3.0 for Spark 3.3 since we want to able to use changelog view
 if [ ! -f iceberg-spark-runtime-3.3_2.12-1.3.0.jar ]; then
-  wget https://search.maven.org/remotecontent?filepath=org/apache/iceberg/iceberg-spark-runtime-3.3_2.12/1.3.0/iceberg-spark-runtime-3.3_2.12-1.3.0.jar -O iceberg-spark-runtime-3.3_2.12-1.3.0.jar &
+  wget https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-runtime-3.3_2.12/1.3.0/iceberg-spark-runtime-3.3_2.12-1.3.0.jar -O iceberg-spark-runtime-3.3_2.12-1.3.0.jar &
 fi
 # For 2.4 we use Iceberg 1.1 since newer versions are not published for Spark 2.4
 if [ ! -f iceberg-spark-runtime-2.4-1.1.0.jar ]; then
-  wget https://search.maven.org/remotecontent?filepath=org/apache/iceberg/iceberg-spark-runtime-2.4/1.1.0/iceberg-spark-runtime-2.4-1.1.0.jar -O iceberg-spark-runtime-2.4-1.1.0.jar &
+  wget https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-runtime-2.4/1.1.0/iceberg-spark-runtime-2.4-1.1.0.jar -O iceberg-spark-runtime-2.4-1.1.0.jar &
 fi
 wait
+# Fail loudly if either download did not produce a valid jar. A failed "wget -O" leaves an
+# empty file behind; previously search.maven.org/remotecontent returned HTTP 403 to CI
+# runners (we now fetch from Maven Central / repo1 above), and that empty jar got copied
+# onto the Spark classpath, only surfacing much later as a confusing ClassNotFoundException
+# for the Iceberg catalog.
+unzip -tq iceberg-spark-runtime-3.3_2.12-1.3.0.jar > /dev/null
+unzip -tq iceberg-spark-runtime-2.4-1.1.0.jar > /dev/null
 cp iceberg-spark-runtime-3.3_2.12-1.3.0.jar ${SPARK3_DETAILS}/jars/
 cp iceberg-spark-runtime-2.4-1.1.0.jar ${SPARK2_DETAILS}/jars/
 
