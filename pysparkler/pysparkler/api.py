@@ -31,6 +31,7 @@ from pysparkler.pyspark_35_to_40 import pyspark_35_to_40_transformers
 from pysparkler.pyspark_40_to_41 import pyspark_40_to_41_transformers
 from pysparkler.pyspark_41_to_42 import pyspark_41_to_42_transformers
 from pysparkler.pyspark_common import pyspark_common_transformers
+from pysparkler.rdd_to_dataset import rdd_to_dataset_transformers
 from pysparkler.sql_21_to_33 import sql_21_to_33_transformers
 
 
@@ -63,6 +64,8 @@ class PySparkler:
             *pyspark_41_to_42_transformers(),
             *pyspark_common_transformers(),
             *sql_21_to_33_transformers(),
+            # Optional / opt-in checks (disabled by default, enable via config override)
+            *rdd_to_dataset_transformers(),
         ]
         # Override the default values of the transformers with the user provided values
         for transformer in all_transformers:
