@@ -17,6 +17,7 @@
 #
 
 import libcst as cst
+import libcst.matchers as m
 
 from pysparkler.base import StatementLineCommentWriter
 
@@ -25,6 +26,13 @@ from pysparkler.base import StatementLineCommentWriter
 # This mirrors the Scala scalafix rule RDDToDatasetMigrationCheck: it looks at
 # the RDD operations used in a script and leaves a code hint about whether the
 # RDD usage is simple enough to migrate to the typed DataFrame/Dataset API.
+#
+# Like the Scala rule it is conservative about the "can be migrated" verdict: a
+# script is only advertised as migratable when *every* RDD operation it uses is
+# one of the narrowly supported ones. If the script uses any RDD operation with
+# no DataFrame/Dataset equivalent, only those blocking operations are flagged and
+# the simple operations are left alone, so we never claim a pipeline is migratable
+# when it is not.
 #
 # Because PySpark is dynamically typed we cannot always tell an RDD apart from a
 # DataFrame, so this is a fuzzy code-hint rule. To keep the false positive rate
@@ -37,10 +45,10 @@ from pysparkler.base import StatementLineCommentWriter
 class RddToDatasetMigrationCommentWriter(StatementLineCommentWriter):
     """Flags RDD operations and hints whether the RDD usage can be migrated to the DataFrame/Dataset API.
 
-    RDD operations that have a reasonably direct DataFrame/Dataset equivalent get a hint that they can be
-    migrated, while RDD-specific operations with no straightforward equivalent (key/pair functions, joins,
-    zips, custom partitioning, manual aggregations, RDD sinks, ...) get a hint that the surrounding RDD usage
-    likely can't be migrated automatically.
+    The "can be migrated" hint is only added when the whole script uses only the narrowly supported RDD
+    operations (those with a reasonably direct DataFrame/Dataset equivalent). If any RDD-specific operation
+    with no straightforward equivalent (key/pair functions, joins, zips, custom partitioning, manual
+    aggregations, RDD sinks, ...) is used, only those blocking operations are flagged as not migratable.
     """
 
     # RDD operations that have a reasonably direct DataFrame/Dataset equivalent.
@@ -108,8 +116,19 @@ class RddToDatasetMigrationCommentWriter(StatementLineCommentWriter):
         )
         # Optional / opt-in: disabled unless explicitly enabled via config override.
         self.enabled = False
-        # Whether a blocking RDD operation was seen on the statement line being visited.
-        self._line_is_blocking = False
+        # Whether the script uses any RDD operation with no DataFrame/Dataset equivalent.
+        # Computed up front so the "can be migrated" hint is only emitted when the whole
+        # script uses only the narrowly supported operations.
+        self._has_blocking = False
+
+    def visit_Module(self, node: cst.Module) -> None:
+        """Pre-scan the whole module to see whether any unsupported RDD operation is used."""
+        self._has_blocking = any(
+            isinstance(call, cst.Call)
+            and isinstance(call.func, cst.Attribute)
+            and call.func.attr.value in self.BLOCKING_OPS
+            for call in m.findall(node, m.Call())
+        )
 
     def visit_Call(self, node: cst.Call) -> None:
         """Detect RDD-specific operations and set a migration hint for the statement line."""
@@ -119,29 +138,18 @@ class RddToDatasetMigrationCommentWriter(StatementLineCommentWriter):
         op = func.attr.value
         if op in self.BLOCKING_OPS:
             self.match_found = True
-            self._line_is_blocking = True
             self._comment = (
                 f"Spark RDD operation '{op}' has no direct DataFrame/Dataset equivalent "
                 f"({self.BLOCKING_OPS[op]}); this RDD usage likely can't be migrated to the "
                 "DataFrame/Dataset API automatically."
             )
-        elif op in self.SIMPLE_OPS and not self._line_is_blocking:
+        elif op in self.SIMPLE_OPS and not self._has_blocking:
             self.match_found = True
             self._comment = (
                 f"Spark RDD operation '{op}' has a direct DataFrame/Dataset equivalent "
                 f"({self.SIMPLE_OPS[op]}); this RDD usage is simple enough to migrate to the "
                 "DataFrame/Dataset API."
             )
-
-    def leave_SimpleStatementLine(
-        self,
-        original_node: cst.SimpleStatementLine,
-        updated_node: cst.SimpleStatementLine,
-    ) -> cst.SimpleStatementLine:
-        """Add the migration hint to the statement line and reset the per-line blocking state."""
-        result = super().leave_SimpleStatementLine(original_node, updated_node)
-        self._line_is_blocking = False
-        return result
 
 
 def rdd_to_dataset_transformers() -> list[cst.CSTTransformer]:
