@@ -19,3 +19,4 @@ fix.SparkSQLCallExternal
 fix.AllEquivalentExprs
 fix.AnsiModeEnabledWarn
 fix.MesosRemovedWarn
+fix.RDDToDatasetMigrationCheck

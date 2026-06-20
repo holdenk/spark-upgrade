@@ -32,6 +32,33 @@ git clone https://github.com/holdenk/spark-upgrade.git
 cd spark-upgrade/sql; pip install .
 ```
 
+## Optional rules
+
+### RDDToDatasetMigrationCheck
+
+A simplistic, opt-in check that looks at the RDD usage in a file and decides
+whether it is "simple enough" to migrate to the typed `Dataset` API. It does
+*not* rewrite your code; it only reports a lint message:
+
+  - If every RDD operation used has a direct `Dataset`/`DataFrame` equivalent
+    (`map`, `filter`, `flatMap`, `distinct`, `union`, `count`, ...), it reports
+    that the pipeline is a good candidate for migration.
+  - If any RDD operation has no simple equivalent (key/pair functions such as
+    `reduceByKey`/`join`, `zipWithIndex`, custom `partitionBy`, manual
+    `aggregate`, `saveAs*`, ...), it reports a warning at each such operation
+    explaining why the pipeline can not be migrated automatically.
+
+To keep it conservative, any RDD API the rule does not explicitly recognise is
+treated as blocking a migration. It is not enabled in the default
+`.scalafix.conf`; add it to your config (it ships in `.scalafix-warn.conf`) to
+turn it on:
+
+```
+rules = [
+  RDDToDatasetMigrationCheck
+]
+```
+
 ## Other (non-Spark Specific) rules you may wish to use
 
 https://github.com/scala/scala-rewrites -
