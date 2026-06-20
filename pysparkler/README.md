@@ -81,8 +81,9 @@ to upgrade your PySpark scripts. In the latest stable version it supports the fo
   removed pandas-on-spark APIs, raised minimum dependency versions). Because these are not safe to rewrite
   automatically in a dynamically-typed language, the 4.x rules mostly emit **code hints** rather than code
   transformations. Review each hint and apply the suggested change where it is relevant.
-- The `3.3 → 3.4` and `3.4 → 3.5` steps are not yet implemented, so a `3.3 → 4.2` run currently skips the
-  hints that belong to those two intermediate releases.
+- PySparkler applies every implemented rule on each run; the `from_pyspark` / `to_pyspark` arguments do not
+  currently scope which rules run. The `3.3 → 3.4` and `3.4 → 3.5` steps have no rules yet, so those
+  intermediate hints are simply absent (not filtered out by a version range).
 - Spark `4.2` is still a **preview** release. The `4.1 → 4.2` rules track the preview migration guide and may
   change before the final `4.2.0` release.
 

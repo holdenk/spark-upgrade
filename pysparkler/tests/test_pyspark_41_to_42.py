@@ -74,4 +74,21 @@ def test_does_nothing_when_no_udf_or_to_pandas_present():
 result = df.select("a", "b")
 """
     assert rewrite(given_code, ArrowOptimizedPythonUdfByDefault()) == given_code
+    assert rewrite(given_code, ArrowOptimizedPythonUdtfByDefault()) == given_code
     assert rewrite(given_code, ArrowDataExchangeEnabledByDefault()) == given_code
+
+
+def test_adds_code_hint_when_udf_used_as_module_attribute():
+    given_code = """
+greet = F.udf(my_func, StringType())
+"""
+    modified_code = rewrite(given_code, ArrowOptimizedPythonUdfByDefault())
+    assert "# PY41-42-003:" in modified_code and modified_code != given_code
+
+
+def test_adds_code_hint_when_udtf_used_as_module_attribute():
+    given_code = """
+my_table_func = F.udtf(MyUdtf, returnType="x: int")
+"""
+    modified_code = rewrite(given_code, ArrowOptimizedPythonUdtfByDefault())
+    assert "# PY41-42-004:" in modified_code and modified_code != given_code

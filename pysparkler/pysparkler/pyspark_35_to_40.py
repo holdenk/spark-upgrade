@@ -147,9 +147,19 @@ class PandasIndexClassesRemoved(StatementLineCommentWriter):
 on Spark, use Index directly instead.",
         )
 
-    def visit_Name(self, node: cst.Name) -> None:
-        """Check if the removed Int64Index / Float64Index classes are being referenced"""
-        if m.matches(node, m.OneOf(m.Name("Int64Index"), m.Name("Float64Index"))):
+    def visit_Call(self, node: cst.Call) -> None:
+        """Check if the removed Int64Index / Float64Index classes are being constructed"""
+        if m.matches(
+            node,
+            m.Call(
+                func=m.OneOf(
+                    m.Name("Int64Index"),
+                    m.Name("Float64Index"),
+                    m.Attribute(attr=m.Name("Int64Index")),
+                    m.Attribute(attr=m.Name("Float64Index")),
+                )
+            ),
+        ):
             self.match_found = True
 
 

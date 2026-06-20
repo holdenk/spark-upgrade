@@ -89,3 +89,47 @@ my_udf = pandas_udf(my_func, returnType=LongType())
 my_udf = pandas_udf(my_func, returnType=LongType())  # PY40-41-005: As of PySpark 4.1, spark.sql.execution.pandas.convertToArrowArraySafely is enabled by default, so PyArrow raises errors on unsafe conversions (integer overflow, float truncation, loss of precision). To restore the previous behavior, set it to false.  # noqa: E501
 """
     assert modified_code == expected_code
+
+
+def test_adds_code_hint_when_top_level_pyspark_imported_alongside_other_modules():
+    given_code = """
+import os, pyspark
+"""
+    modified_code = rewrite(given_code, Python39SupportDropped())
+    expected_code = """
+import os, pyspark  # PY40-41-003: As of PySpark 4.1, Python 3.9 support has been dropped, Python 3.10 or higher is required.  # noqa: E501
+"""
+    assert modified_code == expected_code
+
+
+def test_does_nothing_when_pyspark_not_imported_at_top_level():
+    given_code = """
+import os
+import sys
+"""
+    modified_code = rewrite(given_code, Python39SupportDropped())
+    assert modified_code == given_code
+
+
+def test_does_nothing_when_binary_type_absent():
+    given_code = """
+field = StructField("name", StringType())
+"""
+    modified_code = rewrite(given_code, BinaryTypeMapsToBytes())
+    assert modified_code == given_code
+
+
+def test_adds_code_hint_when_pandas_udf_used_as_module_attribute():
+    given_code = """
+my_udf = F.pandas_udf(my_func, returnType=LongType())
+"""
+    modified_code = rewrite(given_code, ConvertToArrowArraySafelyEnabledByDefault())
+    assert "# PY40-41-005:" in modified_code and modified_code != given_code
+
+
+def test_does_nothing_for_convert_safely_when_pandas_udf_absent():
+    given_code = """
+result = df.select("a")
+"""
+    modified_code = rewrite(given_code, ConvertToArrowArraySafelyEnabledByDefault())
+    assert modified_code == given_code

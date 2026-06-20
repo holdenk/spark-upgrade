@@ -77,8 +77,17 @@ required.",
         )
 
     def visit_Import(self, node: cst.Import) -> None:
-        """Check if the top-level pyspark package is being imported"""
-        if m.matches(node, m.Import(names=[m.ImportAlias(name=m.Name("pyspark"))])):
+        """Check if the top-level pyspark package is being imported, even alongside other modules"""
+        if m.matches(
+            node,
+            m.Import(
+                names=[
+                    m.ZeroOrMore(),
+                    m.ImportAlias(name=m.Name("pyspark")),
+                    m.ZeroOrMore(),
+                ]
+            ),
+        ):
             self.match_found = True
 
 

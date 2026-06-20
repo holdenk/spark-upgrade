@@ -149,3 +149,24 @@ codes, uniques = series.factorize(use_na_sentinel=True)
 """
     modified_code = rewrite(given_code, FactorizeNaSentinelRenamed())
     assert modified_code == given_code
+
+
+def test_adds_code_hint_when_index_class_is_constructed_without_module_prefix():
+    given_code = """
+idx = Int64Index([1, 2, 3])
+"""
+    modified_code = rewrite(given_code, PandasIndexClassesRemoved())
+    expected_code = """
+idx = Int64Index([1, 2, 3])  # PY35-40-006: As of PySpark 4.0, Int64Index and Float64Index have been removed from pandas API on Spark, use Index directly instead.  # noqa: E501
+"""
+    assert modified_code == expected_code
+
+
+def test_does_nothing_for_index_class_names_that_are_not_constructed():
+    # Assignment targets and keyword-argument names should not be flagged.
+    given_code = """
+Int64Index = 5
+result = compute(Float64Index=3)
+"""
+    modified_code = rewrite(given_code, PandasIndexClassesRemoved())
+    assert modified_code == given_code
