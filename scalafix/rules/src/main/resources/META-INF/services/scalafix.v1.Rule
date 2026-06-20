@@ -17,3 +17,4 @@ fix.MultiLineDatasetReadWarn
 fix.ExpressionEncoder
 fix.SparkSQLCallExternal
 fix.AllEquivalentExprs
+fix.RDDToDatasetMigrationCheck
