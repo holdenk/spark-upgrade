@@ -13,16 +13,22 @@ prompt () {
 }
 
 bash ./cleanup.sh
-cd ./sparkdemoproject
-if ! [ -x "$(command -v gradle)" ]; then
-  echo 'Error: git is not installed.' >&2
-  if [ -x "$(command -v brew)" ]; then
-    brew install gradle
-  elif [ -x "$(command -v sdk)" ]; then
-    sdk install gradle
-  fi
+
+########################################################################
+# Pin Gradle to a version that runs on Java 11. This demo builds and runs
+# Spark 2.4.8, which needs Java 8/11, but the system Gradle on CI runners is
+# now 9.x and refuses to start on anything older than Java 17. Download a
+# known-good Gradle so the demo works regardless of the system Gradle/JVM.
+########################################################################
+GRADLE_VERSION=7.6.4
+if [ ! -x "gradle-${GRADLE_VERSION}/bin/gradle" ]; then
+  wget -q "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" -O "gradle-${GRADLE_VERSION}-bin.zip"
+  unzip -q -o "gradle-${GRADLE_VERSION}-bin.zip"
 fi
-gradle clean
+GRADLE="$(pwd)/gradle-${GRADLE_VERSION}/bin/gradle"
+
+cd ./sparkdemoproject
+"${GRADLE}" clean
 cd ..
 
 ########################################################################
@@ -58,7 +64,7 @@ rm -rf sparkdemoproject-3
 cp -af sparkdemoproject sparkdemoproject-3
 echo "Build the current demo project"
 cd sparkdemoproject
-gradle clean test jar
+"${GRADLE}" clean test jar
 cd ..
 cd sparkdemoproject-3
 
@@ -81,7 +87,7 @@ cp ../../../scalafix/.scalafix.conf ./
 prompt "Setup for scalafix complete"
 
 echo "Great! Now we'll try and run the scala fix rules in your project! Yay!. This might fail if you have interesting build targets."
-gradle scalafix #|| (echo "Linter warnings were found"; prompt)
+"${GRADLE}" scalafix #|| (echo "Linter warnings were found"; prompt)
 
 echo "ScalaFix is done, you should probably review the changes (e.g. git diff)"
 
@@ -91,7 +97,7 @@ echo "You will also need to update dependency versions now (e.g. Spark to 3.3 an
 echo "Please address those and then press enter."
 
 prompt "Build file setup done. Next, we will build a jar"
-gradle jar
+"${GRADLE}" jar
 
 prompt "Jar has been built. Check build/libs for the jar"
 
