@@ -79,7 +79,7 @@ class RDDToDatasetMigrationCheck
     "distinct", "union", "++", "intersection", "subtract",
     "count", "collect", "toLocalIterator", "take", "first", "reduce", "isEmpty",
     "sample", "cache", "persist", "unpersist", "checkpoint",
-    "coalesce", "repartition"
+    "coalesce", "repartition", "sortBy"
   )
 
   // RDD members that neither help nor hinder a migration (accessors / metadata).
@@ -115,7 +115,6 @@ class RDDToDatasetMigrationCheck
     "flatMapValues" -> "pair-RDD function; operate on the value column instead",
     "lookup" -> "use a filter on the key column",
     "sortByKey" -> "use Dataset.orderBy on the key column",
-    "sortBy" -> "use Dataset.orderBy / sort with a column expression",
     "zip" -> "RDD.zip has no Dataset equivalent",
     "zipPartitions" -> "no Dataset equivalent",
     "zipWithIndex" -> "use monotonically_increasing_id() or a window function",
