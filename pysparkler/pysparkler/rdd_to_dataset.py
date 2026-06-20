@@ -32,7 +32,9 @@ from pysparkler.base import StatementLineCommentWriter
 # one of the narrowly supported ones. If the script uses any RDD operation with
 # no DataFrame/Dataset equivalent, only those blocking operations are flagged and
 # the simple operations are left alone, so we never claim a pipeline is migratable
-# when it is not.
+# when it is not. The unsupported-operation list below is kept comprehensive for
+# the known RDD API so this gate is reliable; a method we do not recognise at all
+# cannot be classified without type information.
 #
 # Because PySpark is dynamically typed we cannot always tell an RDD apart from a
 # DataFrame, so this is a fuzzy code-hint rule. To keep the false positive rate
@@ -68,8 +70,14 @@ class RddToDatasetMigrationCommentWriter(StatementLineCommentWriter):
         "foldByKey": "key-based aggregation; use groupBy(...).agg(...)",
         "countByKey": "use groupBy(...).count()",
         "countByValue": "use groupBy(...).count()",
+        "countApprox": "approximate actions have no DataFrame equivalent",
+        "countApproxDistinct": "use approx_count_distinct()",
+        "sumApprox": "approximate actions have no DataFrame equivalent",
+        "meanApprox": "approximate actions have no DataFrame equivalent",
         "reduceByKeyLocally": "key-based aggregation; use groupBy(...).agg(...)",
         "sampleByKey": "use DataFrame.stat.sampleBy(...)",
+        "subtractByKey": "pair-RDD set op; use a left_anti join on the key column",
+        "collectAsMap": "collect() the DataFrame and build the dict in Python",
         "leftOuterJoin": 'extract the join keys and use DataFrame.join(..., how="left")',
         "rightOuterJoin": 'extract the join keys and use DataFrame.join(..., how="right")',
         "fullOuterJoin": 'extract the join keys and use DataFrame.join(..., how="outer")',
@@ -80,6 +88,7 @@ class RddToDatasetMigrationCommentWriter(StatementLineCommentWriter):
         "repartitionAndSortWithinPartitions": "no direct DataFrame equivalent",
         "mapPartitions": "use mapInPandas()/mapInArrow() or vectorized UDFs",
         "mapPartitionsWithIndex": "the partition index is not exposed on DataFrame",
+        "mapPartitionsWithSplit": "the partition index is not exposed on DataFrame",
         "zip": "RDD.zip has no DataFrame equivalent",
         "zipWithIndex": "use monotonically_increasing_id() or a window function",
         "zipWithUniqueId": "use monotonically_increasing_id()",
@@ -96,6 +105,7 @@ class RddToDatasetMigrationCommentWriter(StatementLineCommentWriter):
         "lookup": "use a filter on the key column",
         "takeOrdered": "use orderBy(...).limit(n)",
         "top": "use orderBy(...).limit(n)",
+        "takeSample": "use sample(...).limit(n)",
         "saveAsTextFile": "use DataFrameWriter, e.g. df.write.text(...)",
         "saveAsSequenceFile": "use DataFrameWriter",
         "saveAsPickleFile": "use DataFrameWriter, e.g. df.write.parquet(...)",

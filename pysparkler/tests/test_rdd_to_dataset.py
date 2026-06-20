@@ -130,6 +130,22 @@ flattened = rdd.flatMap(g)
     assert modified_code.count("simple enough to migrate") == 2
 
 
+def test_unlisted_pair_op_blocks_the_migratable_hint():
+    # subtractByKey is an RDD-only pair operation with no DataFrame equivalent, so
+    # the map line must NOT be advertised as migratable even though map on its own is.
+    given_code = """\
+mapped = rdd.map(f)
+diff = pairs.subtractByKey(other)
+"""
+    modified_code = rewrite(given_code, RddToDatasetMigrationCommentWriter())
+    assert "simple enough to migrate" not in modified_code
+    assert (
+        "Spark RDD operation 'subtractByKey' has no direct DataFrame/Dataset equivalent"
+        in modified_code
+    )
+    assert modified_code.count("PYRDD-DS-001") == 1
+
+
 def test_does_not_flag_dataframe_operations():
     given_code = """\
 df2 = df.select("a").filter(df.a > 1).distinct()
