@@ -59,12 +59,41 @@ import pyspark  # PY40-41-003: As of PySpark 4.1, Python 3.9 support has been dr
     assert modified_code == expected_code
 
 
-def test_does_nothing_for_pyspark_submodule_imports():
+def test_adds_code_hint_for_pyspark_submodule_imports():
     given_code = """
 import pyspark.pandas as ps
 """
     modified_code = rewrite(given_code, Python39SupportDropped())
-    assert modified_code == given_code
+    expected_code = """
+import pyspark.pandas as ps  # PY40-41-003: As of PySpark 4.1, Python 3.9 support has been dropped, Python 3.10 or higher is required.  # noqa: E501
+"""
+    assert modified_code == expected_code
+
+
+def test_adds_code_hint_for_from_pyspark_imports():
+    given_code = """
+from pyspark.sql import SparkSession
+"""
+    modified_code = rewrite(given_code, Python39SupportDropped())
+    expected_code = """
+from pyspark.sql import SparkSession  # PY40-41-003: As of PySpark 4.1, Python 3.9 support has been dropped, Python 3.10 or higher is required.  # noqa: E501
+"""
+    assert modified_code == expected_code
+
+
+def test_python39_warning_fires_only_once_per_module():
+    given_code = """
+import pyspark
+from pyspark.sql import SparkSession
+import pyspark.sql.functions as F
+"""
+    modified_code = rewrite(given_code, Python39SupportDropped())
+    expected_code = """
+import pyspark  # PY40-41-003: As of PySpark 4.1, Python 3.9 support has been dropped, Python 3.10 or higher is required.  # noqa: E501
+from pyspark.sql import SparkSession
+import pyspark.sql.functions as F
+"""
+    assert modified_code == expected_code
 
 
 def test_adds_code_hint_when_binary_type_is_constructed():
@@ -86,9 +115,17 @@ my_udf = pandas_udf(my_func, returnType=LongType())
 """
     modified_code = rewrite(given_code, ConvertToArrowArraySafelyEnabledByDefault())
     expected_code = """
-my_udf = pandas_udf(my_func, returnType=LongType())  # PY40-41-005: As of PySpark 4.1, spark.sql.execution.pandas.convertToArrowArraySafely is enabled by default, so PyArrow raises errors on unsafe conversions (integer overflow, float truncation, loss of precision). To restore the previous behavior, set it to false.  # noqa: E501
+my_udf = pandas_udf(my_func, returnType=LongType())  # PY40-41-005: As of PySpark 4.1, spark.sql.execution.pandas.convertToArrowArraySafely is enabled by default, so PyArrow raises errors on unsafe conversions (integer overflow, float truncation, loss of precision) in Arrow-enabled UDFs and when creating DataFrames from pandas. To restore the previous behavior, set it to false.  # noqa: E501
 """
     assert modified_code == expected_code
+
+
+def test_adds_code_hint_when_create_data_frame_used():
+    given_code = """
+sdf = spark.createDataFrame(pdf)
+"""
+    modified_code = rewrite(given_code, ConvertToArrowArraySafelyEnabledByDefault())
+    assert "# PY40-41-005:" in modified_code and modified_code != given_code
 
 
 def test_adds_code_hint_when_top_level_pyspark_imported_alongside_other_modules():

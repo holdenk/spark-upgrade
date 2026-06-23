@@ -20,6 +20,7 @@ import libcst as cst
 import libcst.matchers as m
 
 from pysparkler.base import (
+    PySparkImportCommentWriter,
     RequiredDependencyVersionCommentWriter,
     StatementLineCommentWriter,
 )
@@ -63,7 +64,7 @@ class RequiredPandasVersionCommentWriter(RequiredDependencyVersionCommentWriter)
         )
 
 
-class Python39SupportDropped(StatementLineCommentWriter):
+class Python39SupportDropped(PySparkImportCommentWriter):
     """In Spark 4.1, Python 3.9 support was dropped in PySpark."""
 
     def __init__(
@@ -75,20 +76,6 @@ class Python39SupportDropped(StatementLineCommentWriter):
             comment=f"As of PySpark {pyspark_version}, Python 3.9 support has been dropped, Python 3.10 or higher is \
 required.",
         )
-
-    def visit_Import(self, node: cst.Import) -> None:
-        """Check if the top-level pyspark package is being imported, even alongside other modules"""
-        if m.matches(
-            node,
-            m.Import(
-                names=[
-                    m.ZeroOrMore(),
-                    m.ImportAlias(name=m.Name("pyspark")),
-                    m.ZeroOrMore(),
-                ]
-            ),
-        ):
-            self.match_found = True
 
 
 class BinaryTypeMapsToBytes(StatementLineCommentWriter):
@@ -133,18 +120,20 @@ class ConvertToArrowArraySafelyEnabledByDefault(StatementLineCommentWriter):
         super().__init__(
             transformer_id="PY40-41-005",
             comment=f"As of PySpark {pyspark_version}, spark.sql.execution.pandas.convertToArrowArraySafely is enabled \
-by default, so PyArrow raises errors on unsafe conversions (integer overflow, float truncation, loss of precision). \
-To restore the previous behavior, set it to false.",
+by default, so PyArrow raises errors on unsafe conversions (integer overflow, float truncation, loss of precision) in \
+Arrow-enabled UDFs and when creating DataFrames from pandas. To restore the previous behavior, set it to false.",
         )
 
     def visit_Call(self, node: cst.Call) -> None:
-        """Check if pandas_udf is being used (as a decorator factory or function)"""
+        """Check for paths affected by convertToArrowArraySafely: pandas_udf serialization
+        or creating a DataFrame from pandas data via createDataFrame."""
         if m.matches(
             node,
             m.Call(
                 func=m.OneOf(
                     m.Name("pandas_udf"),
                     m.Attribute(attr=m.Name("pandas_udf")),
+                    m.Attribute(attr=m.Name("createDataFrame")),
                 )
             ),
         ):

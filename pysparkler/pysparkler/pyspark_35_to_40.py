@@ -20,6 +20,7 @@ import libcst as cst
 import libcst.matchers as m
 
 from pysparkler.base import (
+    PySparkImportCommentWriter,
     RequiredDependencyVersionCommentWriter,
     StatementLineCommentWriter,
 )
@@ -266,6 +267,20 @@ pandas API on Spark, use use_na_sentinel instead.",
             self.match_found = True
 
 
+class Python38SupportDropped(PySparkImportCommentWriter):
+    """In Spark 4.0, Python 3.8 support was dropped in PySpark."""
+
+    def __init__(
+        self,
+        pyspark_version: str = "4.0",
+    ):
+        super().__init__(
+            transformer_id="PY35-40-010",
+            comment=f"As of PySpark {pyspark_version}, Python 3.8 support has been dropped, Python 3.9 or higher is \
+required.",
+        )
+
+
 def pyspark_35_to_40_transformers() -> list[cst.CSTTransformer]:
     """Return a list of transformers for PySpark 3.5 to 4.0 migration guide"""
     return [
@@ -278,4 +293,5 @@ def pyspark_35_to_40_transformers() -> list[cst.CSTTransformer]:
         AnsiModeEnabledByDefault(),
         SqlFunctionsStarImport(),
         FactorizeNaSentinelRenamed(),
+        Python38SupportDropped(),
     ]

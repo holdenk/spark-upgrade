@@ -22,6 +22,7 @@ from pysparkler.pyspark_35_to_40 import (
     PandasIndexClassesRemoved,
     PandasIteritemsRemoved,
     PandasToKoalasRemoved,
+    Python38SupportDropped,
     RequiredNumpyVersionCommentWriter,
     RequiredPandasVersionCommentWriter,
     RequiredPyArrowVersionCommentWriter,
@@ -169,4 +170,37 @@ Int64Index = 5
 result = compute(Float64Index=3)
 """
     modified_code = rewrite(given_code, PandasIndexClassesRemoved())
+    assert modified_code == given_code
+
+
+def test_adds_python38_drop_hint_to_first_pyspark_import():
+    given_code = """
+import pyspark
+from pyspark.sql import SparkSession
+"""
+    modified_code = rewrite(given_code, Python38SupportDropped())
+    expected_code = """
+import pyspark  # PY35-40-010: As of PySpark 4.0, Python 3.8 support has been dropped, Python 3.9 or higher is required.  # noqa: E501
+from pyspark.sql import SparkSession
+"""
+    assert modified_code == expected_code
+
+
+def test_python38_drop_hint_handles_from_pyspark_import():
+    given_code = """
+from pyspark.sql import SparkSession
+"""
+    modified_code = rewrite(given_code, Python38SupportDropped())
+    expected_code = """
+from pyspark.sql import SparkSession  # PY35-40-010: As of PySpark 4.0, Python 3.8 support has been dropped, Python 3.9 or higher is required.  # noqa: E501
+"""
+    assert modified_code == expected_code
+
+
+def test_python38_drop_hint_does_nothing_without_pyspark_import():
+    given_code = """
+import os
+import numpy as np
+"""
+    modified_code = rewrite(given_code, Python38SupportDropped())
     assert modified_code == given_code
