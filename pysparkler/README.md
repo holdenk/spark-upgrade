@@ -87,6 +87,17 @@ to upgrade your PySpark scripts. In the latest stable version it supports the fo
 - Spark `4.2` is still a **preview** release. The `4.1 → 4.2` rules track the preview migration guide and may
   change before the final `4.2.0` release.
 
+**Cross-version lints (`PYC-*`):** in addition to the per-transition rules, `pyspark_common.py` holds
+version-agnostic correctness/portability hints whose transformer ids use the `PYC-` prefix:
+
+- `PYC-001` — `trigger(once=True)` / `Trigger.Once` is deprecated since Spark 3.3; suggests
+  `trigger(availableNow=True)`.
+- `PYC-002` — importing builtins-shadowing names (`max`, `min`, `sum`, `sorted`, …) from
+  `pyspark.sql.functions` (or via `import *`); suggests importing the module or aliasing.
+- `PYC-003` — detects removed/renamed Spark configs passed to `.set()` / `.config()` (e.g. the legacy
+  parquet/avro rebase configs, `spark.shuffle.unsafe.file.output.buffer`, `*.blacklist.*`) and suggests the
+  replacement so the setting keeps taking effect.
+
 ## Features Supported
 
 The tool supports the following features:

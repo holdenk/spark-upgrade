@@ -32,6 +32,7 @@ def get_rules() -> List[BaseRule]:
         Rule_FORMATSTRONEINDEX_L004,
         Rule_SPARKSQL_L004,
         Rule_SPARKSQL_L005,
+        Rule_GLOBALTEMPVIEW_L006,
     ]
 
 
@@ -414,6 +415,44 @@ class Rule_SPARKSQL_L004(BaseRule):
                     ],
                 )
 
+        return None
+
+
+class Rule_GLOBALTEMPVIEW_L006(BaseRule):
+    """Global temporary views are not portable across all Spark runtimes.
+
+    ``CREATE GLOBAL TEMPORARY VIEW`` ties the view to the cross-session ``global_temp``
+    database and the lifetime of the Spark application. Some runtimes (for example Spark
+    Connect / Databricks serverless) do not support global temporary views. There is no
+    safe automatic rewrite, so this rule only warns: depending on intent, switch to a
+    regular session-scoped view (``CREATE TEMPORARY VIEW``) or a persistent table/view.
+
+    **Flagged**
+
+    .. code-block:: sql
+
+        CREATE GLOBAL TEMPORARY VIEW v AS SELECT 1
+    """
+
+    groups = ("all",)
+    crawl_behaviour = SegmentSeekerCrawler({"create_view_statement"})
+    is_fix_compatible = False
+
+    def _eval(self, context: RuleContext) -> Optional[LintResult]:
+        """Warn when a view is created as GLOBAL TEMPORARY."""
+        keywords = [
+            segment.raw_upper
+            for segment in context.segment.segments
+            if segment.is_type("keyword")
+        ]
+        if "GLOBAL" in keywords:
+            return LintResult(
+                anchor=context.segment,
+                description="GLOBAL TEMPORARY VIEW is not supported on all Spark runtimes "
+                "(e.g. Spark Connect / serverless). Use a regular TEMPORARY VIEW or a "
+                "persistent table/view instead. See "
+                "https://spark.apache.org/docs/latest/sql-ref-syntax-ddl-create-view.html",
+            )
         return None
 
 
