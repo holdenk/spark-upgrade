@@ -138,12 +138,15 @@ val r = rdd.map(_ + 1).reduceByKey(_ + _)   // reduceByKey blocks → no rewrite
 
 ## Phasing
 
-- **Phase 1 (MVP):** origins `sc.parallelize`/`makeRDD` and `dataset.rdd`; the
-  name-identical ops + renames (`++`, `intersection`, `subtract`); require a
-  discoverable `SparkSession`; add `import spark.implicits._`; disqualify on
-  `sortBy`, non-Dataset accessors, unsupported origins, or RDD-typed exits.
-- **Phase 2:** `sc.textFile` → `spark.read.textFile`; introduce a `SparkSession`
-  when only `sc` is present; insert `.rdd` at RDD-typed exits.
+- **Phase 1 (implemented):** origins `sc.parallelize`/`makeRDD` →
+  `createDataset`, `sc.textFile` → `read.textFile`, and `dataset.rdd` drop;
+  name-identical ops only; SparkSession from `<x>.sparkContext` else `spark`;
+  implicits must already be present. Disqualify (log, no change) on renames
+  (`++`/`intersection`/`subtract`), `sortBy`, non-Dataset accessors, blocking
+  ops, or any non-swap op.
+- **Phase 2:** renames (`++`→`union`, `intersection`→`intersect`,
+  `subtract`→`except`) gated by receiver tracing; `import implicits._`
+  synthesis; richer SparkSession discovery; insert `.rdd` at RDD-typed exits.
 - **Phase 3 (maybe never):** `sortBy` → `orderBy` with column synthesis.
 
 ## Testing
@@ -156,12 +159,24 @@ scalafix testkit input/output fixture pairs (rewrites compare against `output/`)
 - blocked file (`reduceByKey`) → unchanged (input-only, lint asserted).
 - unsupported origin (RDD method parameter) → unchanged (input-only, lint).
 
-## Open questions
+## Decisions (resolved)
 
-1. `sc.parallelize(seq, n)`: preserve `n` via `.repartition(n)`, or drop it
-   (Dataset partitioning is planner-driven)?
-2. When no `SparkSession`/`import spark.implicits._` can be found: skip + log
-   (proposed) — OK?
-3. `sortBy`: log-only for now (not auto-swapped) — OK?
-4. New opt-in rule `RDDToDatasetMigration` separate from the checker (proposed),
-   so users choose check-only vs rewrite — OK?
+1. `sc.parallelize(seq, n)` → `createDataset(seq).repartition(n)` (preserve `n`).
+2. SparkSession sourcing is **best-effort**: taken from `<x>.sparkContext` when
+   the origin is written that way, else assumed to be named `spark`. The
+   `import <session>.implicits._` is **not** synthesised (a local import can't be
+   placed reliably) — it must already be in scope, otherwise the rewritten file
+   won't compile and the user fixes it up. This is the "best-effort" tradeoff.
+3. `sortBy` (and `intersection`/`subtract`/`++`) are **not** auto-swapped in
+   Phase 1 — they're logged as "migrate manually". They need a renamed call
+   and/or a column expression, which is unsafe without receiver tracing.
+4. Implemented as a **separate opt-in rule** `RDDToDatasetMigration`
+   (`isRewrite = true`); the lint-only `RDDToDatasetMigrationCheck` is unchanged.
+
+## Status
+
+**Phase 1 implemented** (`RDDToDatasetMigration`): whole-file gate (rewrite only
+if every RDD op is a name-for-name `Dataset` swap, else log every blocker and
+change nothing); origins `parallelize`/`makeRDD` → `createDataset`,
+`textFile` → `read.textFile`, and `.rdd` drop. No renames, no import synthesis,
+no exit `.rdd` insertion yet (Phase 2). PySpark stays detect/log-only.

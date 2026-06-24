@@ -18,3 +18,4 @@ fix.ExpressionEncoder
 fix.SparkSQLCallExternal
 fix.AllEquivalentExprs
 fix.RDDToDatasetMigrationCheck
+fix.RDDToDatasetMigration
