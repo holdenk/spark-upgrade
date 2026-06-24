@@ -59,6 +59,38 @@ rules = [
 ]
 ```
 
+### RDDToDatasetMigration (rewrite)
+
+A best-effort, opt-in **rewrite** that actually swaps an RDD pipeline to the
+typed `Dataset` API — but only when the whole file is migratable. If every RDD
+operation is a name-for-name `Dataset` swap (`map`, `filter`, `flatMap`,
+`distinct`, `union`, `count`, `collect`, `reduce`, ...), it converts the RDD
+*origins* and leaves the rest of the chain untouched:
+
+  - `sc.parallelize(seq)` / `makeRDD(seq)` → `spark.createDataset(seq)`
+    (`.repartition(n)` is appended when a partition count is given)
+  - `sc.textFile(path)` → `spark.read.textFile(path)`
+  - `someDataset.rdd` → `someDataset` (drops the `.rdd`)
+
+If the file uses anything that is not a clean swap (key/pair functions, joins,
+`sortBy`, `intersection`/`subtract`/`++`, RDD-only accessors, ...), it makes
+**no change** and logs each blocker instead — so it never half-migrates a
+pipeline. The typed `Dataset` operations need an `Encoder`, so an
+`import spark.implicits._` must be in scope (the rule does not add it); the
+SparkSession is taken from `<x>.sparkContext` or assumed to be named `spark`.
+The result is meant to be recompiled, which validates the migration. See
+[rdd-to-dataset-rewrite-design.md](./rdd-to-dataset-rewrite-design.md) for the
+full design and the limits of what is rewritten. Enable it explicitly:
+
+```
+rules = [
+  RDDToDatasetMigration
+]
+```
+
+This is Scala-only. PySparkler's equivalent stays detection/log-only because
+PySpark's `DataFrame` has no typed `map`/`flatMap`/`reduce` to swap to.
+
 ## Other (non-Spark Specific) rules you may wish to use
 
 https://github.com/scala/scala-rewrites -
