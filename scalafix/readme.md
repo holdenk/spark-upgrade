@@ -71,13 +71,17 @@ operation is a name-for-name `Dataset` swap (`map`, `filter`, `flatMap`,
     (`.repartition(n)` is appended when a partition count is given)
   - `sc.textFile(path)` → `spark.read.textFile(path)`
   - `someDataset.rdd` → `someDataset` (drops the `.rdd`)
+  - `intersection` → `intersect`, `subtract` → `except` (renamed in place, only
+    when the file is self-contained so the operands are guaranteed Datasets)
 
 If the file uses anything that is not a clean swap (key/pair functions, joins,
-`sortBy`, `intersection`/`subtract`/`++`, RDD-only accessors, ...), it makes
-**no change** and logs each blocker instead — so it never half-migrates a
-pipeline. The typed `Dataset` operations need an `Encoder`, so an
-`import spark.implicits._` must be in scope (the rule does not add it); the
-SparkSession is taken from `<x>.sparkContext` or assumed to be named `spark`.
+`sortBy`, `++`, RDD-only accessors, or an `intersection`/`subtract` whose RDD has
+a non-convertible origin, ...), it makes **no change** and logs each blocker
+instead — so it never half-migrates a pipeline. The typed `Dataset` operations
+need an `Encoder`, so an `import spark.implicits._` must be in scope; if it is
+missing the rule logs that it's needed rather than rewriting (auto-inserting a
+top-level import of a local session wouldn't compile). The SparkSession is taken
+from `<x>.sparkContext` or assumed to be named `spark`.
 The result is meant to be recompiled, which validates the migration. See
 [rdd-to-dataset-rewrite-design.md](./rdd-to-dataset-rewrite-design.md) for the
 full design and the limits of what is rewritten. Enable it explicitly:

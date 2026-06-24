@@ -175,8 +175,21 @@ scalafix testkit input/output fixture pairs (rewrites compare against `output/`)
 
 ## Status
 
-**Phase 1 implemented** (`RDDToDatasetMigration`): whole-file gate (rewrite only
-if every RDD op is a name-for-name `Dataset` swap, else log every blocker and
-change nothing); origins `parallelize`/`makeRDD` → `createDataset`,
-`textFile` → `read.textFile`, and `.rdd` drop. No renames, no import synthesis,
-no exit `.rdd` insertion yet (Phase 2). PySpark stays detect/log-only.
+**Phases 1 & 2 implemented** (`RDDToDatasetMigration`):
+
+- Whole-file gate: rewrite only if every RDD op is a name-for-name `Dataset` swap
+  or a known rename; otherwise log every blocker and change nothing.
+- Origins: `parallelize`/`makeRDD` → `createDataset` (`+ .repartition(n)`),
+  `textFile` → `read.textFile`, and `.rdd` drop.
+- Renames: `intersection` → `intersect`, `subtract` → `except`, but only when the
+  file is *self-contained* (no `RDD[...]` type and no non-convertible RDD origin
+  such as `objectFile`), so every renamed operand is guaranteed to become a
+  `Dataset`; otherwise the rename is logged for manual migration.
+- Encoders: the rewrite requires an `import <session>.implicits._` already in
+  scope (detected via the AST). If it's missing the file is logged
+  (`RDDMigrationNeedsImplicits`) rather than rewritten — auto-inserting a
+  top-level import of a local session wouldn't compile, so this is the safe
+  "handle the import" behaviour.
+
+Not yet done (future): `++` → `union`, inserting `.rdd` at RDD-typed exits, and
+`sortBy` → `orderBy`. PySpark stays detect/log-only.
