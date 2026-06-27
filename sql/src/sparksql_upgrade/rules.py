@@ -1,7 +1,7 @@
 """Custom Spark SQL upgrade rules."""
 
 import os.path
-from typing import List, Optional
+from typing import Optional
 
 
 from sqlfluff.core.config import ConfigLoader
