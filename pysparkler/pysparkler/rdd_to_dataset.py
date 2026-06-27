@@ -23,25 +23,31 @@ from pysparkler.base import StatementLineCommentWriter
 
 # A simplistic (and optional) RDD -> Dataset/DataFrame migration check.
 #
-# This mirrors the Scala scalafix rule RDDToDatasetMigrationCheck: it looks at
-# the RDD operations used in a script and leaves a code hint about whether the
-# RDD usage is simple enough to migrate to the typed DataFrame/Dataset API.
+# This loosely mirrors the Scala scalafix rule RDDToDatasetMigrationCheck: it
+# looks at the RDD operations used in a script and leaves a code hint about
+# whether the RDD usage looks simple enough to migrate to the typed
+# DataFrame/Dataset API.
 #
-# Like the Scala rule it is conservative about the "can be migrated" verdict: a
-# script is only advertised as migratable when *every* RDD operation it uses is
-# one of the narrowly supported ones. If the script uses any RDD operation with
-# no DataFrame/Dataset equivalent, only those blocking operations are flagged and
-# the simple operations are left alone, so we never claim a pipeline is migratable
-# when it is not. The unsupported-operation list below is kept comprehensive for
-# the known RDD API so this gate is reliable; a method we do not recognise at all
-# cannot be classified without type information.
+# IMPORTANT: unlike the Scala rule, this is a *best-effort, name-based* heuristic.
+# The Scala rule resolves method-owner symbols and is safe-by-default (any RDD op
+# it does not recognise is treated as blocking), so it cannot over-claim. Here we
+# only see method *names* (PySpark is dynamically typed, so we cannot tell an RDD
+# apart from a DataFrame, a dict, or a list), so:
+#   - The BLOCKING_OPS list below covers many common RDD-only operations, but it
+#     cannot be exhaustive -- an RDD-only op we did not enumerate will not trip
+#     the gate. The "can be migrated" hint is therefore ADVISORY: it means "the
+#     RDD ops seen here have equivalents", not "the whole pipeline is provably
+#     migratable". Verify the full pipeline before relying on it.
+#   - To keep the false-positive rate tolerable we deliberately do NOT flag
+#     operations whose names collide with very common non-Spark methods (e.g.
+#     keys()/values()/max()/min()/sum() on dicts, lists, pandas), even though
+#     they exist on RDDs. That is a knowing trade-off: fewer false alarms, at the
+#     cost of missing those as blockers.
 #
-# Because PySpark is dynamically typed we cannot always tell an RDD apart from a
-# DataFrame, so this is a fuzzy code-hint rule. To keep the false positive rate
-# low it only looks at RDD-specific method names (operations that the DataFrame
-# API does not also expose, so e.g. filter/distinct/union/count/collect are
-# intentionally ignored). The rule is disabled by default; enable it with a
-# config override (PYRDD-DS-001: {enabled: true}).
+# To keep the false positive rate low it only looks at RDD-specific method names
+# (operations that the DataFrame API does not also expose, so e.g.
+# filter/distinct/union/count/collect are intentionally ignored). The rule is
+# disabled by default; enable it with a config override (PYRDD-DS-001: {enabled: true}).
 
 
 class RddToDatasetMigrationCommentWriter(StatementLineCommentWriter):
@@ -113,6 +119,17 @@ class RddToDatasetMigrationCommentWriter(StatementLineCommentWriter):
         "saveAsNewAPIHadoopFile": "use DataFrameWriter",
         "saveAsHadoopDataset": "use DataFrameWriter",
         "saveAsNewAPIHadoopDataset": "use DataFrameWriter",
+        # DoubleRDD statistics ops (Spark-specific names, low collision risk).
+        "histogram": "no DataFrame equivalent; bucket with a window/agg expression",
+        "stats": "use describe()/summary() or agg() with the stat functions",
+        "stdev": "use agg(stddev_pop(...))",
+        "sampleStdev": "use agg(stddev_samp(...))",
+        "variance": "use agg(var_pop(...))",
+        "sampleVariance": "use agg(var_samp(...))",
+        # Other RDD-only ops with Spark-specific names.
+        "countByValueApprox": "approximate actions have no DataFrame equivalent",
+        "getCheckpointFile": "no DataFrame equivalent",
+        "getNumPartitions": "use df.rdd.getNumPartitions() or spark_partition_id()",
     }
 
     def __init__(self, comment: str | None = None):

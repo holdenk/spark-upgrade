@@ -146,6 +146,22 @@ diff = pairs.subtractByKey(other)
     assert modified_code.count("PYRDD-DS-001") == 1
 
 
+def test_double_rdd_stats_op_blocks_the_migratable_hint():
+    # stdev is an RDD-only DoubleRDD statistic (no DataFrame method of the same
+    # name), so a map line in the same script must not be advertised as migratable.
+    given_code = """\
+mapped = rdd.map(f)
+spread = values.stdev()
+"""
+    modified_code = rewrite(given_code, RddToDatasetMigrationCommentWriter())
+    assert "simple enough to migrate" not in modified_code
+    assert (
+        "Spark RDD operation 'stdev' has no direct DataFrame/Dataset equivalent"
+        in modified_code
+    )
+    assert modified_code.count("PYRDD-DS-001") == 1
+
+
 def test_does_not_flag_dataframe_operations():
     given_code = """\
 df2 = df.select("a").filter(df.a > 1).distinct()

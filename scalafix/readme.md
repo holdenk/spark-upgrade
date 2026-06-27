@@ -71,17 +71,22 @@ operation is a name-for-name `Dataset` swap (`map`, `filter`, `flatMap`,
     (`.repartition(n)` is appended when a partition count is given)
   - `sc.textFile(path)` → `spark.read.textFile(path)`
   - `someDataset.rdd` → `someDataset` (drops the `.rdd`)
-  - `intersection` → `intersect`, `subtract` → `except` (renamed in place, only
-    when the file is self-contained so the operands are guaranteed Datasets)
+  - `intersection` → `intersect`, `subtract` → `exceptAll` (renamed in place, only
+    when both operands *trace* to a convertible origin so they are guaranteed
+    Datasets; `exceptAll`, not `except`, because `RDD.subtract` keeps duplicates)
 
 If the file uses anything that is not a clean swap (key/pair functions, joins,
-`sortBy`, `++`, RDD-only accessors, or an `intersection`/`subtract` whose RDD has
-a non-convertible origin, ...), it makes **no change** and logs each blocker
-instead — so it never half-migrates a pipeline. The typed `Dataset` operations
-need an `Encoder`, so an `import spark.implicits._` must be in scope; if it is
-missing the rule logs that it's needed rather than rewriting (auto-inserting a
-top-level import of a local session wouldn't compile). The SparkSession is taken
-from `<x>.sparkContext` or assumed to be named `spark`.
+`sortBy`, `++`, RDD-only accessors, an `intersection`/`subtract` whose operand
+doesn't trace to a convertible origin, or an arity with no Dataset namesake such
+as `coalesce(n, shuffle)` / `distinct(n)` / `mapPartitions(f, preserves)`), it
+makes **no change** and logs each blocker instead — so it never half-migrates a
+pipeline. (Ops whose Dataset namesake differs even at the base arity, like
+`toLocalIterator` and `checkpoint`, are treated as blockers too.) The typed
+`Dataset` operations need an `Encoder`, so an `import <session>.implicits._` must
+be in scope; if it is missing the rule logs that it's needed rather than
+rewriting (auto-inserting a top-level import of a local session wouldn't
+compile). `createDataset`/`read` are driven by the session in `<x>.sparkContext`,
+else the session whose `implicits._` are imported.
 The result is meant to be recompiled, which validates the migration. See
 [rdd-to-dataset-rewrite-design.md](./rdd-to-dataset-rewrite-design.md) for the
 full design and the limits of what is rewritten. Enable it explicitly:
