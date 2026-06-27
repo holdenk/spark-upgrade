@@ -140,13 +140,19 @@ def test_adds_hint_for_raw_string_renamed_config():
 spark.conf.set(r"spark.sql.legacy.parquet.int96RebaseModeInWrite", "LEGACY")
 """
     modified_code = rewrite(given_code, RemovedOrRenamedConfig())
-    assert "# PYC-003:" in modified_code and "spark.sql.parquet.int96RebaseModeInWrite" in modified_code
+    assert (
+        "# PYC-003:" in modified_code
+        and "spark.sql.parquet.int96RebaseModeInWrite" in modified_code
+    )
 
 
 def test_adds_hints_for_all_matched_configs_in_chained_call():
-    given_code = """
-spark = SparkSession.builder.config("spark.shuffle.unsafe.file.output.buffer", "32k").config("spark.sql.legacy.parquet.int96RebaseModeInWrite", "LEGACY").getOrCreate()
-"""
+    given_code = (
+        "\nspark = SparkSession.builder"
+        '.config("spark.shuffle.unsafe.file.output.buffer", "32k")'
+        '.config("spark.sql.legacy.parquet.int96RebaseModeInWrite", "LEGACY")'
+        ".getOrCreate()\n"
+    )
     modified_code = rewrite(given_code, RemovedOrRenamedConfig())
     assert "# PYC-003:" in modified_code
     assert "spark.shuffle.unsafe.file.output.buffer" in modified_code
