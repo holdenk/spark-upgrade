@@ -36,10 +36,11 @@ migratable ops are not a pure mechanical swap:
 
 | RDD op | Dataset rewrite | Mechanical? |
 |---|---|---|
-| `map`, `filter`, `flatMap`, `mapPartitions`, `foreach`, `foreachPartition`, `distinct`, `reduce`, `count`, `collect`, `take`, `first`, `isEmpty`, `toLocalIterator`, `sample`, `cache`, `persist`, `unpersist`, `checkpoint`, `coalesce`, `repartition`, `union` | identical method name on `Dataset` → **leave the call as-is** | ✅ |
+| `map`, `filter`, `flatMap`, `mapPartitions`, `foreach`, `foreachPartition`, `distinct`, `reduce`, `count`, `collect`, `take`, `first`, `isEmpty`, `sample`, `cache`, `persist`, `unpersist`, `coalesce`, `repartition`, `union` | identical method name on `Dataset` → **leave the call as-is** (at the base arity; `coalesce(n,shuffle)`/`distinct(n)`/`mapPartitions(f,preserves)` are blocked) | ✅ |
+| `toLocalIterator`, `checkpoint` | Dataset namesake differs even at the base arity (`java.util.Iterator`; returns a new Dataset) | ❌ → block (log) |
 | `++` | rename to `union` | ✅ |
 | `intersection` | rename to `intersect` | ✅ |
-| `subtract` | rename to `except` | ✅ |
+| `subtract` | rename to `exceptAll` (keeps duplicates, matching `RDD.subtract`) | ✅ |
 | `sortBy(f)` | `orderBy`/`sort` need a **Column**, not a `T => K` function | ❌ → disqualifies auto-rewrite (log) |
 
 So the chain itself usually stays textually the same; only the **origin** changes
@@ -130,7 +131,7 @@ val names = ds.map(_.name)
 // before
 val r = a.intersection(b).subtract(c)   // a,b,c: RDDs
 // after
-val r = a.intersect(b).except(c)         // a,b,c: Datasets
+val r = a.intersect(b).exceptAll(c)      // a,b,c: Datasets
 
 // 4) blocked → unchanged + lint
 val r = rdd.map(_ + 1).reduceByKey(_ + _)   // reduceByKey blocks → no rewrite
@@ -163,7 +164,9 @@ scalafix testkit input/output fixture pairs (rewrites compare against `output/`)
 
 1. `sc.parallelize(seq, n)` → `createDataset(seq).repartition(n)` (preserve `n`).
 2. SparkSession sourcing is **best-effort**: taken from `<x>.sparkContext` when
-   the origin is written that way, else assumed to be named `spark`. The
+   the origin is written that way, else from the session whose `implicits._` are
+   imported (the encoders and `createDataset` come from the same session; falls
+   back to `spark` only if neither is determinable). The
    `import <session>.implicits._` is **not** synthesised (a local import can't be
    placed reliably) — it must already be in scope, otherwise the rewritten file
    won't compile and the user fixes it up. This is the "best-effort" tradeoff.
@@ -181,15 +184,27 @@ scalafix testkit input/output fixture pairs (rewrites compare against `output/`)
   or a known rename; otherwise log every blocker and change nothing.
 - Origins: `parallelize`/`makeRDD` → `createDataset` (`+ .repartition(n)`),
   `textFile` → `read.textFile`, and `.rdd` drop.
-- Renames: `intersection` → `intersect`, `subtract` → `except`, but only when the
-  file is *self-contained* (no `RDD[...]` type and no non-convertible RDD origin
-  such as `objectFile`), so every renamed operand is guaranteed to become a
-  `Dataset`; otherwise the rename is logged for manual migration.
+- Arity-aware gate: an op only counts as a name-for-name swap at an arity whose
+  `Dataset` namesake matches. `coalesce(n, shuffle)`, `distinct(n)` and
+  `mapPartitions(f, preserves)` are blocked (their Dataset namesakes take fewer
+  args); the base-arity forms rewrite. `toLocalIterator` (Dataset returns a
+  `java.util.Iterator`) and `checkpoint` (Dataset returns a new Dataset instead
+  of mutating in place) differ even at the base arity and are **not** swap ops.
+- Renames: `intersection` → `intersect`, `subtract` → `exceptAll` (not `except`,
+  which is `EXCEPT DISTINCT` and would drop the duplicates `RDD.subtract` keeps).
+  A rename fires only when **both operands trace** to a convertible origin
+  (`tracesToDataset`: an origin call, a chain of RDD ops on one, or a local `val`
+  bound to one), so an RDD from a parameter or a non-Spark helper correctly
+  blocks it. Both dot (`a.intersection(b)`) and infix (`a intersection b`) forms
+  are handled.
 - Encoders: the rewrite requires an `import <session>.implicits._` already in
   scope (detected via the AST). If it's missing the file is logged
   (`RDDMigrationNeedsImplicits`) rather than rewritten — auto-inserting a
   top-level import of a local session wouldn't compile, so this is the safe
-  "handle the import" behaviour.
+  "handle the import" behaviour. The session that drives `createDataset`/`read`
+  is taken from `<x>.sparkContext`, else from that same `implicits._` import.
 
 Not yet done (future): `++` → `union`, inserting `.rdd` at RDD-typed exits, and
-`sortBy` → `orderBy`. PySpark stays detect/log-only.
+`sortBy` → `orderBy`. PySpark stays detect/log-only (a best-effort, name-based
+heuristic whose "migratable" hint is advisory — its blocklist can't be exhaustive
+without type information, unlike the symbol-resolved Scala check).
