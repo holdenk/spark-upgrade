@@ -41,14 +41,14 @@ trigger(availableNow=True) (Trigger.AvailableNow) instead, which honors rate lim
         )
 
     def visit_Call(self, node: cst.Call) -> None:
-        """Check for a streaming .trigger(once=...) call"""
+        """Check for a streaming .trigger(once=True) call"""
         if m.matches(
             node,
             m.Call(
                 func=m.Attribute(attr=m.Name("trigger")),
                 args=[
                     m.ZeroOrMore(),
-                    m.Arg(keyword=m.Name("once")),
+                    m.Arg(keyword=m.Name("once"), value=m.Name("True")),
                     m.ZeroOrMore(),
                 ],
             ),
@@ -58,15 +58,15 @@ trigger(availableNow=True) (Trigger.AvailableNow) instead, which honors rate lim
 
 class BuiltinFunctionShadowing(StatementLineCommentWriter):
     """Importing functions such as ``max``, ``min``, ``sum``, ``round``, ``abs`` directly from
-    ``pyspark.sql.functions`` (or via a wildcard import) shadows the Python builtins of the same
-    name. Calling the shadowed name with builtin-only arguments (for example ``max(xs, key=...)`` or
-    ``sorted(...)``) then fails or silently changes behavior.
+    ``pyspark.sql.functions`` shadows the Python builtins of the same name. Calling the shadowed
+    name with builtin-only arguments (for example ``max(xs, key=...)``) then fails or silently
+    changes behavior.
     """
 
-    # Names exported by pyspark.sql.functions that collide with commonly-used Python builtins.
-    shadowed_builtins = frozenset(
-        {"max", "min", "sum", "round", "abs", "sorted", "filter", "map"}
-    )
+    # Names exported by pyspark.sql.functions that collide with Python builtins.
+    # Note: `sorted` and `map` are NOT exported by pyspark.sql.functions and are intentionally
+    # absent. `filter` is included because it is exported as an alias of array_filter (Spark 3+).
+    shadowed_builtins = frozenset({"max", "min", "sum", "round", "abs", "filter"})
 
     def __init__(self) -> None:
         super().__init__(
@@ -91,9 +91,9 @@ Calling it with builtin-only arguments (e.g. key=) will fail. Prefer importing t
         """Check for builtin-shadowing imports from pyspark.sql.functions"""
         if not self._is_functions_module(node):
             return
+        # Wildcard imports are already flagged by PY35-40-008 (SqlFunctionsStarImport) which
+        # gives a more actionable message. Only flag explicit unaliased name imports here.
         if isinstance(node.names, cst.ImportStar):
-            # A wildcard import pulls in every shadowing name.
-            self.match_found = True
             return
         for alias in node.names:
             # Only flag unaliased imports; `import max as spark_max` is safe.
@@ -126,6 +126,7 @@ class RemovedOrRenamedConfig(StatementLineCommentWriter):
 
     def __init__(self) -> None:
         super().__init__(transformer_id="PYC-003", comment="")
+        self._pending_comments: list[str] = []
 
     def visit_Call(self, node: cst.Call) -> None:
         """Check for set()/config() calls passing a removed or renamed Spark config key"""
@@ -137,19 +138,33 @@ class RemovedOrRenamedConfig(StatementLineCommentWriter):
             ),
         ):
             return
-        config = node.args[0].value.value.strip("\"'")
+        # Use evaluated_value to correctly handle raw strings (r"..."), byte strings, etc.
+        config = node.args[0].value.evaluated_value
+        if not isinstance(config, str):
+            return
         if config in self.renamed_configs:
-            self.comment = (
+            self._pending_comments.append(
                 f"{config} was renamed in Spark 4.x; it no longer takes effect. "
                 f"Use {self.renamed_configs[config]} instead."
             )
             self.match_found = True
         elif ".blacklist." in config or config.endswith(".blacklist"):
-            self.comment = (
+            self._pending_comments.append(
                 f"{config} uses the deprecated 'blacklist' naming, which Spark 4.1 ignores. "
                 "Use the corresponding 'excludeOnFailure' configuration name (Spark 3.1.0+) instead."
             )
             self.match_found = True
+
+    def leave_SimpleStatementLine(
+        self,
+        original_node: cst.SimpleStatementLine,
+        updated_node: cst.SimpleStatementLine,
+    ) -> cst.SimpleStatementLine:
+        """Combine all per-call messages collected on this line, then emit."""
+        if self._pending_comments:
+            self.comment = "; ".join(self._pending_comments)
+        self._pending_comments = []
+        return super().leave_SimpleStatementLine(original_node, updated_node)
 
 
 def pyspark_common_transformers() -> list[cst.CSTTransformer]:

@@ -29,6 +29,7 @@ from pysparkler.base import StatementLineCommentWriter
 
 SPARK_SQL_DIALECT = "sparksql"
 SPARK_SQL_CAST_RULE = "SPARKSQLCAST_L001"
+SPARK_SQL_GLOBAL_TEMP_VIEW_RULE = "GLOBALTEMPVIEW_L006"
 
 
 class SqlStatementUpgradeAndCommentWriter(StatementLineCommentWriter):
@@ -47,6 +48,7 @@ However, the upcast won't be possible for certain formatted string SQL having co
 cases please de-template the SQL and use the Sqlfluff tooling to upcast the SQL yourself.",
         )
         self.sql_upgraded = False
+        self._sql_lint_warnings: list[str] = []
 
     def leave_Call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.Call:
         """Check if the call is a SQL statement and try to upcast it"""
@@ -87,18 +89,24 @@ cases please de-template the SQL and use the Sqlfluff tooling to upcast the SQL 
                         "Spark SQL statement has Spark 3.3 compatible syntax."
                     )
 
+                if self._sql_lint_warnings:
+                    self.comment += " " + "; ".join(self._sql_lint_warnings)
+                    self._sql_lint_warnings = []
+
                 return updated_node.with_changes(args=[cst.Arg(value=updated_sql_node)])
             except Exception:  # pylint: disable=broad-except
                 self.comment = "Unable to inspect the Spark SQL statement since the formatted string SQL has complex \
 expressions within. Please de-template the SQL and use the 'pysparkler upgrade-sql' CLI command to upcast the SQL \
 yourself."
                 self.sql_upgraded = False
+                self._sql_lint_warnings = []
 
         return updated_node
 
     def update_simple_string_sql(self, sql_node: cst.SimpleString) -> cst.SimpleString:
         sql = sql_node.evaluated_value
         updated_sql = self.do_fix(sql)
+        self._sql_lint_warnings = self.do_lint_warnings(sql)
         if updated_sql != sql:
             self.sql_upgraded = True
             updated_sql_value = (
@@ -132,6 +140,7 @@ yourself."
                 )
 
         updated_sql = self.do_fix(sql)
+        self._sql_lint_warnings = self.do_lint_warnings(sql)
         if updated_sql != sql:
             self.sql_upgraded = True
             updated_sql_value = (
@@ -156,6 +165,22 @@ yourself."
             sql,
             dialect=SPARK_SQL_DIALECT,
         )
+
+    @staticmethod
+    def do_lint_warnings(sql: str) -> list[str]:
+        """Run warn-only lint rules against the SQL and return violation descriptions."""
+        results = sqlfluff.lint(
+            sql,
+            dialect=SPARK_SQL_DIALECT,
+            rules=[SPARK_SQL_GLOBAL_TEMP_VIEW_RULE],
+        )
+        # Filter strictly by our rule code so that unrecognised-rule fallback results
+        # (e.g. parse errors) and violations from other rules are excluded.
+        return [
+            r["description"]
+            for r in results
+            if r.get("code") == SPARK_SQL_GLOBAL_TEMP_VIEW_RULE
+        ]
 
 
 def sql_21_to_33_transformers() -> list[cst.CSTTransformer]:

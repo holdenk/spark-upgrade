@@ -23,20 +23,6 @@ from sqlfluff.utils.functional import FunctionalContext, sp
 
 
 @hookimpl
-def get_rules() -> List[BaseRule]:
-    """Get plugin rules."""
-    return [
-        Rule_SPARKSQLCAST_L001,
-        Rule_RESERVEDROPERTIES_L002,
-        Rule_NOCHARS_L003,
-        Rule_FORMATSTRONEINDEX_L004,
-        Rule_SPARKSQL_L004,
-        Rule_SPARKSQL_L005,
-        Rule_GLOBALTEMPVIEW_L006,
-    ]
-
-
-@hookimpl
 def load_default_config() -> dict:
     """Loads the default configuration for the plugin."""
     return ConfigLoader.get_global().load_config_file(

@@ -35,6 +35,14 @@ query = df.writeStream.trigger(once=True).start()  # PYC-001: trigger(once=True)
     assert modified_code == expected_code
 
 
+def test_does_nothing_for_trigger_once_false():
+    given_code = """
+query = df.writeStream.trigger(once=False).start()
+"""
+    modified_code = rewrite(given_code, TriggerOnceDeprecated())
+    assert modified_code == given_code
+
+
 def test_does_nothing_for_trigger_available_now_or_processing_time():
     given_code = """
 a = df.writeStream.trigger(availableNow=True).start()
@@ -55,12 +63,14 @@ from pyspark.sql.functions import max, col  # PYC-002: This import shadows a Pyt
     assert modified_code == expected_code
 
 
-def test_adds_hint_for_builtin_shadowing_wildcard_import():
+def test_does_nothing_for_wildcard_import_from_functions():
+    # Wildcard imports are already flagged by PY35-40-008 (SqlFunctionsStarImport).
+    # PYC-002 deliberately skips this case to avoid double-commenting the same line.
     given_code = """
 from pyspark.sql.functions import *
 """
     modified_code = rewrite(given_code, BuiltinFunctionShadowing())
-    assert "# PYC-002:" in modified_code and modified_code != given_code
+    assert modified_code == given_code
 
 
 def test_does_nothing_for_non_shadowing_functions_import():
@@ -123,3 +133,23 @@ spark.conf.set("spark.sql.shuffle.partitions", "200")
 """
     modified_code = rewrite(given_code, RemovedOrRenamedConfig())
     assert modified_code == given_code
+
+
+def test_adds_hint_for_raw_string_renamed_config():
+    given_code = """
+spark.conf.set(r"spark.sql.legacy.parquet.int96RebaseModeInWrite", "LEGACY")
+"""
+    modified_code = rewrite(given_code, RemovedOrRenamedConfig())
+    assert "# PYC-003:" in modified_code and "spark.sql.parquet.int96RebaseModeInWrite" in modified_code
+
+
+def test_adds_hints_for_all_matched_configs_in_chained_call():
+    given_code = """
+spark = SparkSession.builder.config("spark.shuffle.unsafe.file.output.buffer", "32k").config("spark.sql.legacy.parquet.int96RebaseModeInWrite", "LEGACY").getOrCreate()
+"""
+    modified_code = rewrite(given_code, RemovedOrRenamedConfig())
+    assert "# PYC-003:" in modified_code
+    assert "spark.shuffle.unsafe.file.output.buffer" in modified_code
+    assert "spark.shuffle.localDisk.file.output.buffer" in modified_code
+    assert "spark.sql.legacy.parquet.int96RebaseModeInWrite" in modified_code
+    assert "spark.sql.parquet.int96RebaseModeInWrite" in modified_code
