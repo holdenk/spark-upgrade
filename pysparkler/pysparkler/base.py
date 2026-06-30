@@ -99,6 +99,49 @@ class StatementLineCommentWriter(BaseTransformer):
             return updated_node
 
 
+class PySparkImportCommentWriter(StatementLineCommentWriter):
+    """Base class for adding a single comment to the first PySpark import in a module.
+
+    Matches any ``import pyspark...`` statement (including dotted submodules and
+    multi-name imports such as ``import os, pyspark``) and any
+    ``from pyspark... import ...`` statement. It fires only once per module so that a
+    file with several PySpark imports receives the hint a single time.
+    """
+
+    def __init__(self, transformer_id: str, comment: str):
+        super().__init__(transformer_id=transformer_id, comment=comment)
+        self._already_flagged = False
+
+    @staticmethod
+    def _root_is_pyspark(node: cst.BaseExpression | None) -> bool:
+        """Return True if a dotted module path (Name/Attribute) is rooted at ``pyspark``."""
+        while isinstance(node, cst.Attribute):
+            node = node.value
+        return isinstance(node, cst.Name) and node.value == "pyspark"
+
+    def visit_Import(self, node: cst.Import) -> None:
+        """Check for ``import pyspark...`` (possibly alongside other modules)"""
+        if not self._already_flagged and any(
+            self._root_is_pyspark(alias.name) for alias in node.names
+        ):
+            self.match_found = True
+
+    def visit_ImportFrom(self, node: cst.ImportFrom) -> None:
+        """Check for ``from pyspark... import ...``"""
+        if not self._already_flagged and self._root_is_pyspark(node.module):
+            self.match_found = True
+
+    def leave_SimpleStatementLine(
+        self,
+        original_node: cst.SimpleStatementLine,
+        updated_node: cst.SimpleStatementLine,
+    ) -> cst.SimpleStatementLine:
+        """Emit the comment once, then suppress further matches in this module"""
+        if self.match_found:
+            self._already_flagged = True
+        return super().leave_SimpleStatementLine(original_node, updated_node)
+
+
 class RequiredDependencyVersionCommentWriter(StatementLineCommentWriter):
     """Base class for adding comments to the import statements of required dependencies version of PySpark"""
 

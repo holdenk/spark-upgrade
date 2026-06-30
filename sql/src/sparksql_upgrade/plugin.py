@@ -19,6 +19,7 @@ def get_rules() -> List[BaseRule]:
         Rule_FORMATSTRONEINDEX_L004,
         Rule_SPARKSQL_L004,
         Rule_SPARKSQL_L005,
+        Rule_GLOBALTEMPVIEW_L006,
     )
 
     return [
@@ -28,6 +29,7 @@ def get_rules() -> List[BaseRule]:
         Rule_FORMATSTRONEINDEX_L004,
         Rule_SPARKSQL_L004,
         Rule_SPARKSQL_L005,
+        Rule_GLOBALTEMPVIEW_L006,
     ]
 
 

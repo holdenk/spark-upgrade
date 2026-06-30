@@ -27,6 +27,10 @@ from pysparkler.pyspark_23_to_24 import pyspark_23_to_24_transformers
 from pysparkler.pyspark_24_to_30 import pyspark_24_to_30_transformers
 from pysparkler.pyspark_31_to_32 import pyspark_31_to_32_transformers
 from pysparkler.pyspark_32_to_33 import pyspark_32_to_33_transformers
+from pysparkler.pyspark_35_to_40 import pyspark_35_to_40_transformers
+from pysparkler.pyspark_40_to_41 import pyspark_40_to_41_transformers
+from pysparkler.pyspark_41_to_42 import pyspark_41_to_42_transformers
+from pysparkler.pyspark_common import pyspark_common_transformers
 from pysparkler.sql_21_to_33 import sql_21_to_33_transformers
 
 
@@ -36,7 +40,7 @@ class PySparkler:
     def __init__(
         self,
         from_pyspark: str = "2.2",
-        to_pyspark: str = "3.3",
+        to_pyspark: str = "4.2",
         dry_run: bool = False,
         **overrides: dict[str, Any]
     ):
@@ -54,6 +58,10 @@ class PySparkler:
             *pyspark_24_to_30_transformers(),
             *pyspark_31_to_32_transformers(),
             *pyspark_32_to_33_transformers(),
+            *pyspark_35_to_40_transformers(),
+            *pyspark_40_to_41_transformers(),
+            *pyspark_41_to_42_transformers(),
+            *pyspark_common_transformers(),
             *sql_21_to_33_transformers(),
         ]
         # Override the default values of the transformers with the user provided values
