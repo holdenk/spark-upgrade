@@ -120,8 +120,10 @@ class ConvertToArrowArraySafelyEnabledByDefault(StatementLineCommentWriter):
         super().__init__(
             transformer_id="PY40-41-005",
             comment=f"As of PySpark {pyspark_version}, spark.sql.execution.pandas.convertToArrowArraySafely is enabled \
-by default, so PyArrow raises errors on unsafe conversions (integer overflow, float truncation, loss of precision) in \
-Arrow-enabled UDFs and when creating DataFrames from pandas. To restore the previous behavior, set it to false.",
+by default. If this call converts pandas data (creating a DataFrame from a pandas DataFrame, or an Arrow-enabled UDF), \
+PyArrow now raises errors on unsafe conversions (integer overflow, float truncation, loss of precision); it has no \
+effect on createDataFrame calls built from non-pandas data such as Python lists or RDDs. To restore the previous \
+behavior, set it to false.",
         )
 
     def visit_Call(self, node: cst.Call) -> None:

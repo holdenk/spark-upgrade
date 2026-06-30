@@ -180,27 +180,34 @@ an exception under ANSI mode. Disable it via spark.sql.ansi.enabled=false, or se
 compute.fail_on_ansi_mode=False to force it to work.",
         )
 
+    @staticmethod
+    def _is_pyspark_pandas(node: cst.BaseExpression | None) -> bool:
+        """Return True for a dotted path that is ``pyspark.pandas`` or a submodule of it."""
+        parts: list[str] = []
+        while isinstance(node, cst.Attribute):
+            parts.append(node.attr.value)
+            node = node.value
+        if isinstance(node, cst.Name):
+            parts.append(node.value)
+        parts.reverse()
+        return parts[:2] == ["pyspark", "pandas"]
+
     def visit_Import(self, node: cst.Import) -> None:
-        """Check if pyspark.pandas is being imported"""
-        if m.matches(
-            node,
-            m.Import(
-                names=[
-                    m.ImportAlias(
-                        name=m.Attribute(value=m.Name("pyspark"), attr=m.Name("pandas"))
-                    )
-                ]
-            ),
-        ):
+        """Check if pyspark.pandas (or a submodule) is imported, possibly alongside other modules"""
+        if any(self._is_pyspark_pandas(alias.name) for alias in node.names):
             self.match_found = True
 
     def visit_ImportFrom(self, node: cst.ImportFrom) -> None:
-        """Check if pyspark.pandas is being imported via a from import statement"""
-        if m.matches(
-            node,
-            m.ImportFrom(
-                module=m.Attribute(value=m.Name("pyspark"), attr=m.Name("pandas"))
-            ),
+        """Check if pyspark.pandas is imported via a from-import statement"""
+        # Covers ``from pyspark.pandas[.submodule] import x`` as well as ``from pyspark import pandas``.
+        if node.module is None:
+            return
+        if self._is_pyspark_pandas(node.module):
+            self.match_found = True
+        elif (
+            m.matches(node.module, m.Name("pyspark"))
+            and not isinstance(node.names, cst.ImportStar)
+            and any(m.matches(alias.name, m.Name("pandas")) for alias in node.names)
         ):
             self.match_found = True
 

@@ -41,18 +41,33 @@ trigger(availableNow=True) (Trigger.AvailableNow) instead, which honors rate lim
         )
 
     def visit_Call(self, node: cst.Call) -> None:
-        """Check for a streaming .trigger(once=True) call"""
-        if m.matches(
-            node,
-            m.Call(
-                func=m.Attribute(attr=m.Name("trigger")),
-                args=[
-                    m.ZeroOrMore(),
-                    m.Arg(keyword=m.Name("once"), value=m.Name("True")),
-                    m.ZeroOrMore(),
-                ],
-            ),
-        ):
+        """Check for a streaming .trigger(once=True) or .trigger(Trigger.Once) call"""
+        once_keyword = m.Call(
+            func=m.Attribute(attr=m.Name("trigger")),
+            args=[
+                m.ZeroOrMore(),
+                m.Arg(keyword=m.Name("once"), value=m.Name("True")),
+                m.ZeroOrMore(),
+            ],
+        )
+        # The enum form ``trigger(Trigger.Once)`` passes ``Trigger.Once`` positionally. Match the
+        # ``...Trigger.Once`` attribute access so both ``Trigger.Once`` and the fully-qualified
+        # ``pyspark.sql.streaming.Trigger.Once`` are covered, while ignoring unrelated ``x.Once`` args.
+        trigger_once_enum = m.Call(
+            func=m.Attribute(attr=m.Name("trigger")),
+            args=[
+                m.Arg(
+                    value=m.Attribute(
+                        value=m.OneOf(
+                            m.Name("Trigger"),
+                            m.Attribute(attr=m.Name("Trigger")),
+                        ),
+                        attr=m.Name("Once"),
+                    )
+                )
+            ],
+        )
+        if m.matches(node, once_keyword) or m.matches(node, trigger_once_enum):
             self.match_found = True
 
 
@@ -148,7 +163,11 @@ class RemovedOrRenamedConfig(StatementLineCommentWriter):
                 f"Use {self.renamed_configs[config]} instead."
             )
             self.match_found = True
-        elif ".blacklist." in config or config.endswith(".blacklist"):
+        elif config.startswith("spark.") and (
+            ".blacklist." in config or config.endswith(".blacklist")
+        ):
+            # Scope the heuristic to Spark config keys so non-Spark builders that happen to use a
+            # "blacklist" name (e.g. redis.config("cache.blacklist", ...)) are not falsely flagged.
             self._pending_comments.append(
                 f"{config} uses the deprecated 'blacklist' naming, which Spark 4.1 ignores. "
                 "Use the corresponding 'excludeOnFailure' configuration name (Spark 3.1.0+) instead."

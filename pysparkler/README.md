@@ -92,8 +92,8 @@ version-agnostic correctness/portability hints whose transformer ids use the `PY
 
 - `PYC-001` — `trigger(once=True)` / `Trigger.Once` is deprecated since Spark 3.3; suggests
   `trigger(availableNow=True)`.
-- `PYC-002` — importing builtins-shadowing names (`max`, `min`, `sum`, `sorted`, …) from
-  `pyspark.sql.functions` (or via `import *`); suggests importing the module or aliasing.
+- `PYC-002` — importing builtins-shadowing names (`max`, `min`, `sum`, `round`, `abs`, `filter`) from
+  `pyspark.sql.functions`; suggests importing the module or aliasing.
 - `PYC-003` — detects removed/renamed Spark configs passed to `.set()` / `.config()` (e.g. the legacy
   parquet/avro rebase configs, `spark.shuffle.unsafe.file.output.buffer`, `*.blacklist.*`) and suggests the
   replacement so the setting keeps taking effect.

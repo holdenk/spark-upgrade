@@ -43,6 +43,30 @@ query = df.writeStream.trigger(once=False).start()
     assert modified_code == given_code
 
 
+def test_adds_hint_for_trigger_once_enum():
+    given_code = """
+query = df.writeStream.trigger(Trigger.Once).start()
+"""
+    modified_code = rewrite(given_code, TriggerOnceDeprecated())
+    assert "# PYC-001:" in modified_code
+
+
+def test_adds_hint_for_qualified_trigger_once_enum():
+    given_code = """
+query = df.writeStream.trigger(pyspark.sql.streaming.Trigger.Once).start()
+"""
+    modified_code = rewrite(given_code, TriggerOnceDeprecated())
+    assert "# PYC-001:" in modified_code
+
+
+def test_does_nothing_for_unrelated_once_attribute():
+    given_code = """
+query = df.writeStream.trigger(MyConfig.Once).start()
+"""
+    modified_code = rewrite(given_code, TriggerOnceDeprecated())
+    assert modified_code == given_code
+
+
 def test_does_nothing_for_trigger_available_now_or_processing_time():
     given_code = """
 a = df.writeStream.trigger(availableNow=True).start()
@@ -125,6 +149,15 @@ spark.conf.set("spark.blacklist.enabled", "true")
 """
     modified_code = rewrite(given_code, RemovedOrRenamedConfig())
     assert "# PYC-003:" in modified_code and "excludeOnFailure" in modified_code
+
+
+def test_does_nothing_for_non_spark_blacklist_config():
+    given_code = """
+redis.config("cache.blacklist", value)
+myconf.set("com.acme.blacklist.hosts", x)
+"""
+    modified_code = rewrite(given_code, RemovedOrRenamedConfig())
+    assert modified_code == given_code
 
 
 def test_does_nothing_for_supported_config():

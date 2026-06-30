@@ -115,7 +115,7 @@ my_udf = pandas_udf(my_func, returnType=LongType())
 """
     modified_code = rewrite(given_code, ConvertToArrowArraySafelyEnabledByDefault())
     expected_code = """
-my_udf = pandas_udf(my_func, returnType=LongType())  # PY40-41-005: As of PySpark 4.1, spark.sql.execution.pandas.convertToArrowArraySafely is enabled by default, so PyArrow raises errors on unsafe conversions (integer overflow, float truncation, loss of precision) in Arrow-enabled UDFs and when creating DataFrames from pandas. To restore the previous behavior, set it to false.  # noqa: E501
+my_udf = pandas_udf(my_func, returnType=LongType())  # PY40-41-005: As of PySpark 4.1, spark.sql.execution.pandas.convertToArrowArraySafely is enabled by default. If this call converts pandas data (creating a DataFrame from a pandas DataFrame, or an Arrow-enabled UDF), PyArrow now raises errors on unsafe conversions (integer overflow, float truncation, loss of precision); it has no effect on createDataFrame calls built from non-pandas data such as Python lists or RDDs. To restore the previous behavior, set it to false.  # noqa: E501
 """
     assert modified_code == expected_code
 

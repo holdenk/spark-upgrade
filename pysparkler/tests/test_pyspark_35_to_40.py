@@ -114,6 +114,39 @@ import pyspark.pandas as ps  # PY35-40-007: As of PySpark 4.0, ANSI mode is enab
     assert modified_code == expected_code
 
 
+def test_adds_ansi_hint_to_multi_name_pandas_on_spark_import():
+    given_code = """
+import os, pyspark.pandas as ps
+"""
+    modified_code = rewrite(given_code, AnsiModeEnabledByDefault())
+    assert "# PY35-40-007:" in modified_code
+
+
+def test_adds_ansi_hint_to_pandas_on_spark_submodule_import():
+    given_code = """
+from pyspark.pandas.config import option_context
+"""
+    modified_code = rewrite(given_code, AnsiModeEnabledByDefault())
+    assert "# PY35-40-007:" in modified_code
+
+
+def test_adds_ansi_hint_to_from_pyspark_import_pandas():
+    given_code = """
+from pyspark import pandas as ps
+"""
+    modified_code = rewrite(given_code, AnsiModeEnabledByDefault())
+    assert "# PY35-40-007:" in modified_code
+
+
+def test_does_nothing_for_plain_pandas_import():
+    given_code = """
+import pandas as pd
+from pyspark import SparkConf
+"""
+    modified_code = rewrite(given_code, AnsiModeEnabledByDefault())
+    assert modified_code == given_code
+
+
 def test_adds_code_hint_to_sql_functions_star_import():
     given_code = """
 from pyspark.sql.functions import *
