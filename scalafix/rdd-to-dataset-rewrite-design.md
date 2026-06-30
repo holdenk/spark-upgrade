@@ -36,11 +36,11 @@ migratable ops are not a pure mechanical swap:
 
 | RDD op | Dataset rewrite | Mechanical? |
 |---|---|---|
-| `map`, `filter`, `flatMap`, `mapPartitions`, `foreach`, `foreachPartition`, `distinct`, `reduce`, `count`, `collect`, `take`, `first`, `isEmpty`, `sample`, `cache`, `persist`, `unpersist`, `coalesce`, `repartition`, `union` | identical method name on `Dataset` → **leave the call as-is** (at the base arity; `coalesce(n,shuffle)`/`distinct(n)`/`mapPartitions(f,preserves)` are blocked) | ✅ |
-| `toLocalIterator`, `checkpoint` | Dataset namesake differs even at the base arity (`java.util.Iterator`; returns a new Dataset) | ❌ → block (log) |
-| `++` | rename to `union` | ✅ |
+| `map`, `filter`, `flatMap`, `mapPartitions`, `foreach`, `foreachPartition`, `distinct`, `reduce`, `count`, `collect`, `take`, `first`, `cache`, `persist`, `unpersist`, `coalesce`, `repartition`, `union` | identical method name on `Dataset` → **leave the call as-is** (at the base arity; `coalesce(n,shuffle)`/`distinct(n)`/`mapPartitions(f,preserves)` are blocked) | ✅ |
+| `union`, `intersection` (binary) | also require the **argument** to trace to a convertible origin (else it stays an RDD) | ✅ when the operand traces |
 | `intersection` | rename to `intersect` | ✅ |
-| `subtract` | rename to `exceptAll` (keeps duplicates, matching `RDD.subtract`) | ✅ |
+| `isEmpty`, `sample`, `toLocalIterator`, `checkpoint`, `subtract` | Dataset namesake differs even at the base arity (parameterless `isEmpty`; different sampler; `java.util.Iterator`; returns a new Dataset; `subtract` is a left-anti join) | ❌ → block (log) |
+| `++` | would rename to `union`, but not yet handled | ❌ → block (log) |
 | `sortBy(f)` | `orderBy`/`sort` need a **Column**, not a `T => K` function | ❌ → disqualifies auto-rewrite (log) |
 
 So the chain itself usually stays textually the same; only the **origin** changes
@@ -127,11 +127,12 @@ val names = ds.rdd.map(_.name)
 // after
 val names = ds.map(_.name)
 
-// 3) op renames
+// 3) op rename (intersection), union kept (both operands trace to a Dataset)
 // before
-val r = a.intersection(b).subtract(c)   // a,b,c: RDDs
+val r = a.intersection(b).union(c)       // a,b,c: RDDs from convertible origins
 // after
-val r = a.intersect(b).exceptAll(c)      // a,b,c: Datasets
+val r = a.intersect(b).union(c)          // a,b,c: Datasets
+// note: subtract is NOT rewritten — it is a left-anti join, blocked + logged
 
 // 4) blocked → unchanged + lint
 val r = rdd.map(_ + 1).reduceByKey(_ + _)   // reduceByKey blocks → no rewrite
@@ -178,33 +179,47 @@ scalafix testkit input/output fixture pairs (rewrites compare against `output/`)
 
 ## Status
 
-**Phases 1 & 2 implemented** (`RDDToDatasetMigration`):
+**Implemented** (`RDDToDatasetMigration`), and deliberately **conservative** — it
+rewrites only when the result is guaranteed to compile to the same thing and
+compute the same result. Three rounds of adversarial self-review showed the
+"name-identical op = safe swap" premise has many sharp edges (signature, arity,
+return-type, partitioning, equality, and AST-shape differences), so the safe
+surface was narrowed and everything uncertain is logged, not rewritten.
 
-- Whole-file gate: rewrite only if every RDD op is a name-for-name `Dataset` swap
-  or a known rename; otherwise log every blocker and change nothing.
-- Origins: `parallelize`/`makeRDD` → `createDataset` (`+ .repartition(n)`),
-  `textFile` → `read.textFile`, and `.rdd` drop.
-- Arity-aware gate: an op only counts as a name-for-name swap at an arity whose
-  `Dataset` namesake matches. `coalesce(n, shuffle)`, `distinct(n)` and
-  `mapPartitions(f, preserves)` are blocked (their Dataset namesakes take fewer
-  args); the base-arity forms rewrite. `toLocalIterator` (Dataset returns a
-  `java.util.Iterator`) and `checkpoint` (Dataset returns a new Dataset instead
-  of mutating in place) differ even at the base arity and are **not** swap ops.
-- Renames: `intersection` → `intersect`, `subtract` → `exceptAll` (not `except`,
-  which is `EXCEPT DISTINCT` and would drop the duplicates `RDD.subtract` keeps).
-  A rename fires only when **both operands trace** to a convertible origin
-  (`tracesToDataset`: an origin call, a chain of RDD ops on one, or a local `val`
-  bound to one), so an RDD from a parameter or a non-Spark helper correctly
-  blocks it. Both dot (`a.intersection(b)`) and infix (`a intersection b`) forms
-  are handled.
-- Encoders: the rewrite requires an `import <session>.implicits._` already in
-  scope (detected via the AST). If it's missing the file is logged
-  (`RDDMigrationNeedsImplicits`) rather than rewritten — auto-inserting a
-  top-level import of a local session wouldn't compile, so this is the safe
-  "handle the import" behaviour. The session that drives `createDataset`/`read`
-  is taken from `<x>.sparkContext`, else from that same `implicits._` import.
+- Whole-file gate: rewrite only if every RDD op is in the audited safe set;
+  otherwise log the first category of blockers and change nothing.
+- Origins (single-argument forms only): `<sess>.sparkContext.parallelize(seq)` /
+  `makeRDD(seq)` → `<sess>.createDataset(seq)`, `textFile(path)` →
+  `read.textFile(path)`, `.rdd` drop. `parallelize(seq, n)` / `textFile(path, n)`
+  are **blocked** (a `.repartition(n)` shuffle would reorder rows / the hint has
+  no Dataset analog).
+- Rename: `intersection` → `intersect` (both `INTERSECT DISTINCT`). `subtract` is
+  **blocked** — RDD removes every row whose value is in the other RDD (a
+  left-anti join); neither `except` (`EXCEPT DISTINCT`) nor `exceptAll`
+  (`EXCEPT ALL`, multiset) reproduces it.
+- Binary ops (`union`, `intersection`): the **argument** must also `tracesToDataset`
+  (an origin call, an RDD-op chain on one, or a local `val` bound to one), else it
+  would remain an RDD and the call wouldn't compile.
+- Arity-aware: `coalesce(n, shuffle)`, `distinct(n)`, `mapPartitions(f, preserves)`
+  are blocked (no Dataset overload), including the explicit-type-argument form
+  `mapPartitions[U](f, true)` (collected via `Term.ApplyType`).
+- Blocked because the Dataset namesake differs even at the base arity: `isEmpty`
+  (parameterless on Dataset), `sample` (different sampler/seed), `toLocalIterator`
+  (`java.util.Iterator`), `checkpoint` (returns a new Dataset).
+- Blocked: any op used as an eta-expanded method value (`rdd.map _`); any file
+  declaring an `RDD[...]` type (the annotation would be left dangling); more than
+  one `implicits._` import (ambiguous session).
+- Encoders: requires an `import <session>.implicits._` in scope (not synthesised);
+  logged (`RDDMigrationNeedsImplicits`) if missing.
 
-Not yet done (future): `++` → `union`, inserting `.rdd` at RDD-typed exits, and
-`sortBy` → `orderBy`. PySpark stays detect/log-only (a best-effort, name-based
-heuristic whose "migratable" hint is advisory — its blocklist can't be exhaustive
-without type information, unlike the symbol-resolved Scala check).
+Each blocker/limitation above has a dedicated test fixture (`RDDToDatasetMigration*`).
+
+Accepted, documented limitations (still rewritten): `parallelize(seq)` /
+`textFile(path)` yield a different partition *count* than the RDD (per-row results
+identical; partition-count-sensitive side effects differ), and `distinct`/`intersect`
+dedup on the encoded representation, not a custom `equals`.
+
+Not done (future): `++` → `union`, inserting `.rdd` at RDD-typed exits, `sortBy` →
+`orderBy`. PySpark stays detect/log-only (a best-effort, name-based heuristic whose
+"migratable" hint is advisory — its blocklist can't be exhaustive without type
+information, unlike the symbol-resolved Scala check).

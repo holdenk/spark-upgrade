@@ -10,6 +10,8 @@ object RDDToDatasetMigrationRenames {
     import spark.implicits._
     val a = spark.sparkContext.parallelize(Seq(1, 2, 3))
     val b = spark.sparkContext.parallelize(Seq(2, 3, 4))
-    val r = a.intersection(b).subtract(spark.sparkContext.parallelize(Seq(3))).collect()
+    // intersection -> intersect (rename); union stays union, but its operand must
+    // also trace to a convertible origin (the inline parallelize does).
+    val r = a.intersection(b).union(spark.sparkContext.parallelize(Seq(3))).collect()
   }
 }
