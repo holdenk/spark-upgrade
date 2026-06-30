@@ -61,32 +61,50 @@ rules = [
 
 ### RDDToDatasetMigration (rewrite)
 
-A best-effort, opt-in **rewrite** that actually swaps an RDD pipeline to the
-typed `Dataset` API — but only when the whole file is migratable. If every RDD
-operation is a name-for-name `Dataset` swap (`map`, `filter`, `flatMap`,
-`distinct`, `union`, `count`, `collect`, `reduce`, ...), it converts the RDD
-*origins* and leaves the rest of the chain untouched:
+A **conservative**, opt-in **rewrite** that swaps an RDD pipeline to the typed
+`Dataset` API — but only when the whole file is migratable *and* the result is
+guaranteed to compile to the same thing and compute the same result. The safe
+surface is deliberately small; anything outside it is logged, not rewritten. When
+safe it converts the RDD *origins* so the chain resolves to `Dataset` methods:
 
-  - `sc.parallelize(seq)` / `makeRDD(seq)` → `spark.createDataset(seq)`
-    (`.repartition(n)` is appended when a partition count is given)
-  - `sc.textFile(path)` → `spark.read.textFile(path)`
+  - `<sess>.sparkContext.parallelize(seq)` / `makeRDD(seq)` → `<sess>.createDataset(seq)`
+  - `<sess>.sparkContext.textFile(path)` → `<sess>.read.textFile(path)`
   - `someDataset.rdd` → `someDataset` (drops the `.rdd`)
-  - `intersection` → `intersect`, `subtract` → `exceptAll` (renamed in place, only
-    when both operands *trace* to a convertible origin so they are guaranteed
-    Datasets; `exceptAll`, not `except`, because `RDD.subtract` keeps duplicates)
+  - `intersection` → `intersect` (both `INTERSECT DISTINCT`; semantics match)
 
-If the file uses anything that is not a clean swap (key/pair functions, joins,
-`sortBy`, `++`, RDD-only accessors, an `intersection`/`subtract` whose operand
-doesn't trace to a convertible origin, or an arity with no Dataset namesake such
-as `coalesce(n, shuffle)` / `distinct(n)` / `mapPartitions(f, preserves)`), it
-makes **no change** and logs each blocker instead — so it never half-migrates a
-pipeline. (Ops whose Dataset namesake differs even at the base arity, like
-`toLocalIterator` and `checkpoint`, are treated as blockers too.) The typed
-`Dataset` operations need an `Encoder`, so an `import <session>.implicits._` must
-be in scope; if it is missing the rule logs that it's needed rather than
-rewriting (auto-inserting a top-level import of a local session wouldn't
-compile). `createDataset`/`read` are driven by the session in `<x>.sparkContext`,
-else the session whose `implicits._` are imported.
+Only the **single-argument** origin forms convert: `parallelize(seq, n)` and
+`textFile(path, minPartitions)` are blocked, because `Dataset` can't reproduce RDD
+partition slicing without a shuffle that reorders rows / drops the hint. Binary
+ops (`union`, `intersection`) additionally require their **argument** to trace to a
+convertible origin (else it would still be an RDD and the call wouldn't compile).
+
+It makes **no change** and logs each blocker when the file uses anything outside
+the safe set, including:
+
+  - key/pair functions, joins, `sortBy`, `++`, RDD-only accessors;
+  - `subtract` (RDD removes *every* row whose value is in the other RDD — a
+    left-anti join, which neither `except` nor `exceptAll` reproduces), `sample`
+    (different sampler/seed), `isEmpty` (`Dataset.isEmpty` is parameterless),
+    `toLocalIterator` (returns a `java.util.Iterator`), `checkpoint` (returns a new
+    Dataset);
+  - higher arities of `coalesce`/`distinct`/`mapPartitions` (including the
+    explicit-type-argument form `mapPartitions[U](f, true)`);
+  - any op used as an eta-expanded method value (`rdd.map _`);
+  - any file that declares an `RDD[...]` type (a return type / ascription would be
+    left dangling once the value becomes a `Dataset`).
+
+The typed `Dataset` operations need an `Encoder`, so an `import <session>.implicits._`
+must be in scope; if it is missing the rule logs that it's needed rather than
+rewriting (auto-inserting a top-level import of a local session wouldn't compile).
+`createDataset`/`read` are driven by the session in `<x>.sparkContext`, else the one
+whose `implicits._` are imported; a file with **more than one** `implicits._` import
+is blocked as ambiguous.
+
+Inherent, documented limitations (still rewritten): `parallelize(seq)`/`textFile(path)`
+produce a different *partition count* than the RDD (per-row results are identical,
+but partition-count-sensitive side effects like `foreachPartition` file counts
+differ), and `distinct`/`intersect` dedup on the encoded representation rather than a
+custom `equals`.
 The result is meant to be recompiled, which validates the migration. See
 [rdd-to-dataset-rewrite-design.md](./rdd-to-dataset-rewrite-design.md) for the
 full design and the limits of what is rewritten. Enable it explicitly:

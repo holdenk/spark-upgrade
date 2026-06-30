@@ -20,48 +20,52 @@ case class RDDMigrationNeedsImplicits(tn: Tree) extends Diagnostic {
 /**
  * Best-effort automatic RDD -> Dataset rewrite (opt-in, `isRewrite`).
  *
- * If a file's RDD usage is entirely composed of operations that map onto the
- * typed `Dataset` API, this rule converts the RDD *origins* to produce a
- * `Dataset` (so the rest of the chain resolves to `Dataset` methods) and renames
- * the few operations whose `Dataset` spelling differs:
+ * The rule is deliberately CONSERVATIVE: it rewrites a file only when it can do
+ * so without changing what the code compiles to OR what it computes. The safe
+ * surface is small, and anything outside it is logged for manual migration
+ * rather than rewritten into code that might not compile or might silently
+ * change results.
  *
- *   - `<sc>.parallelize(seq)` / `makeRDD(seq)` -> `<spark>.createDataset(seq)`
- *     (with `.repartition(n)` appended when a partition count is given)
- *   - `<sc>.textFile(path)`                    -> `<spark>.read.textFile(path)`
- *   - `<dataset>.rdd`                          -> `<dataset>` (drop the `.rdd`)
- *   - `intersection` -> `intersect`, `subtract` -> `exceptAll`
+ * When safe, it converts the RDD *origins* so the chain resolves to `Dataset`
+ * methods, and renames the one operation whose `Dataset` spelling differs:
  *
- * Name-identical operations (`map`, `filter`, `flatMap`, `distinct`, `union`,
- * `count`, `collect`, `reduce`, ...) are left untouched.
+ *   - `<sess>.sparkContext.parallelize(seq)` / `makeRDD(seq)` -> `<sess>.createDataset(seq)`
+ *   - `<sess>.sparkContext.textFile(path)`                    -> `<sess>.read.textFile(path)`
+ *   - `<dataset>.rdd`                                         -> `<dataset>` (drop the `.rdd`)
+ *   - `intersection` -> `intersect` (both dedup; semantics match)
  *
- * Safety:
- *   - Whole-file gate: if any operation is neither a name-identical swap nor a
- *     known rename (key/pair functions, joins, zips, `sortBy`, RDD-only
- *     accessors, ...), the rule makes NO change and logs each blocker. Ops whose
- *     `Dataset` namesake has a different signature only at a higher arity
- *     (`coalesce(n, shuffle)`, `distinct(n)`, `mapPartitions(f, preserves)`) are
- *     also blocked at that arity (see `maxSafeArgs`); the safe arity is rewritten.
- *   - Renames additionally require both operands of each renamed op to *trace*
- *     to a convertible origin (so they are guaranteed to become `Dataset`s);
- *     otherwise the rename is logged for manual migration. This is checked per
- *     operand (`tracesToDataset`), not by a coarse whole-file heuristic, so an
- *     RDD that arrives from an unknown source (a parameter, a non-Spark helper)
- *     correctly blocks the rename.
- *   - The typed `Dataset` operations need an `Encoder`, i.e. an
- *     `import <session>.implicits._` in scope. The rule does not synthesise it
- *     (a top-level import of a local session wouldn't compile); if it is missing
- *     the file is logged instead of rewritten.
+ * Only the SINGLE-argument origin forms are converted: `parallelize(seq, n)` and
+ * `textFile(path, minPartitions)` are blocked, because `Dataset` cannot reproduce
+ * RDD partition slicing without a shuffle that reorders rows / drops the hint.
  *
- * `createDataset`/`read` are driven by the session named in `<x>.sparkContext`
- * when the origin is written that way, otherwise by the session whose
- * `implicits._` are imported (the encoders and `createDataset` must come from
- * the same session); the result is meant to be recompiled, which validates it.
+ * Name-identical operations (`map`, `filter`, `flatMap`, `count`, `collect`,
+ * `reduce`, `union`, ...) keep their call text. `union` and `intersection` are
+ * binary, so their argument must also trace to a convertible origin (else the
+ * argument would still be an RDD and the call would not compile).
+ *
+ * Blocked (logged, never rewritten) -- the `Dataset` namesake differs in a way
+ * that would break compilation or change results:
+ *   - `subtract` (RDD removes all rows whose value is in the other RDD; no single
+ *     Dataset op matches -- needs a left-anti join), `sample` (different sampler/
+ *     seed), `isEmpty` (Dataset.isEmpty is parameterless), `toLocalIterator`
+ *     (returns a java.util.Iterator), `checkpoint` (returns a new Dataset).
+ *   - higher arities of `coalesce`/`distinct`/`mapPartitions` (no Dataset overload).
+ *   - any op used as an eta-expanded method value (`rdd.map _`: Dataset.map is
+ *     overloaded, so the eta form is ambiguous).
+ *   - any file that declares an `RDD[...]` type (a return type / ascription would
+ *     be left dangling once the value becomes a Dataset).
+ *
+ * The session that drives `createDataset`/`read` is `<x>.sparkContext`'s receiver
+ * when the origin is written that way, else the session whose `implicits._` are
+ * imported; a file with more than one `implicits._` import is blocked as
+ * ambiguous. The encoders import must already be in scope (it is not synthesised,
+ * since a top-level import of a local session wouldn't compile).
  */
 class RDDToDatasetMigration extends SemanticRule("RDDToDatasetMigration") {
   override val isRewrite: Boolean = true
 
   override val description: String =
-    "Rewrites a fully-migratable RDD pipeline to the typed Dataset API; logs the blockers otherwise."
+    "Conservatively rewrites a fully-migratable RDD pipeline to the typed Dataset API; logs the blockers otherwise."
 
   private val rddOwnerPrefixes: List[String] = List(
     "org/apache/spark/rdd/RDD#",
@@ -72,35 +76,51 @@ class RDDToDatasetMigration extends SemanticRule("RDDToDatasetMigration") {
     "org/apache/spark/rdd/AsyncRDDActions#"
   )
 
-  // RDD operations that exist on Dataset with the same name and a compatible
-  // signature/return type, so the call text can be left as-is once the receiver
-  // is a Dataset. NOTE: `toLocalIterator` (Dataset returns a java.util.Iterator,
-  // not a scala Iterator) and `checkpoint` (Dataset returns a *new* checkpointed
-  // Dataset instead of mutating in place) are deliberately NOT here -- their
-  // Dataset namesakes differ even at the base arity.
+  // RDD operations that exist on Dataset with the same name, arity, return type
+  // AND runtime semantics, so the call text can be left as-is once the receiver
+  // is a Dataset. Audited against the Spark 3.x Dataset/RDD APIs.
   private val nameIdenticalOps: Set[String] = Set(
     "map", "flatMap", "filter", "mapPartitions",
     "foreach", "foreachPartition",
     "distinct", "union",
-    "count", "collect", "take", "first", "reduce", "isEmpty",
-    "sample", "cache", "persist", "unpersist",
+    "count", "collect", "take", "first", "reduce",
+    "cache", "persist", "unpersist",
     "coalesce", "repartition"
   )
 
-  // Ops that match Dataset only up to a maximum argument count; called with more
-  // args the Dataset signature differs (won't compile), so block at that arity.
+  // Binary ops: the argument is another RDD, which must also become a Dataset,
+  // so it must trace to a convertible origin (`union` is name-identical,
+  // `intersection` is a rename; both need the operand check).
+  private val binaryDatasetArgOps: Set[String] = Set("union", "intersection")
+
+  // Ops that match Dataset only up to a maximum argument count; beyond it the
+  // Dataset signature differs (won't compile), so block at that arity.
   private val maxSafeArgs: Map[String, Int] = Map(
     "coalesce" -> 1,      // Dataset.coalesce(n); RDD.coalesce(n, shuffle)
     "distinct" -> 0,      // Dataset.distinct();  RDD.distinct(n)
     "mapPartitions" -> 1  // Dataset.mapPartitions(f); RDD.mapPartitions(f, preserves)
   )
 
-  // RDD operations whose Dataset spelling differs; renamed in place (only when
-  // both operands trace to a convertible origin, see `tracesToDataset`).
+  // RDD operations whose Dataset spelling differs but is faithful; renamed in place.
   private val renames: Map[String, String] = Map(
-    "intersection" -> "intersect", // both dedup (INTERSECT DISTINCT) -- semantics match
-    "subtract" -> "exceptAll"      // RDD.subtract keeps dups; EXCEPT ALL keeps dups (NOT `except`)
+    "intersection" -> "intersect" // both INTERSECT DISTINCT -- semantics match
   )
+
+  // Ops with a same-name Dataset method that is NOT a safe swap; logged with
+  // specific guidance instead of being rewritten.
+  private val manualReasons: Map[String, String] = Map(
+    "subtract" -> "RDD.subtract removes every row whose value appears in the other RDD (key removal); no single Dataset op matches -- use a left-anti join",
+    "sample" -> "Dataset.sample uses a different sampler and seed derivation, so the same seed yields different rows -- migrate by hand",
+    "isEmpty" -> "Dataset.isEmpty is parameterless while RDD.isEmpty() has parens -- migrate by hand",
+    "toLocalIterator" -> "Dataset.toLocalIterator returns a java.util.Iterator, not a scala Iterator -- migrate by hand",
+    "checkpoint" -> "Dataset.checkpoint returns a new checkpointed Dataset instead of mutating in place -- migrate by hand"
+  )
+
+  private val genericReason =
+    "operation has no automatic Dataset rewrite; migrate it manually or leave it as an RDD"
+
+  /** One operation call on an RDD: the op name node, its name, receiver, and args. */
+  private case class OpSite(node: Term.Name, op: String, receiver: Term, args: List[Term])
 
   private def methodOwnedBy(name: Term.Name, prefixes: List[String])(implicit
       doc: SemanticDocument
@@ -118,28 +138,52 @@ class RDDToDatasetMigration extends SemanticRule("RDDToDatasetMigration") {
   private def isDatasetRdd(name: Term.Name)(implicit doc: SemanticDocument): Boolean =
     methodOwnedBy(name, List("org/apache/spark/sql/Dataset#rdd"))
 
-  /** One operation call on an RDD: the op name node, its name, receiver, and args. */
-  private case class OpSite(node: Term.Name, op: String, receiver: Term, args: List[Term])
-
-  /** The session whose `implicits._` are imported, if any (e.g. `import ss.implicits._` -> "ss"). */
-  private def implicitsSessionName(implicit doc: SemanticDocument): Option[String] =
+  /** Prefixes of every `import <x>.implicits._` in the file (`<x>` is the session). */
+  private def implicitsSessions(implicit doc: SemanticDocument): List[String] =
     doc.tree.collect {
       case Importer(Term.Select(prefix, Term.Name("implicits")), importees)
           if importees.exists(_.is[Importee.Wildcard]) =>
         prefix.syntax
-    }.headOption
+    }
 
-  /** The session to drive createDataset/read from for a given origin receiver. */
   private def sessionName(scExpr: Term)(implicit doc: SemanticDocument): String =
     scExpr match {
       case Term.Select(session, Term.Name("sparkContext")) => session.syntax
-      case _ => implicitsSessionName.getOrElse("spark")
+      case _ => implicitsSessions.headOption.getOrElse("spark")
+    }
+
+  /** True if the file mentions an `RDD[...]` type (a return type / ascription / param). */
+  private def hasRddType(implicit doc: SemanticDocument): Boolean =
+    doc.input.text.contains("org.apache.spark.rdd.RDD") ||
+      doc.tree.collect {
+        case t @ Type.Name(_) if t.symbol.value.startsWith("org/apache/spark/rdd/RDD#") => t
+      }.nonEmpty
+
+  /** RDD ops used as an eta-expanded method value (`rdd.map _`), which can't be swapped safely. */
+  private def etaOps(implicit doc: SemanticDocument): List[Term.Name] =
+    doc.tree.collect {
+      case Term.Eta(Term.Select(_, name)) if rddOpName(name).isDefined => name
+      case Term.Eta(Term.ApplyType(Term.Select(_, name), _)) if rddOpName(name).isDefined => name
+    }
+
+  private def hasNamedArg(args: List[Term]): Boolean = args.exists(_.is[Term.Assign])
+
+  /** Origin calls whose argument form we can't safely convert (only single positional arg is supported). */
+  private def badShapeOrigins(implicit doc: SemanticDocument): List[(Term.Name, String)] =
+    doc.tree.collect {
+      case Term.Apply(Term.Select(_, name @ Term.Name(m)), args)
+          if (m == "parallelize" || m == "makeRDD" || m == "textFile") &&
+            isSparkContextMethod(name) && (args.lengthCompare(1) != 0 || hasNamedArg(args)) =>
+        (name, m)
     }
 
   /** True if `t` is an origin call this rule converts to a Dataset. */
   private def isConvertibleOriginCall(t: Term)(implicit doc: SemanticDocument): Boolean =
     t match {
       case Term.Apply(Term.Select(_, name @ Term.Name(m)), _)
+          if (m == "parallelize" || m == "makeRDD" || m == "textFile") && isSparkContextMethod(name) =>
+        true
+      case Term.Apply(Term.ApplyType(Term.Select(_, name @ Term.Name(m)), _), _)
           if (m == "parallelize" || m == "makeRDD" || m == "textFile") && isSparkContextMethod(name) =>
         true
       case Term.Select(_, name @ Term.Name("rdd")) if isDatasetRdd(name) => true
@@ -149,14 +193,14 @@ class RDDToDatasetMigration extends SemanticRule("RDDToDatasetMigration") {
   /** The right-hand side of a local `val`/`var` binding the given name, if present. */
   private def valDefRhs(name: String)(implicit doc: SemanticDocument): Option[Term] =
     doc.tree.collect {
-      case Defn.Val(_, List(Pat.Var(Term.Name(n))), _, rhs) if n == name        => rhs
-      case Defn.Var(_, List(Pat.Var(Term.Name(n))), _, Some(rhs)) if n == name   => rhs
+      case Defn.Val(_, List(Pat.Var(Term.Name(n))), _, rhs) if n == name      => rhs
+      case Defn.Var(_, List(Pat.Var(Term.Name(n))), _, Some(rhs)) if n == name => rhs
     }.headOption
 
   /**
    * True if `t` is (or resolves to) a value the rewrite turns into a Dataset:
-   * a convertible origin, a chain of RDD ops on such a value, or a local val
-   * bound to one. Conservatively false for parameters / unknown sources.
+   * a convertible origin, a chain of RDD ops on one, or a local val bound to one.
+   * Conservatively false for parameters / unknown sources.
    */
   private def tracesToDataset(t: Term, seen: Set[String])(implicit doc: SemanticDocument): Boolean =
     if (isConvertibleOriginCall(t)) true
@@ -165,6 +209,8 @@ class RDDToDatasetMigration extends SemanticRule("RDDToDatasetMigration") {
         case Term.Name(v) if !seen(v) =>
           valDefRhs(v).exists(rhs => tracesToDataset(rhs, seen + v))
         case Term.Apply(Term.Select(recv, name), _) if rddOpName(name).isDefined =>
+          tracesToDataset(recv, seen)
+        case Term.Apply(Term.ApplyType(Term.Select(recv, name), _), _) if rddOpName(name).isDefined =>
           tracesToDataset(recv, seen)
         case Term.ApplyInfix(lhs, op, _, _) if rddOpName(op).isDefined =>
           tracesToDataset(lhs, seen)
@@ -176,12 +222,11 @@ class RDDToDatasetMigration extends SemanticRule("RDDToDatasetMigration") {
   private def originPatches(implicit doc: SemanticDocument): List[Patch] =
     doc.tree.collect {
       case t @ Term.Apply(Term.Select(scExpr, name @ Term.Name(m)), args)
-          if (m == "parallelize" || m == "makeRDD") && isSparkContextMethod(name) =>
-        val base = s"${sessionName(scExpr)}.createDataset(${args.head.syntax})"
-        val repl = if (args.lengthCompare(2) >= 0) s"$base.repartition(${args(1).syntax})" else base
-        Patch.replaceTree(t, repl)
+          if (m == "parallelize" || m == "makeRDD") && isSparkContextMethod(name) &&
+            args.lengthCompare(1) == 0 && !hasNamedArg(args) =>
+        Patch.replaceTree(t, s"${sessionName(scExpr)}.createDataset(${args.head.syntax})")
       case t @ Term.Apply(Term.Select(scExpr, name @ Term.Name("textFile")), args)
-          if isSparkContextMethod(name) =>
+          if isSparkContextMethod(name) && args.lengthCompare(1) == 0 && !hasNamedArg(args) =>
         Patch.replaceTree(t, s"${sessionName(scExpr)}.read.textFile(${args.head.syntax})")
       case sel @ Term.Select(qual, name @ Term.Name("rdd")) if isDatasetRdd(name) =>
         Patch.replaceTree(sel, qual.syntax)
@@ -195,60 +240,65 @@ class RDDToDatasetMigration extends SemanticRule("RDDToDatasetMigration") {
         Patch.replaceTree(op, renames(v))
     }
 
-  // Detects an actual `import <session>.implicits._` (AST, not text, so a comment
-  // mentioning implicits doesn't count). Must be robust: a false positive would
-  // rewrite without the encoders in scope and not compile.
   private def hasImplicitsImport(implicit doc: SemanticDocument): Boolean =
-    implicitsSessionName.isDefined
+    implicitsSessions.nonEmpty
 
   override def fix(implicit doc: SemanticDocument): Patch = {
     val rddOps: List[OpSite] = doc.tree.collect {
       case Term.Apply(Term.Select(recv, name), args) if rddOpName(name).isDefined =>
         OpSite(name, name.value, recv, args)
+      case Term.Apply(Term.ApplyType(Term.Select(recv, name), _), args) if rddOpName(name).isDefined =>
+        OpSite(name, name.value, recv, args)
       case Term.ApplyInfix(lhs, op, _, args) if rddOpName(op).isDefined =>
         OpSite(op, op.value, lhs, args)
       case sel @ Term.Select(recv, name)
-          if rddOpName(name).isDefined && !sel.parent.exists(_.is[Term.Apply]) =>
+          if rddOpName(name).isDefined &&
+            !sel.parent.exists(p => p.is[Term.Apply] || p.is[Term.ApplyType] || p.is[Term.Eta]) =>
         OpSite(name, name.value, recv, Nil)
     }
+    val etas = etaOps
 
-    if (rddOps.isEmpty) {
+    if (rddOps.isEmpty && etas.isEmpty) {
       Patch.empty
     } else {
       def arityBad(o: OpSite): Boolean = maxSafeArgs.get(o.op).exists(max => o.args.lengthCompare(max) > 0)
-      val blockers = rddOps.filter { o =>
-        (!nameIdenticalOps.contains(o.op) && !renames.contains(o.op)) || arityBad(o)
-      }
-      val renameOps = rddOps.filter(o => renames.contains(o.op))
+
+      val anchor: Tree = (rddOps.map(_.node) ++ etas).head
+
+      // Blocker categories, in priority order; the first non-empty one is reported.
+      val unsupported: List[(Tree, String, String)] =
+        rddOps.filter(o => !nameIdenticalOps.contains(o.op) && !renames.contains(o.op))
+          .map(o => (o.node: Tree, o.op, manualReasons.getOrElse(o.op, genericReason)))
+      val arity: List[(Tree, String, String)] =
+        rddOps.filter(arityBad)
+          .map(o => (o.node: Tree, o.op, s"Dataset.${o.op} does not accept this many arguments; migrate manually"))
+      val badOrigins: List[(Tree, String, String)] =
+        badShapeOrigins.map { case (n, m) =>
+          (n: Tree, m, s"only the single-argument $m form is converted (Dataset can't reproduce RDD partition slicing); migrate manually")
+        }
+      val unsafeBinary: List[(Tree, String, String)] =
+        rddOps.filter(o => binaryDatasetArgOps.contains(o.op))
+          .filterNot(o => tracesToDataset(o.receiver, Set.empty) && o.args.forall(a => tracesToDataset(a, Set.empty)))
+          .map(o => (o.node: Tree, o.op, s"an operand of ${o.op} does not trace to a convertible origin, so it would remain an RDD; migrate manually"))
+      val etaBlocks: List[(Tree, String, String)] =
+        etas.map(n => (n: Tree, n.value, s"${n.value} is used as a method value (eta-expansion); the Dataset method is overloaded, so this is ambiguous -- migrate manually"))
+      val rddTypeBlock: List[(Tree, String, String)] =
+        if (hasRddType) List((anchor, "RDD", "this file declares an RDD[...] type; rewriting the chain to a Dataset would leave that annotation dangling -- migrate manually"))
+        else Nil
+      val ambiguousSession: List[(Tree, String, String)] =
+        if (implicitsSessions.lengthCompare(1) > 0) List((anchor, "implicits", "more than one `implicits._` import makes the target SparkSession ambiguous; migrate manually"))
+        else Nil
+
+      val blockers = List(unsupported, arity, badOrigins, unsafeBinary, etaBlocks, rddTypeBlock, ambiguousSession)
+        .find(_.nonEmpty)
+        .getOrElse(Nil)
+
       if (blockers.nonEmpty) {
-        // Has a genuinely non-migratable op (or unsupported arity): log, change nothing.
-        blockers.map { o =>
-          val reason =
-            if (arityBad(o)) s"Dataset.${o.op} does not accept this many arguments; migrate manually"
-            else "operation has no automatic Dataset rewrite; migrate it manually or leave it as an RDD"
-          Patch.lint(RDDMigrationBlocked(o.node, o.op, reason))
-        }.asPatch
+        blockers.map { case (n, op, reason) => Patch.lint(RDDMigrationBlocked(n, op, reason)) }.asPatch
+      } else if (!hasImplicitsImport) {
+        Patch.lint(RDDMigrationNeedsImplicits(rddOps.head.node))
       } else {
-        val unsafeRenames = renameOps.filterNot { o =>
-          tracesToDataset(o.receiver, Set.empty) && o.args.forall(a => tracesToDataset(a, Set.empty))
-        }
-        if (unsafeRenames.nonEmpty) {
-          // A renamed op has an operand we can't guarantee becomes a Dataset.
-          unsafeRenames.map { o =>
-            Patch.lint(
-              RDDMigrationBlocked(
-                o.node,
-                o.op,
-                s"rewrite to Dataset.${renames(o.op)} manually -- an operand does not trace to a convertible origin"
-              )
-            )
-          }.asPatch
-        } else if (!hasImplicitsImport) {
-          // Migratable, but the Dataset encoders import is missing.
-          Patch.lint(RDDMigrationNeedsImplicits(rddOps.head.node))
-        } else {
-          (originPatches ++ renamePatches).asPatch
-        }
+        (originPatches ++ renamePatches).asPatch
       }
     }
   }
