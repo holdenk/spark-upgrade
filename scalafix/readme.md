@@ -46,6 +46,8 @@ surface is deliberately small; anything outside it is logged, not rewritten. Whe
 safe it converts the RDD *origins* so the chain resolves to `Dataset` methods:
 
   - `<sess>.sparkContext.parallelize(seq)` / `makeRDD(seq)` → `<sess>.createDataset(seq)`
+    (an explicit type argument is preserved: `parallelize[T](seq)` → `createDataset[T](seq)`,
+    which keeps the empty-seq idiom compiling)
   - `<sess>.sparkContext.textFile(path)` → `<sess>.read.textFile(path)`
   - `someDataset.rdd` → `someDataset` (drops the `.rdd`)
   - `intersection` → `intersect` (both `INTERSECT DISTINCT`; semantics match)
@@ -72,7 +74,10 @@ the safe set, including:
     left dangling once the value becomes a `Dataset`).
 
 The typed `Dataset` operations need an `Encoder`, so an `import <session>.implicits._`
-must be in scope; if it is missing the rule logs that it's needed rather than
+must be **lexically in scope at each rewritten site that needs one** (`createDataset`
+origins and `map`/`flatMap`/`mapPartitions`) — an import inside a *different* method
+doesn't count, and a file-wide check would wrongly rewrite such files into code that
+doesn't compile. If it's missing at a site the rule logs that it's needed rather than
 rewriting (auto-inserting a top-level import of a local session wouldn't compile).
 `createDataset`/`read` are driven by the session in `<x>.sparkContext`, else the one
 whose `implicits._` are imported; a file with **more than one** `implicits._` import
@@ -81,8 +86,9 @@ is blocked as ambiguous.
 Inherent, documented limitations (still rewritten): `parallelize(seq)`/`textFile(path)`
 produce a different *partition count* than the RDD (per-row results are identical,
 but partition-count-sensitive side effects like `foreachPartition` file counts
-differ), and `distinct`/`intersect` dedup on the encoded representation rather than a
-custom `equals`.
+differ); `distinct`/`intersect` dedup on the encoded representation rather than a
+custom `equals`; and a type *alias* of `RDD` (`type MyRDD = RDD[Int]`) used as an
+annotation is not detected by the dangling-type guard.
 The result is meant to be recompiled, which validates the migration. See
 [rdd-to-dataset-rewrite-design.md](./rdd-to-dataset-rewrite-design.md) for the
 full design and the limits of what is rewritten. Enable it explicitly:
