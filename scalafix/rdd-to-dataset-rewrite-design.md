@@ -184,7 +184,13 @@ rewrites only when the result is guaranteed to compile to the same thing and
 compute the same result. Three rounds of adversarial self-review showed the
 "name-identical op = safe swap" premise has many sharp edges (signature, arity,
 return-type, partitioning, equality, and AST-shape differences), so the safe
-surface was narrowed and everything uncertain is logged, not rewritten.
+surface was narrowed and everything uncertain is logged, not rewritten. A fourth
+(confirmation) pass verified the prior fixes hold and fixed two redesign
+regressions: the explicit-type-argument origin form (`parallelize[T](seq)`) is now
+converted symmetrically everywhere (collector, trace, `originPatches`,
+`badShapeOrigins`), and the `RDD[...]`-type block is decided from the resolved
+`Type.Name` symbol only — never a raw-text match — so a stale import / comment /
+string mentioning the FQCN no longer wrongly blocks a safe file.
 
 - Whole-file gate: rewrite only if every RDD op is in the audited safe set;
   otherwise log the first category of blockers and change nothing.

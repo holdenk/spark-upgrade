@@ -152,12 +152,16 @@ class RDDToDatasetMigration extends SemanticRule("RDDToDatasetMigration") {
       case _ => implicitsSessions.headOption.getOrElse("spark")
     }
 
-  /** True if the file mentions an `RDD[...]` type (a return type / ascription / param). */
+  /**
+   * True if the file uses an `RDD[...]` *type* (a return type / ascription / param).
+   * Matched on the resolved `Type.Name` symbol, NOT on source text: an unused
+   * `import org.apache.spark.rdd.RDD`, a comment, or a string literal mentioning the
+   * FQCN is not a dangling type and must not block a safe rewrite.
+   */
   private def hasRddType(implicit doc: SemanticDocument): Boolean =
-    doc.input.text.contains("org.apache.spark.rdd.RDD") ||
-      doc.tree.collect {
-        case t @ Type.Name(_) if t.symbol.value.startsWith("org/apache/spark/rdd/RDD#") => t
-      }.nonEmpty
+    doc.tree.collect {
+      case t @ Type.Name(_) if t.symbol.value.startsWith("org/apache/spark/rdd/RDD#") => t
+    }.nonEmpty
 
   /** RDD ops used as an eta-expanded method value (`rdd.map _`), which can't be swapped safely. */
   private def etaOps(implicit doc: SemanticDocument): List[Term.Name] =
@@ -172,6 +176,10 @@ class RDDToDatasetMigration extends SemanticRule("RDDToDatasetMigration") {
   private def badShapeOrigins(implicit doc: SemanticDocument): List[(Term.Name, String)] =
     doc.tree.collect {
       case Term.Apply(Term.Select(_, name @ Term.Name(m)), args)
+          if (m == "parallelize" || m == "makeRDD" || m == "textFile") &&
+            isSparkContextMethod(name) && (args.lengthCompare(1) != 0 || hasNamedArg(args)) =>
+        (name, m)
+      case Term.Apply(Term.ApplyType(Term.Select(_, name @ Term.Name(m)), _), args)
           if (m == "parallelize" || m == "makeRDD" || m == "textFile") &&
             isSparkContextMethod(name) && (args.lengthCompare(1) != 0 || hasNamedArg(args)) =>
         (name, m)
@@ -219,15 +227,25 @@ class RDDToDatasetMigration extends SemanticRule("RDDToDatasetMigration") {
         case _ => false
       }
 
+  // Both the plain `parallelize(seq)` and the explicit-type-argument `parallelize[T](seq)`
+  // forms are converted; the latter parses as Term.Apply(Term.ApplyType(Term.Select(...))).
+  // Keep this in lockstep with isConvertibleOriginCall / badShapeOrigins.
+  private def originReplacement(scExpr: Term, m: String, args: List[Term])(implicit
+      doc: SemanticDocument
+  ): String =
+    if (m == "textFile") s"${sessionName(scExpr)}.read.textFile(${args.head.syntax})"
+    else s"${sessionName(scExpr)}.createDataset(${args.head.syntax})"
+
   private def originPatches(implicit doc: SemanticDocument): List[Patch] =
     doc.tree.collect {
       case t @ Term.Apply(Term.Select(scExpr, name @ Term.Name(m)), args)
-          if (m == "parallelize" || m == "makeRDD") && isSparkContextMethod(name) &&
+          if (m == "parallelize" || m == "makeRDD" || m == "textFile") && isSparkContextMethod(name) &&
             args.lengthCompare(1) == 0 && !hasNamedArg(args) =>
-        Patch.replaceTree(t, s"${sessionName(scExpr)}.createDataset(${args.head.syntax})")
-      case t @ Term.Apply(Term.Select(scExpr, name @ Term.Name("textFile")), args)
-          if isSparkContextMethod(name) && args.lengthCompare(1) == 0 && !hasNamedArg(args) =>
-        Patch.replaceTree(t, s"${sessionName(scExpr)}.read.textFile(${args.head.syntax})")
+        Patch.replaceTree(t, originReplacement(scExpr, m, args))
+      case t @ Term.Apply(Term.ApplyType(Term.Select(scExpr, name @ Term.Name(m)), _), args)
+          if (m == "parallelize" || m == "makeRDD" || m == "textFile") && isSparkContextMethod(name) &&
+            args.lengthCompare(1) == 0 && !hasNamedArg(args) =>
+        Patch.replaceTree(t, originReplacement(scExpr, m, args))
       case sel @ Term.Select(qual, name @ Term.Name("rdd")) if isDatasetRdd(name) =>
         Patch.replaceTree(sel, qual.syntax)
     }
