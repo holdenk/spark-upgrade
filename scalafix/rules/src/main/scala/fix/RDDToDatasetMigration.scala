@@ -13,8 +13,8 @@ case class RDDMigrationNeedsImplicits(tn: Tree) extends Diagnostic {
 
   override def message: String =
     "This RDD pipeline is migratable to the Dataset API, but needs " +
-      "`import spark.implicits._` in scope for the encoders. Add it and re-run " +
-      "RDDToDatasetMigration to rewrite it automatically."
+      "`import <session>.implicits._` in scope at this call site for the encoders. " +
+      "Add it and re-run RDDToDatasetMigration to rewrite it automatically."
 }
 
 /**
@@ -58,8 +58,14 @@ case class RDDMigrationNeedsImplicits(tn: Tree) extends Diagnostic {
  * The session that drives `createDataset`/`read` is `<x>.sparkContext`'s receiver
  * when the origin is written that way, else the session whose `implicits._` are
  * imported; a file with more than one `implicits._` import is blocked as
- * ambiguous. The encoders import must already be in scope (it is not synthesised,
- * since a top-level import of a local session wouldn't compile).
+ * ambiguous. The `implicits._` import must already be LEXICALLY IN SCOPE at each
+ * rewritten site that needs an `Encoder` (`createDataset` origins and
+ * `map`/`flatMap`/`mapPartitions`) -- a file-wide import check is not enough, and
+ * the import is not synthesised (a top-level import of a local session wouldn't
+ * compile). An explicit origin type argument is preserved
+ * (`parallelize[T](seq)` -> `createDataset[T](seq)`), keeping the empty-seq idiom
+ * compiling. Known limitation: a type alias of `RDD` (`type MyRDD = RDD[Int]`)
+ * used as an annotation is not detected by the dangling-type guard.
  */
 class RDDToDatasetMigration extends SemanticRule("RDDToDatasetMigration") {
   override val isRewrite: Boolean = true
@@ -229,23 +235,28 @@ class RDDToDatasetMigration extends SemanticRule("RDDToDatasetMigration") {
 
   // Both the plain `parallelize(seq)` and the explicit-type-argument `parallelize[T](seq)`
   // forms are converted; the latter parses as Term.Apply(Term.ApplyType(Term.Select(...))).
-  // Keep this in lockstep with isConvertibleOriginCall / badShapeOrigins.
-  private def originReplacement(scExpr: Term, m: String, args: List[Term])(implicit
+  // A written type argument is PRESERVED (`createDataset[T](...)`): dropping it would
+  // re-infer T from the argument alone, which breaks the empty-seq idiom
+  // (`parallelize[Int](Seq())` must not become `createDataset(Seq())`, whose T is
+  // Nothing). Keep this in lockstep with isConvertibleOriginCall / badShapeOrigins.
+  private def originReplacement(scExpr: Term, m: String, targs: List[Type], args: List[Term])(implicit
       doc: SemanticDocument
-  ): String =
+  ): String = {
+    val targsStr = if (targs.isEmpty) "" else targs.map(_.syntax).mkString("[", ", ", "]")
     if (m == "textFile") s"${sessionName(scExpr)}.read.textFile(${args.head.syntax})"
-    else s"${sessionName(scExpr)}.createDataset(${args.head.syntax})"
+    else s"${sessionName(scExpr)}.createDataset$targsStr(${args.head.syntax})"
+  }
 
   private def originPatches(implicit doc: SemanticDocument): List[Patch] =
     doc.tree.collect {
       case t @ Term.Apply(Term.Select(scExpr, name @ Term.Name(m)), args)
           if (m == "parallelize" || m == "makeRDD" || m == "textFile") && isSparkContextMethod(name) &&
             args.lengthCompare(1) == 0 && !hasNamedArg(args) =>
-        Patch.replaceTree(t, originReplacement(scExpr, m, args))
-      case t @ Term.Apply(Term.ApplyType(Term.Select(scExpr, name @ Term.Name(m)), _), args)
+        Patch.replaceTree(t, originReplacement(scExpr, m, Nil, args))
+      case t @ Term.Apply(Term.ApplyType(Term.Select(scExpr, name @ Term.Name(m)), targs), args)
           if (m == "parallelize" || m == "makeRDD" || m == "textFile") && isSparkContextMethod(name) &&
             args.lengthCompare(1) == 0 && !hasNamedArg(args) =>
-        Patch.replaceTree(t, originReplacement(scExpr, m, args))
+        Patch.replaceTree(t, originReplacement(scExpr, m, targs, args))
       case sel @ Term.Select(qual, name @ Term.Name("rdd")) if isDatasetRdd(name) =>
         Patch.replaceTree(sel, qual.syntax)
     }
@@ -258,8 +269,70 @@ class RDDToDatasetMigration extends SemanticRule("RDDToDatasetMigration") {
         Patch.replaceTree(op, renames(v))
     }
 
-  private def hasImplicitsImport(implicit doc: SemanticDocument): Boolean =
-    implicitsSessions.nonEmpty
+  // Dataset ops whose rewritten form needs an implicit Encoder at the call site.
+  private val encoderNeedingOps: Set[String] = Set("map", "flatMap", "mapPartitions")
+
+  private def isSparkContextReceiver(scExpr: Term): Boolean =
+    scExpr match {
+      case Term.Select(_, Term.Name("sparkContext")) => true
+      case _ => false
+    }
+
+  /**
+   * Sites whose rewritten form needs the session's `implicits._` lexically in
+   * scope right there: `createDataset` origins (`Encoder[T]`), the
+   * `map`/`flatMap`/`mapPartitions` calls (`Encoder[U]`), and bare-receiver
+   * `textFile` origins (the emitted session name is the implicits import's
+   * prefix, so that import must be visible at the site).
+   */
+  private def encoderSites(rddOps: List[OpSite])(implicit doc: SemanticDocument): List[Tree] = {
+    def needsImplicits(m: String, scExpr: Term): Boolean =
+      m == "parallelize" || m == "makeRDD" || (m == "textFile" && !isSparkContextReceiver(scExpr))
+    val originSites = doc.tree.collect {
+      case Term.Apply(Term.Select(scExpr, name @ Term.Name(m)), _)
+          if needsImplicits(m, scExpr) && isSparkContextMethod(name) =>
+        name: Tree
+      case Term.Apply(Term.ApplyType(Term.Select(scExpr, name @ Term.Name(m)), _), _)
+          if needsImplicits(m, scExpr) && isSparkContextMethod(name) =>
+        name: Tree
+    }
+    originSites ++ rddOps.filter(o => encoderNeedingOps(o.op)).map(o => o.node: Tree)
+  }
+
+  private def isImplicitsImportStat(s: Stat): Boolean =
+    s match {
+      case Import(importers) =>
+        importers.exists {
+          case Importer(Term.Select(_, Term.Name("implicits")), importees) =>
+            importees.exists(_.is[Importee.Wildcard])
+          case _ => false
+        }
+      case _ => false
+    }
+
+  /**
+   * True if an `import <session>.implicits._` is lexically in scope at `t`: some
+   * enclosing block/template/source contains that import before `t`. A file-wide
+   * check is not enough -- an import inside one method puts neither the encoders
+   * nor the session name in scope in another method.
+   */
+  private def implicitsInScopeAt(t: Tree): Boolean = {
+    def enclosingStats(anc: Tree): List[Stat] = anc match {
+      case b: Term.Block => b.stats
+      case tpl: Template => tpl.stats
+      case s: Source => s.stats
+      case p: Pkg => p.stats
+      case _ => Nil
+    }
+    var cur = t.parent
+    var found = false
+    while (!found && cur.isDefined) {
+      val anc = cur.get
+      found = enclosingStats(anc).exists(s => isImplicitsImportStat(s) && s.pos.end <= t.pos.start)
+      cur = anc.parent
+    }
+    found
+  }
 
   override def fix(implicit doc: SemanticDocument): Patch = {
     val rddOps: List[OpSite] = doc.tree.collect {
@@ -313,10 +386,12 @@ class RDDToDatasetMigration extends SemanticRule("RDDToDatasetMigration") {
 
       if (blockers.nonEmpty) {
         blockers.map { case (n, op, reason) => Patch.lint(RDDMigrationBlocked(n, op, reason)) }.asPatch
-      } else if (!hasImplicitsImport) {
-        Patch.lint(RDDMigrationNeedsImplicits(rddOps.head.node))
       } else {
-        (originPatches ++ renamePatches).asPatch
+        // Per-site, not file-wide: an import inside another method wouldn't put
+        // the encoders (or the session name) in scope at this call.
+        val missingEncoders = encoderSites(rddOps).filterNot(implicitsInScopeAt)
+        if (missingEncoders.nonEmpty) Patch.lint(RDDMigrationNeedsImplicits(missingEncoders.head))
+        else (originPatches ++ renamePatches).asPatch
       }
     }
   }

@@ -192,6 +192,25 @@ converted symmetrically everywhere (collector, trace, `originPatches`,
 `Type.Name` symbol only — never a raw-text match — so a stale import / comment /
 string mentioning the FQCN no longer wrongly blocks a safe file.
 
+A fifth pass (independent double-check of the fourth) found and fixed two more:
+
+- The typed-origin conversion **dropped the written type argument**
+  (`parallelize[Int](Seq())` became `createDataset(Seq())`, whose `T` infers to
+  `Nothing`); the type argument is now preserved (`createDataset[Int](Seq())`),
+  keeping the empty-seq idiom — the main reason the type argument is written —
+  compiling. (Fixture: `TypedOrigin`, empty-seq case.)
+- The encoders gate was **file-wide but scope-blind**: one `implicits._` import
+  inside method A satisfied it while a chain in method B was rewritten with no
+  encoders in scope there (non-compiling). The check is now lexical and per-site
+  (`implicitsInScopeAt`): every `createDataset` origin, every
+  `map`/`flatMap`/`mapPartitions` call, and every bare-receiver `textFile` origin
+  must have the import in an enclosing scope, before the site; otherwise the file
+  is logged, not rewritten. (Fixture: `ImplicitsScope`.)
+
+Known limitation (documented, not detected): a type alias of `RDD`
+(`type MyRDD = RDD[Int]`) used as an annotation evades the dangling-type guard,
+which matches on the resolved `Type.Name` symbol without dealiasing.
+
 - Whole-file gate: rewrite only if every RDD op is in the audited safe set;
   otherwise log the first category of blockers and change nothing.
 - Origins (single-argument forms only): `<sess>.sparkContext.parallelize(seq)` /
