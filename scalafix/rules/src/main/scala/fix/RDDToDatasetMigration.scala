@@ -377,7 +377,10 @@ class RDDToDatasetMigration extends SemanticRule("RDDToDatasetMigration") {
         if (hasRddType) List((anchor, "RDD", "this file declares an RDD[...] type; rewriting the chain to a Dataset would leave that annotation dangling -- migrate manually"))
         else Nil
       val ambiguousSession: List[(Tree, String, String)] =
-        if (implicitsSessions.lengthCompare(1) > 0) List((anchor, "implicits", "more than one `implicits._` import makes the target SparkSession ambiguous; migrate manually"))
+        // Count DISTINCT sessions, not total imports: the same `import s.implicits._`
+        // repeated across methods (the norm once the import must be in scope per site)
+        // is one unambiguous session, not two.
+        if (implicitsSessions.distinct.lengthCompare(1) > 0) List((anchor, "implicits", "more than one distinct `implicits._` session makes the target SparkSession ambiguous; migrate manually"))
         else Nil
 
       val blockers = List(unsupported, arity, badOrigins, unsafeBinary, etaBlocks, rddTypeBlock, ambiguousSession)

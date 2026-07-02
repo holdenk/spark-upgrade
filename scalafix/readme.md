@@ -102,8 +102,9 @@ doesn't count, and a file-wide check would wrongly rewrite such files into code 
 doesn't compile. If it's missing at a site the rule logs that it's needed rather than
 rewriting (auto-inserting a top-level import of a local session wouldn't compile).
 `createDataset`/`read` are driven by the session in `<x>.sparkContext`, else the one
-whose `implicits._` are imported; a file with **more than one** `implicits._` import
-is blocked as ambiguous.
+whose `implicits._` are imported; a file importing **two different sessions'**
+`implicits._` is blocked as ambiguous (the same import repeated across methods — the
+normal per-scope pattern — is fine).
 
 Inherent, documented limitations (still rewritten): `parallelize(seq)`/`textFile(path)`
 produce a different *partition count* than the RDD (per-row results are identical,

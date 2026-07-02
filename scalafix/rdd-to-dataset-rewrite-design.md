@@ -232,10 +232,13 @@ which matches on the resolved `Type.Name` symbol without dealiasing.
   (parameterless on Dataset), `sample` (different sampler/seed), `toLocalIterator`
   (`java.util.Iterator`), `checkpoint` (returns a new Dataset).
 - Blocked: any op used as an eta-expanded method value (`rdd.map _`); any file
-  declaring an `RDD[...]` type (the annotation would be left dangling); more than
-  one `implicits._` import (ambiguous session).
-- Encoders: requires an `import <session>.implicits._` in scope (not synthesised);
-  logged (`RDDMigrationNeedsImplicits`) if missing.
+  declaring an `RDD[...]` type (the annotation would be left dangling); imports of
+  two **distinct** sessions' `implicits._` (ambiguous session) — the same import
+  repeated across methods counts as one session and is fine.
+- Encoders: requires an `import <session>.implicits._` LEXICALLY in scope at each
+  site that needs one (`createDataset` origins, `map`/`flatMap`/`mapPartitions`,
+  and bare-receiver `textFile`); logged (`RDDMigrationNeedsImplicits`) if missing.
+  Encoder-free chains (e.g. `ds.rdd.filter(_ > 1).count()`) rewrite with no import.
 
 Each blocker/limitation above has a dedicated test fixture (`RDDToDatasetMigration*`).
 
