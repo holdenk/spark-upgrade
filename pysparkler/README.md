@@ -87,8 +87,9 @@ to upgrade your PySpark scripts. In the latest stable version it supports the fo
   classes, and several removed `Index` APIs) and removed keyword parameters (`na_sentinel`, Categorical/
   CategoricalIndex `inplace`, `date_range(closed=...)`, `between_time(include_start=/include_end=)`,
   `Series.between(inclusive=True/False)`, `plot(sort_columns=...)`, `to_latex(col_space=...)`,
-  `to_excel(encoding=/verbose=)`, `read_csv`/`read_excel(squeeze=/mangle_dupe_cols=/convert_float=)`,
-  `info(null_counts=...)`), plus the removed `assertPandasOnSparkEqual` testing helper. Because the tool is
+  `to_excel(encoding=/verbose=)`, `read_csv`/`read_excel(squeeze=/mangle_dupe_cols=)`,
+  `read_excel(convert_float=...)`, `info(null_counts=...)`), plus the removed `assertPandasOnSparkEqual`
+  testing helper. Because the tool is
   syntactic (no type information), hints for common method names such as `.append` and `.pad` are worded
   conditionally — verify the receiver is a pandas-on-spark object before applying the change.
 - PySparkler applies every implemented rule on each run; the `from_pyspark` / `to_pyspark` arguments do not

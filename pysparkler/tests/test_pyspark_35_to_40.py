@@ -481,6 +481,15 @@ other = ps.read_excel("in.xlsx", convert_float=True)
     assert modified_code.count("# PY35-40-027:") == 2
 
 
+def test_does_nothing_for_read_csv_convert_float():
+    # convert_float was removed from read_excel only, not read_csv.
+    given_code = """
+df = ps.read_csv("in.csv", convert_float=True)
+"""
+    modified_code = rewrite(given_code, PandasReadCsvExcelParamsRemoved())
+    assert modified_code == given_code
+
+
 def test_adds_code_hint_when_info_uses_null_counts():
     given_code = """
 df.info(null_counts=True)

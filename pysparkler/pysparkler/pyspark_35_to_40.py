@@ -745,34 +745,41 @@ class PandasReadCsvExcelParamsRemoved(StatementLineCommentWriter):
     ):
         super().__init__(
             transformer_id="PY35-40-027",
-            comment=f"As of PySpark {pyspark_version}, the squeeze, mangle_dupe_cols and convert_float parameters of \
-ps.read_csv / ps.read_excel have been removed from pandas API on Spark.",
+            comment=f"As of PySpark {pyspark_version}, the squeeze and mangle_dupe_cols parameters of ps.read_csv / \
+ps.read_excel, and the convert_float parameter of ps.read_excel, have been removed from pandas API on Spark.",
         )
 
     def visit_Call(self, node: cst.Call) -> None:
         """Check if read_csv / read_excel is called with a removed keyword argument"""
-        if m.matches(
-            node,
-            m.Call(
-                func=m.OneOf(
-                    m.Name("read_csv"),
-                    m.Name("read_excel"),
-                    m.Attribute(attr=m.Name("read_csv")),
-                    m.Attribute(attr=m.Name("read_excel")),
-                ),
-                args=[
-                    m.ZeroOrMore(),
-                    m.Arg(
-                        keyword=m.OneOf(
-                            m.Name("squeeze"),
-                            m.Name("mangle_dupe_cols"),
-                            m.Name("convert_float"),
-                        )
-                    ),
-                    m.ZeroOrMore(),
-                ],
-            ),
-        ):
+        read_csv_or_excel = m.OneOf(
+            m.Name("read_csv"),
+            m.Name("read_excel"),
+            m.Attribute(attr=m.Name("read_csv")),
+            m.Attribute(attr=m.Name("read_excel")),
+        )
+        read_excel = m.OneOf(
+            m.Name("read_excel"),
+            m.Attribute(attr=m.Name("read_excel")),
+        )
+        # squeeze and mangle_dupe_cols were removed from both read_csv and read_excel.
+        shared_params = m.Call(
+            func=read_csv_or_excel,
+            args=[
+                m.ZeroOrMore(),
+                m.Arg(keyword=m.OneOf(m.Name("squeeze"), m.Name("mangle_dupe_cols"))),
+                m.ZeroOrMore(),
+            ],
+        )
+        # convert_float was removed from read_excel only.
+        read_excel_only = m.Call(
+            func=read_excel,
+            args=[
+                m.ZeroOrMore(),
+                m.Arg(keyword=m.Name("convert_float")),
+                m.ZeroOrMore(),
+            ],
+        )
+        if m.matches(node, shared_params) or m.matches(node, read_excel_only):
             self.match_found = True
 
 
