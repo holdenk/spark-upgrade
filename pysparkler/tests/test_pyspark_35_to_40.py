@@ -416,9 +416,25 @@ mask = series.between(1, 5, inclusive=True)
     assert "# PY35-40-023:" in modified_code
 
 
+def test_adds_code_hint_when_between_uses_positional_boolean_inclusive():
+    given_code = """
+mask = series.between(1, 5, False)
+"""
+    modified_code = rewrite(given_code, PandasSeriesBetweenBooleanInclusiveRemoved())
+    assert "# PY35-40-023:" in modified_code
+
+
 def test_does_nothing_for_between_with_string_inclusive():
     given_code = """
 mask = series.between(1, 5, inclusive="both")
+"""
+    modified_code = rewrite(given_code, PandasSeriesBetweenBooleanInclusiveRemoved())
+    assert modified_code == given_code
+
+
+def test_does_nothing_for_between_with_positional_string_inclusive():
+    given_code = """
+mask = series.between(1, 5, "both")
 """
     modified_code = rewrite(given_code, PandasSeriesBetweenBooleanInclusiveRemoved())
     assert modified_code == given_code
@@ -430,6 +446,14 @@ df.plot(sort_columns=True)
 """
     modified_code = rewrite(given_code, PandasPlotSortColumnsRemoved())
     assert "# PY35-40-024:" in modified_code
+
+
+def test_does_nothing_for_sort_columns_on_non_plot_call():
+    given_code = """
+write_table(data, sort_columns=True)
+"""
+    modified_code = rewrite(given_code, PandasPlotSortColumnsRemoved())
+    assert modified_code == given_code
 
 
 def test_adds_code_hint_when_to_latex_uses_col_space():

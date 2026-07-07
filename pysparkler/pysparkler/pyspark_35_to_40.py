@@ -616,21 +616,28 @@ Series.between has been removed from pandas API on Spark, use "both" or "neither
         )
 
     def visit_Call(self, node: cst.Call) -> None:
-        """Check if between is called with a boolean inclusive keyword argument"""
-        if m.matches(
-            node,
-            m.Call(
-                func=m.Attribute(attr=m.Name("between")),
-                args=[
-                    m.ZeroOrMore(),
-                    m.Arg(
-                        keyword=m.Name("inclusive"),
-                        value=m.OneOf(m.Name("True"), m.Name("False")),
-                    ),
-                    m.ZeroOrMore(),
-                ],
-            ),
-        ):
+        """Check if between is called with a boolean inclusive argument (keyword or third positional)"""
+        boolean = m.OneOf(m.Name("True"), m.Name("False"))
+        keyword_form = m.Call(
+            func=m.Attribute(attr=m.Name("between")),
+            args=[
+                m.ZeroOrMore(),
+                m.Arg(keyword=m.Name("inclusive"), value=boolean),
+                m.ZeroOrMore(),
+            ],
+        )
+        # Spark 3.5 also accepted ``inclusive`` as the third positional argument,
+        # e.g. ``series.between(1, 5, False)``.
+        positional_form = m.Call(
+            func=m.Attribute(attr=m.Name("between")),
+            args=[
+                m.Arg(keyword=None),
+                m.Arg(keyword=None),
+                m.Arg(keyword=None, value=boolean),
+                m.ZeroOrMore(),
+            ],
+        )
+        if m.matches(node, keyword_form) or m.matches(node, positional_form):
             self.match_found = True
 
 
@@ -654,6 +661,7 @@ has been removed from pandas API on Spark.",
         if m.matches(
             node,
             m.Call(
+                func=m.Attribute(attr=m.Name("plot")),
                 args=[
                     m.ZeroOrMore(),
                     m.Arg(keyword=m.Name("sort_columns")),
