@@ -37,9 +37,15 @@ We do not have an equivelent to "Scala Steward" for SQL files and SQL can target
 The PySpark Upgrade tool - PySparkler - is currently built using [LibCST](https://github.com/Instagram/LibCST).
 More on the tool's design and challenges can be found in the subdirectory README of the tool [here](./pysparkler/README.md).
 
+It includes rules for upgrading through Spark 4.x (3.5→4.0, 4.0→4.1, and the 4.1→4.2 preview). See the
+[PySparkler README](./pysparkler/README.md#pyspark-upgrades-supported) for the full list of supported migrations and
+the current gaps.
+
 ### Scala Upgrade (WIP)
 
 The Scala upgrade tooling is built on top of ScalaFix and has access to (most) of the type information. Spark's Scala APIs are perhaps the fastest changing of three primary languages used with Spark.
+
+For Spark 4.x, the biggest source-level changes for Scala pipelines are behavior changes (ANSI mode on by default, Apache Mesos removal, and many config default changes) rather than API signature changes. These are covered by the `AnsiModeEnabledWarn` and `MesosRemovedWarn` lint rules, plus the legacy-config map in [`conf_migrate`](./conf_migrate/migrate.py). See the [scalafix README](./scalafix/readme.md#spark-4x-rules) for details.
 
 
 #### Limitations / Unique Challenges

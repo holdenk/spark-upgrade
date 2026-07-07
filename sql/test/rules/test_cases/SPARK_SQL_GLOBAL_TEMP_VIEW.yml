@@ -1,0 +1,29 @@
+rule: GLOBALTEMPVIEW_L006
+
+global_temp_view_flagged:
+  configs:
+    core:
+      dialect: sparksql
+  fail_str: |
+    CREATE GLOBAL TEMPORARY VIEW v AS SELECT 1
+
+global_temp_view_if_not_exists_flagged:
+  configs:
+    core:
+      dialect: sparksql
+  fail_str: |
+    CREATE GLOBAL TEMPORARY VIEW IF NOT EXISTS v AS SELECT id FROM t
+
+regular_temp_view_ok:
+  configs:
+    core:
+      dialect: sparksql
+  pass_str: |
+    CREATE TEMPORARY VIEW v AS SELECT 1
+
+regular_view_ok:
+  configs:
+    core:
+      dialect: sparksql
+  pass_str: |
+    CREATE VIEW v AS SELECT 1

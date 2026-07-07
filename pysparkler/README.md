@@ -60,6 +60,10 @@ to upgrade your PySpark scripts. In the latest stable version it supports the fo
 
 | Migration                                       | Supported | Details                                                                                                                                      |
 |-------------------------------------------------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| Upgrading from PySpark 4.1 to 4.2 (preview)     | ✅         | [Link](https://spark.apache.org/docs/4.2.0-preview4/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-4-1-to-4-2)        |
+| Upgrading from PySpark 4.0 to 4.1               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-4-0-to-4-1)               |
+| Upgrading from PySpark 3.5 to 4.0               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-5-to-4-0)               |
+| Upgrading from PySpark 3.4 to 3.5               | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-4-to-3-5)               |
 | Upgrading from PySpark 3.3 to 3.4               | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-3-to-3-4)               |
 | Upgrading from PySpark 3.2 to 3.3               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-2-to-3-3)               |
 | Upgrading from PySpark 3.1 to 3.2               | ✅         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-3-1-to-3-2)               |
@@ -70,6 +74,29 @@ to upgrade your PySpark scripts. In the latest stable version it supports the fo
 | Upgrading from PySpark 2.1 to 2.2               | ✅         | NA                                                                                                                                           |
 | Upgrading from PySpark 1.4 to 1.5               | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-1-4-to-1-5)               |
 | Upgrading from PySpark 1.0-1.2 to 1.3           | ❌         | [Link](https://spark.apache.org/docs/latest/api/python/migration_guide/pyspark_upgrade.html#upgrading-from-pyspark-1-0-1-2-to-1-3)           |
+
+**Notes on the Spark 4.x rules:**
+
+- The 4.x migration guides are dominated by behavior changes (ANSI mode on by default, Arrow-by-default,
+  removed pandas-on-spark APIs, raised minimum dependency versions). Because these are not safe to rewrite
+  automatically in a dynamically-typed language, the 4.x rules mostly emit **code hints** rather than code
+  transformations. Review each hint and apply the suggested change where it is relevant.
+- PySparkler applies every implemented rule on each run; the `from_pyspark` / `to_pyspark` arguments do not
+  currently scope which rules run. The `3.3 → 3.4` and `3.4 → 3.5` steps have no rules yet, so those
+  intermediate hints are simply absent (not filtered out by a version range).
+- Spark `4.2` is still a **preview** release. The `4.1 → 4.2` rules track the preview migration guide and may
+  change before the final `4.2.0` release.
+
+**Cross-version lints (`PYC-*`):** in addition to the per-transition rules, `pyspark_common.py` holds
+version-agnostic correctness/portability hints whose transformer ids use the `PYC-` prefix:
+
+- `PYC-001` — `trigger(once=True)` / `Trigger.Once` is deprecated since Spark 3.3; suggests
+  `trigger(availableNow=True)`.
+- `PYC-002` — importing builtins-shadowing names (`max`, `min`, `sum`, `round`, `abs`, `filter`) from
+  `pyspark.sql.functions`; suggests importing the module or aliasing.
+- `PYC-003` — detects removed/renamed Spark configs passed to `.set()` / `.config()` (e.g. the legacy
+  parquet/avro rebase configs, `spark.shuffle.unsafe.file.output.buffer`, `*.blacklist.*`) and suggests the
+  replacement so the setting keeps taking effect.
 
 ## Features Supported
 

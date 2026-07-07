@@ -1,0 +1,195 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#  #
+#    http://www.apache.org/licenses/LICENSE-2.0
+#  #
+#  Unless required by applicable law or agreed to in writing,
+#  software distributed under the License is distributed on an
+#  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#  KIND, either express or implied.  See the License for the
+#  specific language governing permissions and limitations
+#  under the License.
+#
+
+import libcst as cst
+import libcst.matchers as m
+
+from pysparkler.base import StatementLineCommentWriter
+
+# Cross-version (version-agnostic) PySpark correctness and portability lints.
+#
+# Unlike the pyspark_<from>_to_<to> modules, these rules are not tied to a single Spark
+# release. Their transformer ids use the PYC- ("PySpark common") prefix.
+
+
+class TriggerOnceDeprecated(StatementLineCommentWriter):
+    """``Trigger.Once`` / ``.trigger(once=True)`` was deprecated in Spark 3.3 in favor of
+    ``Trigger.AvailableNow`` / ``.trigger(availableNow=True)``, which processes all available data
+    in (potentially) multiple micro-batches with rate-limiting honored.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(
+            transformer_id="PYC-001",
+            comment="trigger(once=True) (Trigger.Once) is deprecated since Spark 3.3. Use \
+trigger(availableNow=True) (Trigger.AvailableNow) instead, which honors rate limits across multiple micro-batches.",
+        )
+
+    def visit_Call(self, node: cst.Call) -> None:
+        """Check for a streaming .trigger(once=True) or .trigger(Trigger.Once) call"""
+        once_keyword = m.Call(
+            func=m.Attribute(attr=m.Name("trigger")),
+            args=[
+                m.ZeroOrMore(),
+                m.Arg(keyword=m.Name("once"), value=m.Name("True")),
+                m.ZeroOrMore(),
+            ],
+        )
+        # The enum form ``trigger(Trigger.Once)`` passes ``Trigger.Once`` positionally. Match the
+        # ``...Trigger.Once`` attribute access so both ``Trigger.Once`` and the fully-qualified
+        # ``pyspark.sql.streaming.Trigger.Once`` are covered, while ignoring unrelated ``x.Once`` args.
+        trigger_once_enum = m.Call(
+            func=m.Attribute(attr=m.Name("trigger")),
+            args=[
+                m.Arg(
+                    value=m.Attribute(
+                        value=m.OneOf(
+                            m.Name("Trigger"),
+                            m.Attribute(attr=m.Name("Trigger")),
+                        ),
+                        attr=m.Name("Once"),
+                    )
+                )
+            ],
+        )
+        if m.matches(node, once_keyword) or m.matches(node, trigger_once_enum):
+            self.match_found = True
+
+
+class BuiltinFunctionShadowing(StatementLineCommentWriter):
+    """Importing functions such as ``max``, ``min``, ``sum``, ``round``, ``abs`` directly from
+    ``pyspark.sql.functions`` shadows the Python builtins of the same name. Calling the shadowed
+    name with builtin-only arguments (for example ``max(xs, key=...)``) then fails or silently
+    changes behavior.
+    """
+
+    # Names exported by pyspark.sql.functions that collide with Python builtins.
+    # Note: `sorted` and `map` are NOT exported by pyspark.sql.functions and are intentionally
+    # absent. `filter` is included because it is exported as an alias of array_filter (Spark 3+).
+    shadowed_builtins = frozenset({"max", "min", "sum", "round", "abs", "filter"})
+
+    def __init__(self) -> None:
+        super().__init__(
+            transformer_id="PYC-002",
+            comment="This import shadows a Python builtin of the same name from pyspark.sql.functions. \
+Calling it with builtin-only arguments (e.g. key=) will fail. Prefer importing the module, e.g. \
+`from pyspark.sql import functions as F`, or alias the function on import.",
+        )
+
+    def _is_functions_module(self, node: cst.ImportFrom) -> bool:
+        return m.matches(
+            node,
+            m.ImportFrom(
+                module=m.Attribute(
+                    value=m.Attribute(value=m.Name("pyspark"), attr=m.Name("sql")),
+                    attr=m.Name("functions"),
+                )
+            ),
+        )
+
+    def visit_ImportFrom(self, node: cst.ImportFrom) -> None:
+        """Check for builtin-shadowing imports from pyspark.sql.functions"""
+        if not self._is_functions_module(node):
+            return
+        # Wildcard imports are already flagged by PY35-40-008 (SqlFunctionsStarImport) which
+        # gives a more actionable message. Only flag explicit unaliased name imports here.
+        if isinstance(node.names, cst.ImportStar):
+            return
+        for alias in node.names:
+            # Only flag unaliased imports; `import max as spark_max` is safe.
+            if (
+                alias.asname is None
+                and isinstance(alias.name, cst.Name)
+                and alias.name.value in self.shadowed_builtins
+            ):
+                self.match_found = True
+                return
+
+
+class RemovedOrRenamedConfig(StatementLineCommentWriter):
+    """Several Spark configurations were renamed or removed in Spark 4.x. When a known
+    removed/renamed config is passed to ``.set(...)`` / ``.config(...)`` (e.g.
+    ``spark.conf.set("spark.sql.legacy.parquet.int96RebaseModeInWrite", ...)``), suggest the
+    replacement so the setting keeps taking effect after the upgrade.
+    """
+
+    # Old config name -> replacement config name (Spark 4.0 / 4.1).
+    renamed_configs = {
+        "spark.sql.legacy.parquet.int96RebaseModeInWrite": "spark.sql.parquet.int96RebaseModeInWrite",
+        "spark.sql.legacy.parquet.datetimeRebaseModeInWrite": "spark.sql.parquet.datetimeRebaseModeInWrite",
+        "spark.sql.legacy.parquet.int96RebaseModeInRead": "spark.sql.parquet.int96RebaseModeInRead",
+        "spark.sql.legacy.parquet.datetimeRebaseModeInRead": "spark.sql.parquet.datetimeRebaseModeInRead",
+        "spark.sql.legacy.avro.datetimeRebaseModeInWrite": "spark.sql.avro.datetimeRebaseModeInWrite",
+        "spark.sql.legacy.avro.datetimeRebaseModeInRead": "spark.sql.avro.datetimeRebaseModeInRead",
+        "spark.shuffle.unsafe.file.output.buffer": "spark.shuffle.localDisk.file.output.buffer",
+    }
+
+    def __init__(self) -> None:
+        super().__init__(transformer_id="PYC-003", comment="")
+        self._pending_comments: list[str] = []
+
+    def visit_Call(self, node: cst.Call) -> None:
+        """Check for set()/config() calls passing a removed or renamed Spark config key"""
+        if not m.matches(
+            node,
+            m.Call(
+                func=m.Attribute(attr=m.OneOf(m.Name("set"), m.Name("config"))),
+                args=[m.Arg(value=m.SimpleString()), m.ZeroOrMore()],
+            ),
+        ):
+            return
+        # Use evaluated_value to correctly handle raw strings (r"..."), byte strings, etc.
+        config = node.args[0].value.evaluated_value
+        if not isinstance(config, str):
+            return
+        if config in self.renamed_configs:
+            self._pending_comments.append(
+                f"{config} was renamed in Spark 4.x; it no longer takes effect. "
+                f"Use {self.renamed_configs[config]} instead."
+            )
+            self.match_found = True
+        elif config.startswith("spark.") and (
+            ".blacklist." in config or config.endswith(".blacklist")
+        ):
+            # Scope the heuristic to Spark config keys so non-Spark builders that happen to use a
+            # "blacklist" name (e.g. redis.config("cache.blacklist", ...)) are not falsely flagged.
+            self._pending_comments.append(
+                f"{config} uses the deprecated 'blacklist' naming, which Spark 4.1 ignores. "
+                "Use the corresponding 'excludeOnFailure' configuration name (Spark 3.1.0+) instead."
+            )
+            self.match_found = True
+
+    def leave_SimpleStatementLine(
+        self,
+        original_node: cst.SimpleStatementLine,
+        updated_node: cst.SimpleStatementLine,
+    ) -> cst.SimpleStatementLine:
+        """Combine all per-call messages collected on this line, then emit."""
+        if self._pending_comments:
+            self.comment = "; ".join(self._pending_comments)
+        self._pending_comments = []
+        return super().leave_SimpleStatementLine(original_node, updated_node)
+
+
+def pyspark_common_transformers() -> list[cst.CSTTransformer]:
+    """Return a list of version-agnostic PySpark lint transformers"""
+    return [
+        TriggerOnceDeprecated(),
+        BuiltinFunctionShadowing(),
+        RemovedOrRenamedConfig(),
+    ]
