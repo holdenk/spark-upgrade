@@ -73,12 +73,17 @@ class RDDToDatasetMigrationCheck
   )
 
   // RDD operations with a direct, like-for-like Dataset/DataFrame equivalent.
+  // Kept aligned with the rewrite rule (RDDToDatasetMigration): ops whose Dataset
+  // namesake differs in signature or runtime semantics (subtract, sample,
+  // checkpoint, toLocalIterator, isEmpty, ++) are NOT here -- they carry tailored
+  // entries in blockingReasons below instead. sortBy stays: orderBy/sort with a
+  // column expression is a well-understood manual migration with no semantic trap.
   private val simpleOps: Set[String] = Set(
     "map", "flatMap", "filter", "mapPartitions",
     "foreach", "foreachPartition",
-    "distinct", "union", "++", "intersection", "subtract",
-    "count", "collect", "toLocalIterator", "take", "first", "reduce", "isEmpty",
-    "sample", "cache", "persist", "unpersist", "checkpoint",
+    "distinct", "union", "intersection",
+    "count", "collect", "take", "first", "reduce",
+    "cache", "persist", "unpersist",
     "coalesce", "repartition", "sortBy"
   )
 
@@ -94,6 +99,15 @@ class RDDToDatasetMigrationCheck
   // that is neither simple, neutral, nor listed here is treated as blocking with
   // a generic message.
   private val blockingReasons: Map[String, String] = Map(
+    // Same-name Dataset methods that are NOT like-for-like (kept in sync with the
+    // rewrite rule's manualReasons -- a naive swap would not compile or would
+    // silently change results):
+    "subtract" -> "RDD.subtract removes every row whose value appears in the other RDD (key removal); neither except nor exceptAll matches -- use a left-anti join",
+    "sample" -> "Dataset.sample uses a different sampler and seed derivation, so the same seed yields different rows",
+    "checkpoint" -> "Dataset.checkpoint returns a new checkpointed Dataset instead of mutating in place",
+    "toLocalIterator" -> "Dataset.toLocalIterator returns a java.util.Iterator, not a scala Iterator; convert with .asScala",
+    "isEmpty" -> "Dataset.isEmpty is parameterless while RDD.isEmpty() has parens; drop the parens when migrating",
+    "++" -> "rename to union (Dataset has no ++ alias)",
     "reduceByKey" -> "key-based aggregation; use a relational groupBy(...).agg(...) or KeyValueGroupedDataset.reduceGroups",
     "groupByKey" -> "RDD.groupByKey differs from Dataset.groupByKey; review the aggregation",
     "aggregateByKey" -> "key-based aggregation; use groupBy(...).agg(...)",

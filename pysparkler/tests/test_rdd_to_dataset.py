@@ -130,9 +130,10 @@ flattened = rdd.flatMap(g)
     assert modified_code.count("simple enough to migrate") == 2
 
 
-def test_unlisted_pair_op_blocks_the_migratable_hint():
-    # subtractByKey is an RDD-only pair operation with no DataFrame equivalent, so
-    # the map line must NOT be advertised as migratable even though map on its own is.
+def test_pair_op_blocks_the_migratable_hint():
+    # subtractByKey is a listed RDD-only pair operation (BLOCKING_OPS) with no
+    # DataFrame equivalent, so the map line must NOT be advertised as migratable
+    # even though map on its own is.
     given_code = """\
 mapped = rdd.map(f)
 diff = pairs.subtractByKey(other)
