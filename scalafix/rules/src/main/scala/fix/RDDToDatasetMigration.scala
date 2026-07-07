@@ -204,12 +204,20 @@ class RDDToDatasetMigration extends SemanticRule("RDDToDatasetMigration") {
       case _ => false
     }
 
-  /** The right-hand side of a local `val`/`var` binding the given name, if present. */
-  private def valDefRhs(name: String)(implicit doc: SemanticDocument): Option[Term] =
-    doc.tree.collect {
-      case Defn.Val(_, List(Pat.Var(Term.Name(n))), _, rhs) if n == name      => rhs
-      case Defn.Var(_, List(Pat.Var(Term.Name(n))), _, Some(rhs)) if n == name => rhs
-    }.headOption
+  /**
+   * The right-hand side of the `val`/`var` that DEFINES `ref`, matched by semantic
+   * symbol -- not by name, so a same-named binding in another scope (shadowing,
+   * another method) is never picked up.
+   */
+  private def valDefRhs(ref: Term.Name)(implicit doc: SemanticDocument): Option[Term] = {
+    val refSym = ref.symbol
+    if (refSym.isNone) None
+    else
+      doc.tree.collect {
+        case Defn.Val(_, List(Pat.Var(dn)), _, rhs) if dn.symbol == refSym       => rhs
+        case Defn.Var(_, List(Pat.Var(dn)), _, Some(rhs)) if dn.symbol == refSym => rhs
+      }.headOption
+  }
 
   /**
    * True if `t` is (or resolves to) a value the rewrite turns into a Dataset:
@@ -220,8 +228,8 @@ class RDDToDatasetMigration extends SemanticRule("RDDToDatasetMigration") {
     if (isConvertibleOriginCall(t)) true
     else
       t match {
-        case Term.Name(v) if !seen(v) =>
-          valDefRhs(v).exists(rhs => tracesToDataset(rhs, seen + v))
+        case n @ Term.Name(_) if !n.symbol.isNone && !seen(n.symbol.value) =>
+          valDefRhs(n).exists(rhs => tracesToDataset(rhs, seen + n.symbol.value))
         case Term.Apply(Term.Select(recv, name), _) if rddOpName(name).isDefined =>
           tracesToDataset(recv, seen)
         case Term.Apply(Term.ApplyType(Term.Select(recv, name), _), _) if rddOpName(name).isDefined =>

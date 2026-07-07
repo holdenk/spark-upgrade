@@ -218,8 +218,9 @@ Python counterpart of the Scala `RDDToDatasetMigrationCheck` scalafix rule. It d
 comments:
 
 - RDD-specific operations with no straightforward equivalent (key/pair functions such as `reduceByKey`/`groupByKey`,
-  joins, `zipWithIndex`, custom `partitionBy`, manual `aggregate`, `saveAs*`, ...) get a hint that the RDD usage likely
-  can't be migrated automatically.
+  the outer joins `leftOuterJoin`/`rightOuterJoin`/`fullOuterJoin` (plain `join` shares its name with `DataFrame.join`,
+  so it is deliberately not name-flagged), `zipWithIndex`, custom `partitionBy`, manual `aggregate`, `saveAs*`, ...)
+  get a hint that the RDD usage likely can't be migrated automatically.
 - If (and only if) the script uses none of those unsupported operations, RDD operations that do have a direct
   DataFrame/Dataset equivalent (`map`, `flatMap`, `reduce`, `sortBy`) get a hint that they can be migrated. As soon as a
   single unsupported operation appears anywhere in the script it is no longer advertised as migratable.

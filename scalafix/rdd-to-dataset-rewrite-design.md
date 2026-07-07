@@ -1,6 +1,8 @@
 # RDD → Dataset automatic rewrite — design
 
-Status: **proposal / for review** (no rewrite code written yet).
+Status: **implemented** (`RDDToDatasetMigration`, opt-in) — this document is the
+design it was built from; see the *Status* section at the bottom for what shipped
+and the review history.
 
 This builds on the existing `RDDToDatasetMigrationCheck` lint rule. The goal is:
 

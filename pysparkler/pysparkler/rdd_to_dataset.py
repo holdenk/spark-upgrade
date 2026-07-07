@@ -55,7 +55,9 @@ class RddToDatasetMigrationCommentWriter(StatementLineCommentWriter):
 
     The "can be migrated" hint is only added when the whole script uses only the narrowly supported RDD
     operations (those with a reasonably direct DataFrame/Dataset equivalent). If any RDD-specific operation
-    with no straightforward equivalent (key/pair functions, joins, zips, custom partitioning, manual
+    with no straightforward equivalent (key/pair functions, the outer joins
+    `leftOuterJoin`/`rightOuterJoin`/`fullOuterJoin` (plain `join` shares its name with
+    `DataFrame.join` and is deliberately not name-flagged), zips, custom partitioning, manual
     aggregations, RDD sinks, ...) is used, only those blocking operations are flagged as not migratable.
     """
 
