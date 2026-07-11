@@ -18,10 +18,29 @@
 
 from pysparkler.pyspark_35_to_40 import (
     AnsiModeEnabledByDefault,
+    AssertPandasOnSparkEqualRemoved,
     FactorizeNaSentinelRenamed,
+    PandasAppendRemoved,
+    PandasBetweenTimeInclusiveRemoved,
+    PandasCategoricalInplaceRemoved,
+    PandasDateRangeClosedRemoved,
+    PandasGetDtypeCountsRemoved,
+    PandasGroupByBackfillPadRemoved,
+    PandasIndexApisRemoved,
     PandasIndexClassesRemoved,
+    PandasInfoNullCountsRemoved,
+    PandasIsMonotonicRemoved,
     PandasIteritemsRemoved,
+    PandasKoalasAccessorRemoved,
+    PandasMadRemoved,
+    PandasPlotSortColumnsRemoved,
+    PandasReadCsvExcelParamsRemoved,
+    PandasSeriesBetweenBooleanInclusiveRemoved,
+    PandasToExcelParamsRemoved,
     PandasToKoalasRemoved,
+    PandasToLatexColSpaceRemoved,
+    PandasToSparkIoRemoved,
+    PandasWeekOfYearRemoved,
     Python38SupportDropped,
     RequiredNumpyVersionCommentWriter,
     RequiredPandasVersionCommentWriter,
@@ -237,3 +256,260 @@ import numpy as np
 """
     modified_code = rewrite(given_code, Python38SupportDropped())
     assert modified_code == given_code
+
+
+def test_adds_code_hint_when_append_is_used():
+    given_code = """
+combined = df.append(other)
+"""
+    modified_code = rewrite(given_code, PandasAppendRemoved())
+    assert "# PY35-40-011:" in modified_code
+    assert "ps.concat" in modified_code
+
+
+def test_adds_code_hint_when_mad_is_used():
+    given_code = """
+result = df.mad()
+"""
+    modified_code = rewrite(given_code, PandasMadRemoved())
+    assert "# PY35-40-012:" in modified_code
+
+
+def test_adds_code_hint_when_to_spark_io_is_used():
+    given_code = """
+df.to_spark_io(path)
+"""
+    modified_code = rewrite(given_code, PandasToSparkIoRemoved())
+    expected_code = """
+df.to_spark_io(path)  # PY35-40-013: As of PySpark 4.0, DataFrame.to_spark_io has been removed from pandas API on Spark, use DataFrame.spark.to_spark_io instead.  # noqa: E501
+"""
+    assert modified_code == expected_code
+
+
+def test_adds_code_hint_when_get_dtype_counts_is_used():
+    given_code = """
+counts = df.get_dtype_counts()
+"""
+    modified_code = rewrite(given_code, PandasGetDtypeCountsRemoved())
+    expected_code = """
+counts = df.get_dtype_counts()  # PY35-40-014: As of PySpark 4.0, DataFrame.get_dtype_counts has been removed from pandas API on Spark, use DataFrame.dtypes.value_counts() instead.  # noqa: E501
+"""
+    assert modified_code == expected_code
+
+
+def test_adds_code_hint_when_koalas_accessor_is_used():
+    given_code = """
+frame = df.koalas.to_frame()
+"""
+    modified_code = rewrite(given_code, PandasKoalasAccessorRemoved())
+    assert "# PY35-40-015:" in modified_code
+    assert ".pandas_on_spark" in modified_code
+
+
+def test_does_nothing_for_pandas_on_spark_accessor():
+    given_code = """
+frame = df.pandas_on_spark.to_frame()
+"""
+    modified_code = rewrite(given_code, PandasKoalasAccessorRemoved())
+    assert modified_code == given_code
+
+
+def test_adds_code_hint_for_removed_index_apis():
+    given_code = """
+values = idx.asi8
+compatible = idx.is_type_compatible(other)
+all_dates = idx.is_all_dates
+"""
+    modified_code = rewrite(given_code, PandasIndexApisRemoved())
+    assert modified_code.count("# PY35-40-016:") == 3
+
+
+def test_adds_code_hint_when_is_monotonic_is_used():
+    given_code = """
+mono = series.is_monotonic
+"""
+    modified_code = rewrite(given_code, PandasIsMonotonicRemoved())
+    expected_code = """
+mono = series.is_monotonic  # PY35-40-017: As of PySpark 4.0, Series.is_monotonic and Index.is_monotonic have been removed from pandas API on Spark, use is_monotonic_increasing instead.  # noqa: E501
+"""
+    assert modified_code == expected_code
+
+
+def test_does_nothing_for_is_monotonic_increasing():
+    given_code = """
+mono = series.is_monotonic_increasing
+"""
+    modified_code = rewrite(given_code, PandasIsMonotonicRemoved())
+    assert modified_code == given_code
+
+
+def test_adds_code_hint_when_weekofyear_is_used():
+    given_code = """
+weeks = idx.weekofyear
+"""
+    modified_code = rewrite(given_code, PandasWeekOfYearRemoved())
+    assert "# PY35-40-018:" in modified_code
+
+
+def test_does_nothing_for_isocalendar_week():
+    given_code = """
+weeks = series.dt.isocalendar().week
+"""
+    modified_code = rewrite(given_code, PandasWeekOfYearRemoved())
+    assert modified_code == given_code
+
+
+def test_adds_code_hint_when_groupby_backfill_or_pad_is_used():
+    given_code = """
+filled = df.groupby("a").backfill()
+padded = df.groupby("a").pad()
+"""
+    modified_code = rewrite(given_code, PandasGroupByBackfillPadRemoved())
+    assert modified_code.count("# PY35-40-019:") == 2
+
+
+def test_adds_code_hint_when_categorical_inplace_is_used():
+    given_code = """
+cat.add_categories(["x"], inplace=True)
+"""
+    modified_code = rewrite(given_code, PandasCategoricalInplaceRemoved())
+    assert "# PY35-40-020:" in modified_code
+
+
+def test_does_nothing_for_categorical_without_inplace():
+    given_code = """
+cat = cat.add_categories(["x"])
+"""
+    modified_code = rewrite(given_code, PandasCategoricalInplaceRemoved())
+    assert modified_code == given_code
+
+
+def test_adds_code_hint_when_date_range_uses_closed():
+    given_code = """
+rng = ps.date_range("2021-01-01", periods=3, closed="left")
+"""
+    modified_code = rewrite(given_code, PandasDateRangeClosedRemoved())
+    assert "# PY35-40-021:" in modified_code
+
+
+def test_does_nothing_for_date_range_with_inclusive():
+    given_code = """
+rng = ps.date_range("2021-01-01", periods=3, inclusive="left")
+"""
+    modified_code = rewrite(given_code, PandasDateRangeClosedRemoved())
+    assert modified_code == given_code
+
+
+def test_adds_code_hint_when_between_time_uses_include_start():
+    given_code = """
+subset = df.between_time("0:00", "1:00", include_start=False)
+"""
+    modified_code = rewrite(given_code, PandasBetweenTimeInclusiveRemoved())
+    assert "# PY35-40-022:" in modified_code
+
+
+def test_adds_code_hint_when_between_uses_boolean_inclusive():
+    given_code = """
+mask = series.between(1, 5, inclusive=True)
+"""
+    modified_code = rewrite(given_code, PandasSeriesBetweenBooleanInclusiveRemoved())
+    assert "# PY35-40-023:" in modified_code
+
+
+def test_adds_code_hint_when_between_uses_positional_boolean_inclusive():
+    given_code = """
+mask = series.between(1, 5, False)
+"""
+    modified_code = rewrite(given_code, PandasSeriesBetweenBooleanInclusiveRemoved())
+    assert "# PY35-40-023:" in modified_code
+
+
+def test_does_nothing_for_between_with_string_inclusive():
+    given_code = """
+mask = series.between(1, 5, inclusive="both")
+"""
+    modified_code = rewrite(given_code, PandasSeriesBetweenBooleanInclusiveRemoved())
+    assert modified_code == given_code
+
+
+def test_does_nothing_for_between_with_positional_string_inclusive():
+    given_code = """
+mask = series.between(1, 5, "both")
+"""
+    modified_code = rewrite(given_code, PandasSeriesBetweenBooleanInclusiveRemoved())
+    assert modified_code == given_code
+
+
+def test_adds_code_hint_when_plot_uses_sort_columns():
+    given_code = """
+df.plot(sort_columns=True)
+"""
+    modified_code = rewrite(given_code, PandasPlotSortColumnsRemoved())
+    assert "# PY35-40-024:" in modified_code
+
+
+def test_does_nothing_for_sort_columns_on_non_plot_call():
+    given_code = """
+write_table(data, sort_columns=True)
+"""
+    modified_code = rewrite(given_code, PandasPlotSortColumnsRemoved())
+    assert modified_code == given_code
+
+
+def test_adds_code_hint_when_to_latex_uses_col_space():
+    given_code = """
+latex = df.to_latex(col_space=10)
+"""
+    modified_code = rewrite(given_code, PandasToLatexColSpaceRemoved())
+    assert "# PY35-40-025:" in modified_code
+
+
+def test_adds_code_hint_when_to_excel_uses_removed_params():
+    given_code = """
+df.to_excel("out.xlsx", encoding="utf-8")
+"""
+    modified_code = rewrite(given_code, PandasToExcelParamsRemoved())
+    assert "# PY35-40-026:" in modified_code
+
+
+def test_adds_code_hint_when_read_csv_uses_removed_params():
+    given_code = """
+df = ps.read_csv("in.csv", squeeze=True)
+other = ps.read_excel("in.xlsx", convert_float=True)
+"""
+    modified_code = rewrite(given_code, PandasReadCsvExcelParamsRemoved())
+    assert modified_code.count("# PY35-40-027:") == 2
+
+
+def test_does_nothing_for_read_csv_convert_float():
+    # convert_float was removed from read_excel only, not read_csv.
+    given_code = """
+df = ps.read_csv("in.csv", convert_float=True)
+"""
+    modified_code = rewrite(given_code, PandasReadCsvExcelParamsRemoved())
+    assert modified_code == given_code
+
+
+def test_adds_code_hint_when_info_uses_null_counts():
+    given_code = """
+df.info(null_counts=True)
+"""
+    modified_code = rewrite(given_code, PandasInfoNullCountsRemoved())
+    assert "# PY35-40-028:" in modified_code
+
+
+def test_does_nothing_for_info_with_show_counts():
+    given_code = """
+df.info(show_counts=True)
+"""
+    modified_code = rewrite(given_code, PandasInfoNullCountsRemoved())
+    assert modified_code == given_code
+
+
+def test_adds_code_hint_when_assert_pandas_on_spark_equal_is_used():
+    given_code = """
+assertPandasOnSparkEqual(actual, expected)
+"""
+    modified_code = rewrite(given_code, AssertPandasOnSparkEqualRemoved())
+    assert "# PY35-40-029:" in modified_code
+    assert "assert_frame_equal" in modified_code
