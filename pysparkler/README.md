@@ -221,6 +221,30 @@ pysparkler:
     enabled: false # Disable the code transformer
 ```
 
+### Optional: RDD to DataFrame/Dataset migration check
+
+PySparkler ships with a simplistic, opt-in check (`PYRDD-DS-001`) that looks at the RDD operations in your script and
+leaves a code hint about whether the RDD usage is simple enough to migrate to the DataFrame/Dataset API. It is the
+Python counterpart of the Scala `RDDToDatasetMigrationCheck` scalafix rule. It does not rewrite your code, it only adds
+comments:
+
+- RDD-specific operations with no straightforward equivalent (key/pair functions such as `reduceByKey`/`groupByKey`,
+  the outer joins `leftOuterJoin`/`rightOuterJoin`/`fullOuterJoin` (plain `join` shares its name with `DataFrame.join`,
+  so it is deliberately not name-flagged), `zipWithIndex`, custom `partitionBy`, manual `aggregate`, `saveAs*`, ...)
+  get a hint that the RDD usage likely can't be migrated automatically.
+- If (and only if) the script uses none of those unsupported operations, RDD operations that do have a direct
+  DataFrame/Dataset equivalent (`map`, `flatMap`, `reduce`, `sortBy`) get a hint that they can be migrated. As soon as a
+  single unsupported operation appears anywhere in the script it is no longer advertised as migratable.
+
+Because PySpark is dynamically typed the check is fuzzy (it only looks at RDD-specific method names to keep the false
+positive rate low) and is disabled by default. Enable it via config:
+
+```yaml
+pysparkler:
+  PYRDD-DS-001:
+    enabled: true # Enable the optional RDD to DataFrame/Dataset migration check
+```
+
 ## Contributing
 
 For the development, Poetry is used for packing and dependency management. You can install this using:
