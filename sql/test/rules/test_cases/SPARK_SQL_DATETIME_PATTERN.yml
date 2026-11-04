@@ -1,0 +1,64 @@
+rule: DATETIMEPATTERN_L009
+
+week_based_year_in_to_date_flagged:
+  configs:
+    core:
+      dialect: sparksql
+  fail_str: |
+    SELECT to_date(s, 'dd/MM/YYYY') FROM t
+
+day_of_week_text_when_parsing_flagged:
+  configs:
+    core:
+      dialect: sparksql
+  fail_str: |
+    SELECT unix_timestamp(s, 'yyyy-MM-dd EEE') FROM t
+
+too_many_month_letters_flagged:
+  configs:
+    core:
+      dialect: sparksql
+  fail_str: |
+    SELECT from_unixtime(x, 'yyyy MMMMM') FROM t
+
+f_changed_meaning_when_formatting_flagged:
+  configs:
+    core:
+      dialect: sparksql
+  fail_str: |
+    SELECT date_format(ts, 'F') FROM t
+
+week_of_year_and_day_of_week_number_flagged:
+  configs:
+    core:
+      dialect: sparksql
+  fail_str: |
+    SELECT to_timestamp(s, 'yyyy-ww-u') FROM t
+
+plain_timestamp_format_ok:
+  configs:
+    core:
+      dialect: sparksql
+  pass_str: |
+    SELECT date_format(ts, 'yyyy-MM-dd HH:mm:ss') FROM t
+
+day_of_week_text_when_formatting_ok:
+  configs:
+    core:
+      dialect: sparksql
+  pass_str: |
+    SELECT date_format(ts, 'EEEE') FROM t
+
+quoted_text_section_ok:
+  configs:
+    core:
+      dialect: sparksql
+  pass_str: |
+    SELECT to_timestamp(s, 'yyyy-MM-dd''T''HH') FROM t
+
+non_literal_pattern_ok:
+  configs:
+    core:
+      dialect: sparksql
+  pass_str: |
+    SELECT date_format(ts, fmt_col) FROM t

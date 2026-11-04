@@ -20,6 +20,11 @@ def get_rules() -> List[BaseRule]:
         Rule_SPARKSQL_L004,
         Rule_SPARKSQL_L005,
         Rule_GLOBALTEMPVIEW_L006,
+        Rule_CREATETABLENOPROVIDER_L007,
+        Rule_BANGNOT_L008,
+        Rule_DATETIMEPATTERN_L009,
+        Rule_COUNTQUALIFIEDSTAR_L010,
+        Rule_ENCODECHARSET_L011,
     )
 
     return [
@@ -30,6 +35,11 @@ def get_rules() -> List[BaseRule]:
         Rule_SPARKSQL_L004,
         Rule_SPARKSQL_L005,
         Rule_GLOBALTEMPVIEW_L006,
+        Rule_CREATETABLENOPROVIDER_L007,
+        Rule_BANGNOT_L008,
+        Rule_DATETIMEPATTERN_L009,
+        Rule_COUNTQUALIFIEDSTAR_L010,
+        Rule_ENCODECHARSET_L011,
     ]
 
 

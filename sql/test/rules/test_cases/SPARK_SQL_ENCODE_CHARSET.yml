@@ -1,0 +1,47 @@
+rule: ENCODECHARSET_L011
+
+encode_utf8_alias_rewritten:
+  configs:
+    core:
+      dialect: sparksql
+  fail_str: |
+    SELECT encode(a, 'utf8') FROM t
+  fix_str: |
+    SELECT encode(a, 'UTF-8') FROM t
+
+decode_latin1_alias_rewritten:
+  configs:
+    core:
+      dialect: sparksql
+  fail_str: |
+    SELECT decode(b, 'latin1') FROM t
+  fix_str: |
+    SELECT decode(b, 'ISO-8859-1') FROM t
+
+encode_unsupported_charset_warned:
+  configs:
+    core:
+      dialect: sparksql
+  fail_str: |
+    SELECT encode(a, 'Cp1252') FROM t
+
+decode_canonical_ok:
+  configs:
+    core:
+      dialect: sparksql
+  pass_str: |
+    SELECT decode(b, 'UTF-8') FROM t
+
+oracle_style_decode_ok:
+  configs:
+    core:
+      dialect: sparksql
+  pass_str: |
+    SELECT decode(status, 'A', 'active', 'unknown') FROM t
+
+non_literal_charset_ok:
+  configs:
+    core:
+      dialect: sparksql
+  pass_str: |
+    SELECT encode(a, concat('UTF', '-8')) FROM t

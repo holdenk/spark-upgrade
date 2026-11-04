@@ -1,0 +1,43 @@
+rule: COUNTQUALIFIEDSTAR_L010
+
+count_table_star_flagged:
+  configs:
+    core:
+      dialect: sparksql
+  fail_str: |
+    SELECT count(t.*) FROM t
+
+count_distinct_table_star_flagged:
+  configs:
+    core:
+      dialect: sparksql
+  fail_str: |
+    SELECT count(DISTINCT t.*) FROM t
+
+count_db_table_star_flagged:
+  configs:
+    core:
+      dialect: sparksql
+  fail_str: |
+    SELECT count(db.t.*) FROM db.t
+
+count_star_ok:
+  configs:
+    core:
+      dialect: sparksql
+  pass_str: |
+    SELECT count(*) FROM t
+
+count_column_ok:
+  configs:
+    core:
+      dialect: sparksql
+  pass_str: |
+    SELECT count(t.c1) FROM t
+
+count_multiple_table_stars_ok:
+  configs:
+    core:
+      dialect: sparksql
+  pass_str: |
+    SELECT count(t1.*, t2.*) FROM t1 JOIN t2 ON t1.id = t2.id
