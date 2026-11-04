@@ -15,18 +15,6 @@ java {
 
 repositories {
     mavenCentral()
-    maven {
-        name "sonatype-releases"
-        url "https://oss.sonatype.org/content/repositories/releases/"
-    }
-    maven {
-        name "Typesafe repository"
-        url "https://repo.typesafe.com/typesafe/releases/"
-    }
-    maven {
-        name "Second Typesafe repo"
-        url "https://repo.typesafe.com/typesafe/maven-releases/"
-    }
 }
 
 dependencies {
