@@ -125,6 +125,119 @@ rules = [
 This is Scala-only. PySparkler's equivalent stays detection/log-only because
 PySpark's `DataFrame` has no typed `map`/`flatMap`/`reduce` to swap to.
 
+## Deprecated API and configuration rules
+
+These rules cover deprecated or removed APIs and configuration keys that commonly trip
+2.x/3.x pipelines moving to Spark 3.x/4.x. Rewrites live in `.scalafix.conf`, lints in
+`.scalafix-warn.conf`.
+
+### FunctionsSnakeCaseRename (rewrite)
+
+Renames the deprecated camelCase helpers in `org.apache.spark.sql.functions` to their
+snake_case replacements: `approxCountDistinct` -> `approx_count_distinct`,
+`monotonicallyIncreasingId` -> `monotonically_increasing_id`, `toDegrees` -> `degrees`,
+`toRadians` -> `radians`, `bitwiseNOT` -> `bitwise_not`, `shiftLeft` -> `shiftleft`,
+`shiftRight` -> `shiftright`, `shiftRightUnsigned` -> `shiftrightunsigned`,
+`callUDF` -> `call_udf` and `sumDistinct` -> `sum_distinct`. Only the name token is
+replaced, for bare calls (`import functions._`), qualified calls (`functions.x` / `F.x`) and
+the importee in `import org.apache.spark.sql.functions.{toDegrees}` (an aliased import keeps
+its alias). Matching is by resolved symbol, so a user-defined `def shiftLeft` or
+`scala.math.toDegrees` is never touched. `sumDistinct(columnName: String)` has no
+`sum_distinct(String)` counterpart, so it becomes `sum_distinct(col(columnName))` (adding
+`import org.apache.spark.sql.functions.col` when the call is unqualified); this also applies through
+an import alias (`import functions.{sumDistinct => sd}; sd("x")` becomes `sd(col("x"))`), to a block
+argument (`sumDistinct { name }` -> `sum_distinct(col({ name }))`) and to a named argument
+(`sumDistinct(columnName = name)` -> `sum_distinct(col(name))`). A use that cannot be wrapped
+safely (an eta expansion, also through an alias, or a placeholder such as `sumDistinct(_)`) gets
+a lint instead, and every `sumDistinct` in that file (the import included) is then left as is so
+the file keeps compiling.
+
+Caveat: `sum_distinct`, `bitwise_not`, `shiftleft`/`shiftright`/`shiftrightunsigned` and
+`call_udf` only exist from Spark 3.2.0, so this rule needs a target Spark >= 3.2 (the default
+target here is 3.3.0). The other renames exist since Spark 2.x. None of the old names has
+been removed as of 4.0, so this is deprecation cleanup rather than a hard break.
+
+### RegisterTempTableRewrite (rewrite)
+
+Rewrites `Dataset.registerTempTable(name)` (deprecated since 2.0.0) to
+`createOrReplaceTempView(name)`, for the dotted and infix forms. It matches the resolved
+`org.apache.spark.sql.Dataset#registerTempTable` symbol, so a user class with its own
+`registerTempTable` method is left alone. `registerTempTable` has been a one-line forwarder
+to `createOrReplaceTempView` in every Spark version from 2.0 to 4.0, so the rewrite is
+semantics preserving.
+
+### UntypedScalaUDFWarn (lint)
+
+Flags calls to the untyped `functions.udf(f: AnyRef, dataType: DataType)` overload, which
+throws by default since Spark 3.0 (unless `spark.sql.legacy.allowUntypedScalaUDF=true`) and
+changed null handling for primitive arguments. The resolved overload's signature is inspected,
+so the typed `udf((x: Int) => ...)` overloads and the Java `udf(new UDF1[..]{..}, dataType)`
+overloads are not flagged. Warn only: dropping the `DataType` argument can change the output
+schema, so the fix is left to you. Caveat: when the rules jar is built for Scala 2.11 and run
+on JDK 11+, scalameta cannot read the classpath symbol table, so the rule falls back to the shape
+of the call (two arguments, first one not visibly a Java `UDFn`); `ColumnExprRemovedWarn` has the
+same fallback (a `Column` constructor argument whose type cannot be resolved is flagged unless it
+is a string literal, and only in files that plausibly deal with catalyst expressions).
+
+### RenamedSparkConfRewrite (rewrite)
+
+Rewrites string literals equal to the six `spark.sql.legacy.{parquet,avro}.*RebaseModeIn{Read,Write}`
+keys to the same key without `.legacy` (quoting style preserved). Spark 4.0 removed five of the
+six legacy keys and throws when one of them is set to anything but `CORRECTED`; the sixth,
+`spark.sql.legacy.parquet.datetimeRebaseModeInRead`, is still accepted as an alternative and is
+renamed for consistency. The new keys exist from Spark 3.0.0 (datetime) / 3.1.0 (int96), so the
+rewrite is safe to apply before upgrading. A literal that is only a fragment of a key (a piece
+of an interpolation with arguments such as `s"spark.sql.legacy.parquet.$name"`, or an operand of
+`+`) is deliberately left alone; an interpolation without arguments is treated like a plain
+literal. `spark.shuffle.unsafe.file.output.buffer` is deliberately not rewritten (its
+replacement does not exist on Spark 3.x); `RemovedSparkConfWarn` warns about it instead.
+
+### RemovedSparkConfWarn (lint)
+
+Warns on string literals naming removed or renamed Spark configuration keys: the
+`spark.blacklist.*` / `spark.scheduler.blacklist.*` / `spark.yarn.blacklist.*` family (renamed
+to `spark.excludeOnFailure.*` in 3.1 and silently ignored since 4.1),
+`spark.scheduler.executorTaskBlacklistTime`, `spark.shuffle.unsafe.file.output.buffer`
+(deprecated in 4.0, still works), `spark.yarn.max.executor.failures` and
+`spark.yarn.executor.failuresValidityInterval` (renamed in 3.5), the
+`spark.launcher.childConectionTimeout` typo (3.2), `spark.executor.plugins` (removed in 3.0, use
+`spark.plugins`) and `spark.sql.hive.verifyPartitionPath` (removed in 4.0, use
+`spark.files.ignoreMissingFiles`). Any other `spark.*` literal containing `.blacklist.` or ending
+in `.blacklist` is reported by a fuzzy fallback. Key fragments (pieces of an interpolation with
+arguments, operands of `+`, literals ending in `.`) are skipped. Warn only, because each
+replacement key needs a minimum Spark version on the cluster.
+
+### ColumnExprRemovedWarn (lint)
+
+Flags `column.expr` and `new Column(expr: Expression)` / `new TypedColumn(expr, encoder)`, which
+were removed in Spark 4.0 (Column now wraps a `ColumnNode`, SPARK-47933), including the
+`extends Column(e)` form. The constructor overload is told apart by the static type of the
+argument: `new Column("name")`, string concatenation, interpolations and `if`/`match` with
+string branches are not flagged; an argument whose type cannot be resolved (for example a
+type parameter such as `exprs.head`) is flagged only when the file imports
+`catalyst.expressions` or the argument mentions `Expression`/`catalyst`. The message points at
+`org.apache.spark.sql.classic.ColumnConversions` (for reading `.expr`) and
+`ClassicConversions` (`Column(expr)`, only usable inside `org.apache.spark.*` packages). Warn
+only: the replacement package does not exist before 4.0.
+
+### DateTimePatternWarn (lint)
+
+Inspects string-literal datetime patterns passed to `functions.date_format` / `from_unixtime`
+(formatting), `to_date` / `to_timestamp` / `unix_timestamp` (parsing) and the `dateFormat` /
+`timestampFormat` options of `DataFrameReader` / `DataStreamReader` (parsing) and
+`DataFrameWriter` / `DataStreamWriter` (formatting). Text inside single quotes is skipped. It
+reports week-based letters (`Y W w u e c`, rejected since 3.0), letters with no Spark 3
+equivalent (`A B n N p`), `E F q Q` in parsing patterns, runs of 5+ `G/M/L/E/Q/q` or 7+ `y`,
+and `F` in formatting patterns (SimpleDateFormat day-of-week-in-month became java.time
+aligned-day-of-week-in-month). Interpolated or variable patterns are
+skipped, and the `hh`-without-`a` heuristic is intentionally not implemented. The escape hatch
+is `spark.sql.legacy.timeParserPolicy=LEGACY`.
+
+### IsRunningLocallyWarn (lint)
+
+Flags `TaskContext.isRunningLocally`, removed in Spark 3.0 together with local execution; the
+guarded code path can usually be deleted.
+
 ## Other (non-Spark Specific) rules you may wish to use
 
 https://github.com/scala/scala-rewrites -
