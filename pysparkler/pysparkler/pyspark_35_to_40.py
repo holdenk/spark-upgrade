@@ -20,9 +20,11 @@ import libcst as cst
 import libcst.matchers as m
 
 from pysparkler.base import (
+    ModuleImportCollector,
     PySparkImportCommentWriter,
     RequiredDependencyVersionCommentWriter,
     StatementLineCommentWriter,
+    escape_literal_for_comment,
 )
 
 # Migration rules for PySpark 3.5 to 4.0
@@ -843,6 +845,92 @@ use pyspark.pandas.testing.assert_frame_equal instead.",
             self.match_found = True
 
 
+class EncodeDecodeCharsetRestricted(StatementLineCommentWriter):
+    """Since Spark 4.0, the encode() and decode() functions support only the charsets US-ASCII, ISO-8859-1, UTF-8,
+    UTF-16BE, UTF-16LE, UTF-16 and UTF-32. Other names, including JDK aliases such as utf8 or latin1, raise an
+    error unless spark.sql.legacy.javaCharsets is set to true. Only calls on a bound pyspark.sql.functions module
+    (or a name imported from it) are checked, so str.encode / bytes.decode / codecs.encode are left alone.
+    """
+
+    allowed_charsets = {
+        "us-ascii",
+        "iso-8859-1",
+        "utf-8",
+        "utf-16be",
+        "utf-16le",
+        "utf-16",
+        "utf-32",
+    }
+    function_names = {"encode", "decode"}
+
+    def __init__(self, pyspark_version: str = "4.0"):
+        super().__init__(transformer_id="PY35-40-030", comment="")
+        self.pyspark_version = pyspark_version
+        self._imports = ModuleImportCollector("pyspark", "sql", "functions")
+        self._pending_charsets: list[str] = []
+
+    def visit_Module(self, node: cst.Module) -> None:
+        """Pre-scan the module for pyspark.sql.functions bindings"""
+        self._imports = ModuleImportCollector("pyspark", "sql", "functions")
+        node.visit(self._imports)
+        self._pending_charsets = []
+
+    def _is_sql_function(self, func: cst.BaseExpression) -> bool:
+        if isinstance(func, cst.Name):
+            if func.value in self._imports.redefined_names:
+                return False
+            if self._imports.star_import and func.value in self.function_names:
+                return True
+            return self._imports.is_imported_name(func.value, *self.function_names)
+        if isinstance(func, cst.Attribute):
+            return (
+                func.attr.value in self.function_names
+                and self._imports.binds_module(func.value)
+            )
+        return False
+
+    def visit_Call(self, node: cst.Call) -> None:
+        """Check encode(col, charset) / decode(col, charset) calls for an unsupported literal charset"""
+        if not m.matches(
+            node,
+            m.Call(
+                args=[
+                    m.OneOf(
+                        m.Arg(keyword=None, star=""),
+                        m.Arg(keyword=m.Name("col")),
+                    ),
+                    m.OneOf(
+                        m.Arg(keyword=None, star="", value=m.SimpleString()),
+                        m.Arg(keyword=m.Name("charset"), value=m.SimpleString()),
+                    ),
+                ]
+            ),
+        ) or not self._is_sql_function(node.func):
+            return
+        charset = node.args[1].value.evaluated_value  # type: ignore[attr-defined]
+        if not isinstance(charset, str):
+            return
+        if charset.strip().lower() not in self.allowed_charsets:
+            self._pending_charsets.append(charset)
+            self.match_found = True
+
+    def prepare_comment(self) -> None:
+        """Build one message naming every rejected charset found on the line"""
+        if not self._pending_charsets:
+            return
+        rejected = ", ".join(
+            f"'{escape_literal_for_comment(charset)}'"
+            for charset in self._pending_charsets
+        )
+        several = len(self._pending_charsets) > 1
+        errors = "errors" if several else "an error"
+        self.comment = f"As of PySpark {self.pyspark_version}, encode()/decode() only accept the charsets US-ASCII, \
+ISO-8859-1, UTF-8, UTF-16BE, UTF-16LE, UTF-16 and UTF-32 (case-insensitive, but JDK aliases such as 'utf8', \
+'latin1' or 'ascii' are rejected); {rejected} will raise {errors}. Use one of those names or set \
+spark.sql.legacy.javaCharsets=true to restore the previous behaviour."
+        self._pending_charsets = []
+
+
 def pyspark_35_to_40_transformers() -> list[cst.CSTTransformer]:
     """Return a list of transformers for PySpark 3.5 to 4.0 migration guide"""
     return [
@@ -875,4 +963,5 @@ def pyspark_35_to_40_transformers() -> list[cst.CSTTransformer]:
         PandasReadCsvExcelParamsRemoved(),
         PandasInfoNullCountsRemoved(),
         AssertPandasOnSparkEqualRemoved(),
+        EncodeDecodeCharsetRestricted(),
     ]

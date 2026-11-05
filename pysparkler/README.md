@@ -98,6 +98,39 @@ to upgrade your PySpark scripts. In the latest stable version it supports the fo
 - Spark `4.2` is still a **preview** release. The `4.1 → 4.2` rules track the preview migration guide and may
   change before the final `4.2.0` release.
 
+**Notes on the Spark 2.4 → 3.2 rules:**
+
+- `PY24-30-009` — flags literal datetime patterns passed to `date_format` / `to_date` / `to_timestamp` /
+  `unix_timestamp` / `from_unixtime` and to the `dateFormat` / `timestampFormat` reader and writer options that use
+  the week-based letters `Y`, `W`, `w`, `u`, `e`, `c` (rejected in Spark 3.0) or `F` (changed meaning). Letters inside
+  `'...'` quoted text are ignored and `%`-style strftime patterns are skipped. Warn only: a `YYYY` → `yyyy` rewrite
+  changes results around year boundaries, so review each hint (or set `spark.sql.legacy.timeParserPolicy=LEGACY`).
+- `PY24-30-010` — **rewrites** `OneHotEncoderEstimator` to `OneHotEncoder` (imports, calls and attribute
+  references) and drops the duplicate `OneHotEncoder` import alias when both were imported from
+  `pyspark.ml.feature`.
+- `PY24-30-011` — flags `OneHotEncoder(...).transform(df)` without a preceding `.fit(df)`; in Spark 3.0
+  `OneHotEncoder` is an Estimator. Only fires when `OneHotEncoder` comes from `pyspark.ml.feature` and not from
+  another library (e.g. scikit-learn).
+- `PY31-32-002` — **rewrites** the camelCase `pyspark.sql.functions` aliases deprecated in PySpark 3.2
+  (`sumDistinct`, `bitwiseNOT`, `shiftLeft`, `shiftRight`, `shiftRightUnsigned`, `approxCountDistinct`,
+  `toDegrees`, `toRadians`) to their snake_case replacements on a bound functions module (`F.shiftLeft(c, 2)` →
+  `F.shiftleft(c, 2)`) and in explicit `from pyspark.sql.functions import ...` names. Star imports, unrelated
+  receivers and names the module redefines are left alone. `sum_distinct`, `bitwise_not`, `shiftleft`,
+  `shiftright` and `shiftrightunsigned` require PySpark 3.2 or later; disable the rule via the YAML override
+  (`PY31-32-002: {enabled: false}`) when targeting an older PySpark.
+- `PY35-40-030` — flags `encode()` / `decode()` calls from `pyspark.sql.functions` whose literal charset is not
+  one of the seven names Spark 4.0 accepts (`US-ASCII`, `ISO-8859-1`, `UTF-8`, `UTF-16BE`, `UTF-16LE`, `UTF-16`,
+  `UTF-32`); JDK aliases such as `utf8` or `latin1` raise unless `spark.sql.legacy.javaCharsets=true`.
+- Known limitation: `PY24-30-009` (function-call form), `PY24-30-010`, `PY24-30-011`, `PY31-32-002` and
+  `PY35-40-030` only recognise the Spark module through a direct binding in the same module:
+  `import pyspark.sql.functions as F`, `from pyspark.sql import functions [as F]`, the full dotted path
+  `pyspark.sql.functions.x`, an explicit `from pyspark.sql.functions import x [as y]` (or `import *`), and likewise
+  for `pyspark.ml.feature`. Parent-package aliases such as `import pyspark.sql as psql` followed by
+  `psql.functions.shiftLeft(...)` are not followed, and because each Jupyter code cell is processed as its own
+  module, an import in one cell does not gate the hints in another cell. The
+  `.option("dateFormat" | "timestampFormat", ...)` form of `PY24-30-009` is not gated (those option names are
+  Spark-specific).
+
 **Cross-version lints (`PYC-*`):** in addition to the per-transition rules, `pyspark_common.py` holds
 version-agnostic correctness/portability hints whose transformer ids use the `PYC-` prefix:
 
