@@ -45,3 +45,19 @@ non_literal_charset_ok:
       dialect: sparksql
   pass_str: |
     SELECT encode(a, concat('UTF', '-8')) FROM t
+
+double_quoted_alias_keeps_quote_style:
+  configs:
+    core:
+      dialect: sparksql
+  fail_str: |
+    SELECT encode(a, "utf8") FROM t
+  fix_str: |
+    SELECT encode(a, "UTF-8") FROM t
+
+adjacent_literals_concatenate_to_canonical_ok:
+  configs:
+    core:
+      dialect: sparksql
+  pass_str: |
+    SELECT decode(a, 'UTF''-8') FROM t

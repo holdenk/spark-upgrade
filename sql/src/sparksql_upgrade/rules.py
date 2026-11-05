@@ -634,8 +634,13 @@ class Rule_BANGNOT_L008(BaseRule):
             if not raw_segment.is_type("raw") or raw_segment.raw != "!":
                 continue
             following = raws[idx + 1] if idx + 1 < len(raws) else None
-            if following is not None and following.raw == "=":
-                # "!=" is lexed as two adjacent raw tokens inside unparsable sections.
+            next_code = next(
+                (seg for seg in raws[idx + 1:] if not seg.is_type("whitespace", "newline")),
+                None,
+            )
+            if next_code is not None and next_code.raw == "=":
+                # "!=" is lexed as two adjacent raw tokens inside unparsable sections, and a
+                # spaced "! =" was never a NOT either (Spark 3.x read it as NOT EQ as well).
                 continue
             edits = [KeywordSegment("NOT")]
             if following is None or not following.is_type("whitespace"):
@@ -644,7 +649,8 @@ class Rule_BANGNOT_L008(BaseRule):
                 LintResult(
                     anchor=raw_segment,
                     description="Spark 4.0 only accepts '!' as a prefix NOT; '!' before "
-                    "IN/BETWEEN/LIKE/NULL/EXISTS now raises a syntax error. Rewritten to NOT "
+                    "IN/BETWEEN/LIKE/NULL (and IF ! EXISTS) now raises a syntax error. "
+                    "Rewritten to NOT "
                     "(equivalent on all Spark versions). Alternatively set "
                     "spark.sql.legacy.bangEqualsNot=true.",
                     fixes=[LintFix.replace(raw_segment, edits)],
@@ -657,13 +663,15 @@ def _function_name_and_bracketed(context: RuleContext):
     """Return (FUNCTION_NAME, bracketed segment) for a ``function`` segment, or None."""
     functional_context = FunctionalContext(context)
     children = functional_context.segment.children()
-    function_name_ids = (
-        children.first(sp.is_type("function_name"))
-        .children()
-        .first(sp.is_type("function_name_identifier"))
+    function_name = children.first(sp.is_type("function_name"))
+    function_name_ids = function_name.children().first(
+        sp.is_type("function_name_identifier")
     )
     bracketed_segments = children.first(sp.is_type("bracketed"))
     if not function_name_ids or not bracketed_segments:
+        return None
+    if function_name.children(sp.is_type("dot")):
+        # db.to_date(...) is a user-defined function, not the Spark builtin.
         return None
     return function_name_ids[0].raw.upper().strip(), bracketed_segments[0]
 
@@ -681,12 +689,19 @@ def _single_quoted_literal(expression):
     return None
 
 
+_BACKSLASH_ESCAPE = re.compile(r"\\(.)", re.DOTALL)
+
+
 def _literal_value(quoted_literal) -> str:
-    """Strip the outer quotes of a SQL string literal and unescape doubled quotes."""
+    """Return the string value Spark sees for a quoted literal.
+
+    Spark SQL string literals use backslash escapes (``'it\\'s'``); a doubled quote is NOT an
+    escape but two adjacent literals, which Spark concatenates (``'yyyy''EEE'`` is ``yyyyEEE``).
+    """
     raw = quoted_literal.raw.strip()
     if len(raw) >= 2 and raw[0] in ("'", '"') and raw[-1] == raw[0]:
         quote = raw[0]
-        return raw[1:-1].replace(quote * 2, quote)
+        return _BACKSLASH_ESCAPE.sub(r"\1", raw[1:-1].replace(quote * 2, ""))
     return raw
 
 
@@ -835,6 +850,14 @@ class Rule_COUNTQUALIFIEDSTAR_L010(BaseRule):
         function_name, bracketed = name_and_bracketed
         if function_name != "COUNT":
             return None
+        spelled_name = (
+            FunctionalContext(context)
+            .segment.children()
+            .first(sp.is_type("function_name"))
+            .children()
+            .first(sp.is_type("function_name_identifier"))[0]
+            .raw.strip()
+        )
         # Split the call's arguments on commas, ignoring the brackets and DISTINCT/ALL.
         # count(t.*) parses as one expression [naked_identifier, dot, star]; count(db.t.*)
         # as expression [column_reference 'db.t.'] followed by a sibling star, so work on the
@@ -855,10 +878,22 @@ class Rule_COUNTQUALIFIEDSTAR_L010(BaseRule):
         if len(tokens) < 3 or not tokens[-1].is_type("star") or not tokens[-2].is_type("dot"):
             return None
         qualifier = "".join(token.raw for token in tokens[:-2])
+        if spelled_name == "count":
+            verdict = (
+                f"count({qualifier}.*) is rejected since Spark 3.2 (AnalysisException: "
+                "count(tblName.*) is not allowed)"
+            )
+        else:
+            # Spark's analyzer compares the function name case-sensitively against "count",
+            # so other spellings escape the check and are still expanded; do not rely on it.
+            verdict = (
+                f"{spelled_name}({qualifier}.*) only escapes the Spark 3.2 count(tblName.*) "
+                "rejection because that check is case-sensitive on the lowercase spelling"
+            )
         return LintResult(
             anchor=context.segment,
-            description=f"count({qualifier}.*) is rejected since Spark 3.2 (AnalysisException: "
-            "count(tblName.*) is not allowed). count(*) counts all rows while "
+            description=f"{verdict} -- when {qualifier} is a table or alias (struct field "
+            "expansion is not affected). count(*) counts all rows while "
             f"count({qualifier}.*) in 3.1 counted only rows where every column of "
             f"{qualifier} is non-null, so they are not interchangeable. Choose: count(*) "
             f"if you want a row count; count({qualifier}.c1, {qualifier}.c2, ...) listing "
@@ -974,7 +1009,12 @@ class Rule_ENCODECHARSET_L011(BaseRule):
                 anchor=literal,
                 description=f"Spark 4.0 encode()/decode() only accept canonical charset names; "
                 f"'{charset}' is a JDK alias of '{canonical}' -- rewritten.",
-                fixes=[LintFix.replace(literal, [literal.edit(f"'{canonical}'")])],
+                fixes=[
+                    LintFix.replace(
+                        literal,
+                        [literal.edit(f"{literal.raw[0]}{canonical}{literal.raw[0]}")],
+                    )
+                ],
             )
         return LintResult(
             anchor=literal,

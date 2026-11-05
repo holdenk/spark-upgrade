@@ -54,7 +54,7 @@ quoted_text_section_ok:
     core:
       dialect: sparksql
   pass_str: |
-    SELECT to_timestamp(s, 'yyyy-MM-dd''T''HH') FROM t
+    SELECT to_timestamp(s, 'yyyy-MM-dd\'T\'HH') FROM t
 
 non_literal_pattern_ok:
   configs:
@@ -62,3 +62,24 @@ non_literal_pattern_ok:
       dialect: sparksql
   pass_str: |
     SELECT date_format(ts, fmt_col) FROM t
+
+double_quoted_literal_with_quoted_text_ok:
+  configs:
+    core:
+      dialect: sparksql
+  pass_str: |
+    SELECT to_timestamp(s, "yyyy-MM-dd'T'HH") FROM t
+
+adjacent_literals_concatenate_flagged:
+  configs:
+    core:
+      dialect: sparksql
+  fail_str: |
+    SELECT to_date(s, 'yyyy''EEE''') FROM t
+
+qualified_udf_name_ok:
+  configs:
+    core:
+      dialect: sparksql
+  pass_str: |
+    SELECT db.to_date(s, 'YYYY') FROM t

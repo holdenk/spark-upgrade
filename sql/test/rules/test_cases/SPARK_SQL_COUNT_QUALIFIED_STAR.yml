@@ -41,3 +41,10 @@ count_multiple_table_stars_ok:
       dialect: sparksql
   pass_str: |
     SELECT count(t1.*, t2.*) FROM t1 JOIN t2 ON t1.id = t2.id
+
+uppercase_count_still_flagged_with_case_note:
+  configs:
+    core:
+      dialect: sparksql
+  fail_str: |
+    SELECT COUNT(T.*) FROM t

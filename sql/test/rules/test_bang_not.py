@@ -70,6 +70,7 @@ def test_bang_rewritten_to_not(before, after):
     "sql",
     [
         "SELECT * FROM t WHERE b != 3",
+        "SELECT * FROM t WHERE b ! = 3",
         "SELECT * FROM t WHERE c <> 4",
         "SELECT * FROM t WHERE d = 'x!y'",
         "SELECT * FROM t WHERE `we!rd` = 1",
