@@ -19,6 +19,7 @@
 from pysparkler.pyspark_35_to_40 import (
     AnsiModeEnabledByDefault,
     AssertPandasOnSparkEqualRemoved,
+    EncodeDecodeCharsetRestricted,
     FactorizeNaSentinelRenamed,
     PandasAppendRemoved,
     PandasBetweenTimeInclusiveRemoved,
@@ -513,3 +514,107 @@ assertPandasOnSparkEqual(actual, expected)
     modified_code = rewrite(given_code, AssertPandasOnSparkEqualRemoved())
     assert "# PY35-40-029:" in modified_code
     assert "assert_frame_equal" in modified_code
+
+
+def test_adds_hint_for_encode_with_unsupported_charset_on_module_alias():
+    given_code = """
+import pyspark.sql.functions as F
+b = F.encode(df.a, "utf8")
+"""
+    modified_code = rewrite(given_code, EncodeDecodeCharsetRestricted())
+    expected_code = """
+import pyspark.sql.functions as F
+b = F.encode(df.a, "utf8")  # PY35-40-030: As of PySpark 4.0, encode()/decode() only accept the charsets US-ASCII, ISO-8859-1, UTF-8, UTF-16BE, UTF-16LE, UTF-16 and UTF-32 (case-insensitive, but JDK aliases such as 'utf8', 'latin1' or 'ascii' are rejected); 'utf8' will raise an error. Use one of those names or set spark.sql.legacy.javaCharsets=true to restore the previous behaviour.  # noqa: E501
+"""
+    assert modified_code == expected_code
+
+
+def test_adds_hint_for_decode_with_unsupported_charset_in_all_import_styles():
+    given_code = """
+from pyspark.sql import functions
+from pyspark.sql import functions as sf
+from pyspark.sql.functions import decode, encode as enc
+a = functions.decode(df.a, 'latin1')
+b = sf.decode(df.a, charset="ascii")
+c = decode(df.a, "Windows-1252")
+d = enc(df.a, "utf_16")
+e = pyspark.sql.functions.encode(df.a, "cp1251")
+"""
+    modified_code = rewrite(given_code, EncodeDecodeCharsetRestricted())
+    assert modified_code.count("# PY35-40-030:") == 5
+    assert "'latin1' will raise an error" in modified_code
+    assert "'ascii' will raise an error" in modified_code
+    assert "'Windows-1252' will raise an error" in modified_code
+    assert "'utf_16' will raise an error" in modified_code
+    assert "'cp1251' will raise an error" in modified_code
+
+
+def test_does_nothing_for_encode_decode_with_supported_charsets_or_unrelated_receivers():
+    given_code = """
+import codecs
+import pyspark.sql.functions as F
+from pyspark.sql.functions import encode
+a = F.encode(c, "UTF-8")
+b = F.decode(c, "iso-8859-1")
+c2 = F.encode(c, "utf-16BE")
+d = encode(c, charset="US-ASCII")
+e = s.encode("utf-8")
+f = raw.decode("latin1")
+g = codecs.encode(b, "base64")
+h = F.encode(c, charset_name)
+i = F.encode(c, f"{cs}")
+"""
+    modified_code = rewrite(given_code, EncodeDecodeCharsetRestricted())
+    assert modified_code == given_code
+
+
+def test_does_nothing_for_bare_encode_decode_not_imported_from_pyspark_functions():
+    given_code = """
+from base64 import encode
+a = encode(df.a, "utf8")
+b = decode(df.a, "latin1")
+"""
+    modified_code = rewrite(given_code, EncodeDecodeCharsetRestricted())
+    assert modified_code == given_code
+
+
+def test_encode_charset_with_line_break_does_not_break_the_hint_comment():
+    given_code = """
+import pyspark.sql.functions as F
+a = F.encode(c, 'utf8\\n')
+b = F.encode(c, 'utf8 # x')
+"""
+    modified_code = rewrite(given_code, EncodeDecodeCharsetRestricted())
+    assert modified_code.count("# PY35-40-030:") == 2
+    assert "'utf8\\n' will raise an error" in modified_code
+    assert "'utf8 # x' will raise an error" in modified_code
+    compile(modified_code, "<test>", "exec")
+
+
+def test_encode_charset_hint_lands_on_the_compound_statement_header_and_lists_every_charset_once():
+    given_code = """
+import pyspark.sql.functions as F
+def f(c):
+    if F.encode(c, 'utf8'):
+        pass
+    return F.decode(F.encode(c, 'utf8'), 'latin1')
+"""
+    modified_code = rewrite(given_code, EncodeDecodeCharsetRestricted())
+    lines = modified_code.splitlines()
+    assert lines[3].startswith("    if F.encode(c, 'utf8'):  # PY35-40-030:")
+    assert lines[4] == "        pass"
+    assert lines[5].startswith(
+        "    return F.decode(F.encode(c, 'utf8'), 'latin1')  # PY35-40-030:"
+    )
+    assert "will raise errors" in lines[5]
+    assert "'utf8'" in lines[5] and "'latin1'" in lines[5]
+    assert lines[5].count("only accept the charsets") == 1
+
+
+def test_encode_with_col_keyword_is_still_checked():
+    given_code = """
+import pyspark.sql.functions as F
+a = F.encode(col=c, charset='latin1')
+"""
+    modified_code = rewrite(given_code, EncodeDecodeCharsetRestricted())
+    assert "# PY35-40-030:" in modified_code

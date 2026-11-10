@@ -21,3 +21,11 @@ fix.AnsiModeEnabledWarn
 fix.MesosRemovedWarn
 fix.RDDToDatasetMigrationCheck
 fix.RDDToDatasetMigration
+fix.IsRunningLocallyWarn
+fix.FunctionsSnakeCaseRename
+fix.RegisterTempTableRewrite
+fix.UntypedScalaUDFWarn
+fix.RenamedSparkConfRewrite
+fix.RemovedSparkConfWarn
+fix.ColumnExprRemovedWarn
+fix.DateTimePatternWarn

@@ -9,7 +9,7 @@ While we all wish we had a great test suite that covered all of the possible iss
 ### Side-By-Side Comparison
 
 To support migrations for pipelines with incomplete test coverage, we have tooling to compare two runs of the same pipeline on different versions of Spark.
-Right now it requires that you specify the table to be compared, but (not yet started) for Iceberg tables we plan to provide a custom Iceberg library which automates this component.
+For Iceberg tables the comparison runs in write-audit-publish (WAP) mode: a small Java agent (`iceberg-spark-upgrade-wap-plugin`) reports every snapshot the pipeline stages, and `pipelinecompare/domagic.py --iceberg` diffs the old and new snapshots without publishing either. [agent.md](./agent.md) is a step-by-step guide to that flow written for AI coding agents (and impatient humans); `e2e_demo/scala/run_demo.sh` is the runnable reference.
 
 ### Performance only Comparison (not yet started)
 
@@ -29,6 +29,23 @@ Out of the box SQLFluff lacks access to type information that is available when 
 
 
 Some migration rules are too much work to fully automate so instead output warnings for users to manually verify.
+
+The plugin currently ships these rules (`sqlfluff fix --dialect sparksql` applies the rewrites, `sqlfluff lint` shows the warnings):
+
+| Rule | Spark change | Action |
+|---|---|---|
+| `SPARKSQLCAST_L001` | 3.0: `cast(x as int)` on strings fails | rewrite to `int(x)` |
+| `RESERVEDROPERTIES_L002` | 3.0: `provider`/`location`/`owner` are reserved table properties | rewrite to `USING` / `LOCATION`, warn on `owner` |
+| `NOCHARS_L003` | 3.0: `CHAR` in non-Hive tables | rewrite to `STRING` |
+| `FORMATSTRONEINDEX_L004` | 3.3: `format_string('%0$s')` throws on JDK 17 | rewrite to `%1$s` |
+| `SPARKSQL_L004` | 3.0: `extract(second ...)` returns a decimal | wrap in `int(...)` |
+| `SPARKSQL_L005` | 3.0: `percentile_approx` accuracy must be an int | wrap in `cast(... as int)` |
+| `GLOBALTEMPVIEW_L006` | `CREATE GLOBAL TEMPORARY VIEW` is not portable to all runtimes | warn |
+| `CREATETABLENOPROVIDER_L007` | 4.0: `CREATE TABLE` without `USING`/`STORED AS` creates a parquet data-source table instead of a Hive SerDe table | warn |
+| `BANGNOT_L008` | 4.0: `!` is only accepted as a prefix `NOT` (`a ! IN`, `IS ! NULL` ... are syntax errors) | rewrite `!` to `NOT` (needs `--FIX-EVEN-UNPARSABLE`, see the rule docstring) |
+| `DATETIMEPATTERN_L009` | 3.0: `DateTimeFormatter` rejects week-based letters (`Y W w u e c`), `A B n N p`, `E F q Q` when parsing, and 5+ letter runs; `F` changed meaning | warn |
+| `COUNTQUALIFIEDSTAR_L010` | 3.2: `count(t.*)` is rejected | warn |
+| `ENCODECHARSET_L011` | 4.0: `encode()`/`decode()` only accept 7 canonical charsets | rewrite JDK aliases (`utf8` -> `UTF-8`), warn on unsupported charsets |
 
 We do not have an equivelent to "Scala Steward" for SQL files and SQL can target multiple backends. In most situations, the scheduler job type can be used to determine the engine.
 

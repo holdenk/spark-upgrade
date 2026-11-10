@@ -39,21 +39,30 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 90
     steps:
+    # Action majors: checkout v7, setup-java v6, setup-python v7, cache v6 and
+    # coursier/cache-action v9 all declare `runs.using: node24`. The previous pins
+    # (checkout/cache/setup-java v4, setup-python v5, coursier v6) were node20
+    # actions, and since June 2026 the runner has only run those by forcing them
+    # onto Node 24 with a deprecation warning on every job -- Node 20 itself was
+    # removed from the runner on 2026-09-23. The v6/v7 lines are ESM rewrites of
+    # the same inputs, so none of the usages below change. The coursier bump is
+    # the one with a visible effect: its cache layout and keys changed, so the
+    # first run after this lands starts from a cold coursier cache.
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         fetch-depth: 0
     # After checkout, not before: this action keys its cache on the build
     # definition files (*.sbt, project/**, build.properties), which do not exist
     # yet if it runs first.
-    - uses: coursier/cache-action@v6
+    - uses: coursier/cache-action@v9
     # Pin the toolchain rather than inheriting whatever the runner image ships.
     # This build is not JDK-agnostic -- the oldest Scala versions here predate
     # recent JDKs -- and ubuntu-22.04 merely happens to default to JDK 11 today.
     # Saying it out loud means a runner image bump cannot silently change the
     # compiler we build with.
     - name: Set up JDK
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@v6
       with:
         distribution: temurin
         java-version: '11'
@@ -64,7 +73,7 @@ jobs:
     # Python version means pip resolves click itself instead of silently reusing
     # the runner image's system click 8.0.3, so sql/requirements.txt caps click.
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v7
       with:
         python-version: '3.10'
     - name: Install python deps
@@ -155,25 +164,25 @@ jobs:
     # than that, and these scripts change rarely.
     - name: Cache tgzs
       id: cache-tgz
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: e2e_demo/scala/*.tgz
         key: ${{ runner.os }}-tgz-${{ hashFiles('e2e_demo/scala/dl_dependencies.sh', 'e2e_demo/scala/run_demo.sh', 'e2e_demo/scala/run_demo-gradle.sh') }}
     - name: Cache tar.gz
       id: cache-targz
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: e2e_demo/scala/*.tar.gz
         key: ${{ runner.os }}-targz-${{ hashFiles('e2e_demo/scala/dl_dependencies.sh', 'e2e_demo/scala/run_demo.sh', 'e2e_demo/scala/run_demo-gradle.sh') }}
     - name: Cache extractions spark 3
       id: cache-extract-spark3
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: e2e_demo/scala/spark-3.3.1-bin-hadoop2
         key: ${{ runner.os }}-extract-spark3-${{ hashFiles('e2e_demo/scala/dl_dependencies.sh', 'e2e_demo/scala/run_demo.sh', 'e2e_demo/scala/run_demo-gradle.sh') }}
     - name: Cache extractions hadoop
       id: cache-extract-hadoop
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: e2e_demo/scala/hadoop-2*
         key: ${{ runner.os }}-extract-hadoop2-${{ hashFiles('e2e_demo/scala/dl_dependencies.sh', 'e2e_demo/scala/run_demo.sh', 'e2e_demo/scala/run_demo-gradle.sh') }}

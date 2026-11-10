@@ -1,0 +1,64 @@
+rule: CREATETABLENOPROVIDER_L007
+
+plain_column_list_flagged:
+  configs:
+    core:
+      dialect: sparksql
+  fail_str: |
+    CREATE TABLE t1 (a INT, b STRING)
+
+ctas_without_provider_flagged:
+  configs:
+    core:
+      dialect: sparksql
+  fail_str: |
+    CREATE TABLE t2 AS SELECT * FROM src
+
+external_location_without_provider_flagged:
+  configs:
+    core:
+      dialect: sparksql
+  fail_str: |
+    CREATE EXTERNAL TABLE t3 (a INT) LOCATION '/tmp/x'
+
+partitioned_tblproperties_flagged:
+  configs:
+    core:
+      dialect: sparksql
+  fail_str: |
+    CREATE TABLE t4 (a INT, dt STRING) PARTITIONED BY (dt) TBLPROPERTIES ('k' = 'v')
+
+using_parquet_ok:
+  configs:
+    core:
+      dialect: sparksql
+  pass_str: |
+    CREATE TABLE t5 (a INT) USING parquet
+
+stored_as_parquet_ok:
+  configs:
+    core:
+      dialect: sparksql
+  pass_str: |
+    CREATE TABLE t6 (a INT) STORED AS parquet
+
+row_format_delimited_ok:
+  configs:
+    core:
+      dialect: sparksql
+  pass_str: |
+    CREATE TABLE t7 (a INT) ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+
+like_ok:
+  configs:
+    core:
+      dialect: sparksql
+  pass_str: |
+    CREATE TABLE t8 LIKE t1
+
+temporary_view_ok:
+  configs:
+    core:
+      dialect: sparksql
+  pass_str: |
+    CREATE TEMPORARY VIEW v AS SELECT 1

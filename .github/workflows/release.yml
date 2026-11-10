@@ -18,17 +18,51 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       # olafurpg/setup-scala is unmaintained (last commit 2023) and wraps Jabba.
       # setup-java + setup-sbt is the supported path, and it lets us pin the JDK
       # instead of inheriting the image default.
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '11'
       - uses: sbt/setup-sbt@v1
+      # Where the artifacts go changed under us. Sonatype shut down the legacy
+      # OSSRH host (oss.sonatype.org) on 2025-06-30; once the runner-label fix
+      # above let this job run again, every attempt died inside sbt-ci-release
+      # 1.5.11 with "HTTP response code: 405" from
+      # oss.sonatype.org/content/repositories/snapshots. sbt-ci-release 1.11+
+      # (scalafix/project/plugins.sbt) publishes to the Central Portal instead:
+      # SNAPSHOTs to https://central.sonatype.com/repository/maven-snapshots/,
+      # tagged releases through the Portal's bundle upload. Two things about the
+      # Portal are *account* settings, not build settings, so they cannot be fixed
+      # from this repository and are checked up front instead of 20 minutes in:
+      #   - SONATYPE_USERNAME / SONATYPE_PASSWORD must be the two halves of a
+      #     Portal *user token* (central.sonatype.com -> account -> Generate User
+      #     Token). The old OSSRH credentials are rejected by the new host.
+      #   - SNAPSHOT publishing is off by default per namespace; it has to be
+      #     enabled for com.holdenkarau on central.sonatype.com or every main
+      #     push (a -SNAPSHOT version by dynver) will fail at upload.
+      - name: Check publishing secrets are present
+        env:
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          PGP_SECRET: ${{ secrets.PGP_SECRET }}
+        run: |
+          missing=()
+          [[ -n "$SONATYPE_USERNAME" ]] || missing+=(SONATYPE_USERNAME)
+          [[ -n "$SONATYPE_PASSWORD" ]] || missing+=(SONATYPE_PASSWORD)
+          # Signing is only enforced for releases; sbt-ci-release publishes
+          # SNAPSHOTs unsigned when PGP_SECRET is absent.
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            [[ -n "$PGP_SECRET" ]] || missing+=(PGP_SECRET)
+          fi
+          if (( ${#missing[@]} )); then
+            echo "::error::missing repository secret(s): ${missing[*]}. The Sonatype values must be a Central Portal user token, not an OSSRH login."
+            exit 1
+          fi
       - name: Release 2.4.8 -> 3.3
         run: |
           cd scalafix
@@ -61,7 +95,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout PySparkler
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Publish PySparkler Package on PyPI

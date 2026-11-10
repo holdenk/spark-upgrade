@@ -16,8 +16,11 @@ class IsRunningLocallyWarn extends SemanticRule("IsRunningLocallyWarn") {
   val matcher = SymbolMatcher.normalized("org.apache.spark.TaskContext.isRunningLocally")
 
   override def fix(implicit doc: SemanticDocument): Patch = {
-    doc.tree.collect { case matcher(s) =>
-      Patch.lint(IsRunningLocally(s))
+    // Match the name token only so `TaskContext.get().isRunningLocally()` is reported once
+    // rather than once for each enclosing Select/Apply node that carries the same symbol.
+    doc.tree.collect {
+      case name: Term.Name if matcher.matches(name) =>
+        Patch.lint(IsRunningLocally(name))
     }.asPatch
   }
 }

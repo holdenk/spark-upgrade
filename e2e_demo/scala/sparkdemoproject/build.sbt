@@ -37,21 +37,9 @@ lazy val root = (project in file(".")).
     scalacOptions ++= Seq("-deprecation", "-unchecked"),
     pomIncludeRepository := { x => false },
 
-   resolvers ++= Seq(
-      "sonatype-releases" at "https://oss.sonatype.org/content/repositories/releases/",
-      "Typesafe repository" at "https://repo.typesafe.com/typesafe/releases/",
-      "Second Typesafe repo" at "https://repo.typesafe.com/typesafe/maven-releases/",
-      Resolver.sonatypeRepo("public")
-    ),
-
-    pomIncludeRepository := { _ => false },
-
-    // publish settings
-    publishTo := {
-      val nexus = "https://oss.sonatype.org/"
-      if (isSnapshot.value)
-        Some("snapshots" at nexus + "content/repositories/snapshots")
-      else
-        Some("releases"  at nexus + "service/local/staging/deploy/maven2")
-    }
+    // Everything resolves from Maven Central. The oss.sonatype.org (OSSRH) and
+    // repo.typesafe.com resolvers that used to be listed here are both retired
+    // hosts; sbt would only have waited on them for artifacts that were never
+    // there. The demo never publishes, so the OSSRH publishTo block is gone too.
+    pomIncludeRepository := { _ => false }
   )
