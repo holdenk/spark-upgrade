@@ -35,11 +35,5 @@ lazy val root = (project in file(".")).
     run in Compile := Defaults.runTask(fullClasspath in Compile, mainClass in (Compile, run), runner in (Compile, run)).evaluated,
 
     scalacOptions ++= Seq("-deprecation", "-unchecked"),
-    pomIncludeRepository := { x => false },
-
-    // Everything resolves from Maven Central. The oss.sonatype.org (OSSRH) and
-    // repo.typesafe.com resolvers that used to be listed here are both retired
-    // hosts; sbt would only have waited on them for artifacts that were never
-    // there. The demo never publishes, so the OSSRH publishTo block is gone too.
-    pomIncludeRepository := { _ => false }
+    pomIncludeRepository := { x => false }
   )

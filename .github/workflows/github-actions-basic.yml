@@ -39,15 +39,7 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 90
     steps:
-    # Action majors: checkout v7, setup-java v6, setup-python v7, cache v6 and
-    # coursier/cache-action v9 all declare `runs.using: node24`. The previous pins
-    # (checkout/cache/setup-java v4, setup-python v5, coursier v6) were node20
-    # actions, and since June 2026 the runner has only run those by forcing them
-    # onto Node 24 with a deprecation warning on every job -- Node 20 itself was
-    # removed from the runner on 2026-09-23. The v6/v7 lines are ESM rewrites of
-    # the same inputs, so none of the usages below change. The coursier bump is
-    # the one with a visible effect: its cache layout and keys changed, so the
-    # first run after this lands starts from a cold coursier cache.
+    # All actions are on their Node 24 majors (Node 20 was removed from runners).
     - name: Checkout
       uses: actions/checkout@v7
       with:

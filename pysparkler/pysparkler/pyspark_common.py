@@ -174,11 +174,16 @@ class RemovedOrRenamedConfig(StatementLineCommentWriter):
             )
             self.match_found = True
 
-    def prepare_comment(self) -> None:
-        """Combine all per-call messages collected on the current line into one comment"""
+    def leave_SimpleStatementLine(
+        self,
+        original_node: cst.SimpleStatementLine,
+        updated_node: cst.SimpleStatementLine,
+    ) -> cst.SimpleStatementLine:
+        """Combine all per-call messages collected on this line, then emit."""
         if self._pending_comments:
             self.comment = "; ".join(self._pending_comments)
         self._pending_comments = []
+        return super().leave_SimpleStatementLine(original_node, updated_node)
 
 
 def pyspark_common_transformers() -> list[cst.CSTTransformer]:
