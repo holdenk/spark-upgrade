@@ -9,7 +9,7 @@ While we all wish we had a great test suite that covered all of the possible iss
 ### Side-By-Side Comparison
 
 To support migrations for pipelines with incomplete test coverage, we have tooling to compare two runs of the same pipeline on different versions of Spark.
-Right now it requires that you specify the table to be compared, but (not yet started) for Iceberg tables we plan to provide a custom Iceberg library which automates this component.
+For Iceberg tables it runs in write-audit-publish (WAP) mode: a small Java agent (`iceberg-spark-upgrade-wap-plugin`) reports the snapshots each run stages, and `pipelinecompare/domagic.py --iceberg` diffs them without publishing either. See [agent.md](./agent.md) for a step-by-step guide.
 
 ### Performance only Comparison (not yet started)
 

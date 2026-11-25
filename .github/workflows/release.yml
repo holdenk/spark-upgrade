@@ -18,17 +18,20 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       # olafurpg/setup-scala is unmaintained (last commit 2023) and wraps Jabba.
       # setup-java + setup-sbt is the supported path, and it lets us pin the JDK
       # instead of inheriting the image default.
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '11'
       - uses: sbt/setup-sbt@v1
+      # Publishes to the Sonatype Central Portal (OSSRH was shut down). The
+      # SONATYPE_* secrets must be a Central Portal user token, and SNAPSHOT
+      # publishing must be enabled for the namespace on central.sonatype.com.
       - name: Release 2.4.8 -> 3.3
         run: |
           cd scalafix
@@ -61,7 +64,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout PySparkler
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Publish PySparkler Package on PyPI
